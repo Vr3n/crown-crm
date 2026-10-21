@@ -9,10 +9,20 @@ import { logger } from './lib/logger'
 import { registerIdentityIpc } from './ipc/identity'
 import { registerIdentityReadIpc } from './ipc/identity-read'
 import { registerDashboardIpc } from './ipc/dashboard'
+import { registerMastersIpc } from './ipc/masters'
+import { registerVouchersIpc } from './ipc/vouchers'
+import { registerReportsIpc } from './ipc/reports'
+import { registerBackupIpc } from './ipc/backup'
 import { registerLicenseIpc } from './ipc/license'
 import { restoreRememberedLogin } from './application/identity'
 import { ensureInstallLock } from './licensing/ensure'
 import { generateInstallLock, getInstallDir } from './licensing/install-lock'
+
+// End-to-end runs point at a throwaway data directory. Set before app is ready
+// so every app.getPath('userData') consumer sees the same folder.
+if (process.env.CROWN_BOOKS_USER_DATA) {
+  app.setPath('userData', process.env.CROWN_BOOKS_USER_DATA)
+}
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -84,6 +94,10 @@ app.whenReady().then(async () => {
 
   registerIdentityIpc()
   registerIdentityReadIpc()
+  registerMastersIpc()
+  registerVouchersIpc()
+  registerReportsIpc()
+  registerBackupIpc()
   registerDashboardIpc()
   registerLicenseIpc()
 

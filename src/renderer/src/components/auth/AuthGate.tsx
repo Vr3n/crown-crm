@@ -48,7 +48,7 @@ export function AuthGate({
   statusPending,
   onAuthenticated
 }: AuthGateProps): React.JSX.Element {
-  const [phase] = useState<Phase>(status === 'SETUP_REQUIRED' ? 'setup' : 'login')
+  const phase: Phase = status === 'SETUP_REQUIRED' ? 'setup' : 'login'
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

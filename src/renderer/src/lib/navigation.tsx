@@ -22,7 +22,8 @@ import {
   Percent,
   Ruler,
   Building2,
-  ShieldCheck
+  ShieldCheck,
+  DatabaseBackup
 } from 'lucide-react'
 
 /**
@@ -105,7 +106,13 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Admin',
     items: [
       { to: '/settings/company', label: 'Company', icon: Building2, requires: 'company.view' },
-      { to: '/settings/users', label: 'Users and Roles', icon: ShieldCheck, requires: 'user.view' }
+      { to: '/settings/users', label: 'Users and Roles', icon: ShieldCheck, requires: 'user.view' },
+      {
+        to: '/settings/backup',
+        label: 'Backup',
+        icon: DatabaseBackup,
+        requires: 'backup.manage'
+      }
     ]
   }
 ]

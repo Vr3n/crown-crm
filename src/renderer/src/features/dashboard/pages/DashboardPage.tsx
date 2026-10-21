@@ -69,7 +69,7 @@ export function DashboardPage(): React.JSX.Element {
             Add a party
           </Link>
           <Link
-            to="/sales"
+            to="/sales/new"
             className="flex h-8 items-center gap-1.5 bg-primary px-3 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
             <Receipt className="size-3.5" strokeWidth={1.75} />
