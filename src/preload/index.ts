@@ -3,18 +3,48 @@ import { IPC_CHANNELS } from '../shared/contracts/ipc.channels'
 import type {
   AuthStatus,
   CompanyExistenceInput,
+  CompanyProfile,
   CreateStaffMemberInput,
   CreatedStaffMember,
   LoginInput,
   SessionContext,
   SetupCompanyInput,
-  UpdateCompanyInput,
-  CompanyProfile
+  UpdateCompanyInput
 } from '../shared/contracts/identity'
-import type { IpcResult } from '../shared/contracts/errors'
 import type { DashboardSummary } from '../shared/contracts/dashboard'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
+import type {
+  AccountRow,
+  CreateAccountInput,
+  CreateItemInput,
+  CreatePartyInput,
+  CreateUnitInput,
+  ItemRow,
+  PartyListInput,
+  PartyRow,
+  UpdateItemInput,
+  UpdatePartyInput
+} from '../shared/contracts/masters'
+import type {
+  ListVouchersInput,
+  OutstandingBill,
+  OutstandingInput,
+  PostVoucherInput,
+  VoucherDetail,
+  VoucherListRow
+} from '../shared/contracts/vouchers'
+import type { IpcResult } from '../shared/contracts/errors'
+import type {
+  AgeingRow,
+  BalanceSheetReport,
+  ProfitLossReport,
+  ReceivableRow,
+  RegisterRow,
+  StatementRow,
+  StockRow,
+  TrialBalanceRow
+} from '../shared/contracts/reports'
 
 /**
  * Unwraps the main process envelope. A failure is re-thrown as an Error with a
@@ -46,9 +76,83 @@ const api = {
     staff: (): Promise<StaffMemberOutput[]> => call(IPC_CHANNELS.IDENTITY_STAFF),
     roles: (): Promise<RoleOutput[]> => call(IPC_CHANNELS.IDENTITY_ROLES)
   },
+
+  parties: {
+    list: (input: PartyListInput): Promise<PartyRow[]> => call(IPC_CHANNELS.PARTIES_LIST, input),
+    get: (id: number): Promise<PartyRow> => call(IPC_CHANNELS.PARTIES_GET, { id }),
+    create: (input: CreatePartyInput): Promise<PartyRow> =>
+      call(IPC_CHANNELS.PARTIES_CREATE, input),
+    update: (input: UpdatePartyInput): Promise<PartyRow> =>
+      call(IPC_CHANNELS.PARTIES_UPDATE, input),
+    deactivate: (id: number): Promise<void> => call(IPC_CHANNELS.PARTIES_DEACTIVATE, { id })
+  },
+
+  items: {
+    list: (query?: string, includeInactive = false): Promise<ItemRow[]> =>
+      call(IPC_CHANNELS.ITEMS_LIST, { query, includeInactive }),
+    get: (id: number): Promise<ItemRow> => call(IPC_CHANNELS.ITEMS_GET, { id }),
+    create: (input: CreateItemInput): Promise<ItemRow> => call(IPC_CHANNELS.ITEMS_CREATE, input),
+    update: (input: UpdateItemInput): Promise<ItemRow> => call(IPC_CHANNELS.ITEMS_UPDATE, input),
+    deactivate: (id: number): Promise<void> => call(IPC_CHANNELS.ITEMS_DEACTIVATE, { id })
+  },
+
+  accounts: {
+    list: (includeInactive = false): Promise<AccountRow[]> =>
+      call(IPC_CHANNELS.ACCOUNTS_LIST, { includeInactive }),
+    groups: (): Promise<{ id: number; name: string; nature: string }[]> =>
+      call(IPC_CHANNELS.ACCOUNTS_GROUPS),
+    create: (input: CreateAccountInput): Promise<AccountRow> =>
+      call(IPC_CHANNELS.ACCOUNTS_CREATE, input),
+    deactivate: (id: number): Promise<void> => call(IPC_CHANNELS.ACCOUNTS_DEACTIVATE, { id })
+  },
+
+  units: {
+    list: (): Promise<{ id: number; name: string; symbol: string }[]> =>
+      call(IPC_CHANNELS.UNITS_LIST),
+    create: (input: CreateUnitInput): Promise<void> => call(IPC_CHANNELS.UNITS_CREATE, input)
+  },
+
+  godowns: {
+    list: (): Promise<{ id: number; name: string }[]> => call(IPC_CHANNELS.GODOWNS_LIST)
+  },
+
+  vouchers: {
+    post: (input: PostVoucherInput): Promise<{ id: number; number: string }> =>
+      call(IPC_CHANNELS.VOUCHERS_POST, input),
+    get: (id: number): Promise<VoucherDetail> => call(IPC_CHANNELS.VOUCHERS_GET, { id }),
+    list: (input: ListVouchersInput): Promise<VoucherListRow[]> =>
+      call(IPC_CHANNELS.VOUCHERS_LIST, input),
+    cancel: (id: number, reason: string): Promise<void> =>
+      call(IPC_CHANNELS.VOUCHERS_CANCEL, { id, reason }),
+    outstanding: (input: OutstandingInput): Promise<OutstandingBill[]> =>
+      call(IPC_CHANNELS.VOUCHERS_OUTSTANDING, input),
+    postOpening: (date: string): Promise<{ id: number; number: string }> =>
+      call(IPC_CHANNELS.VOUCHERS_POST_OPENING, { date })
+  },
+
   dashboard: {
     summary: (): Promise<DashboardSummary> => call(IPC_CHANNELS.DASHBOARD_SUMMARY)
   },
+
+  reports: {
+    trialBalance: (): Promise<TrialBalanceRow[]> => call(IPC_CHANNELS.REPORTS_TRIAL_BALANCE),
+    profitLoss: (from: string, to: string): Promise<ProfitLossReport> =>
+      call(IPC_CHANNELS.REPORTS_PROFIT_LOSS, { from, to }),
+    balanceSheet: (from: string, to: string): Promise<BalanceSheetReport> =>
+      call(IPC_CHANNELS.REPORTS_BALANCE_SHEET, { from, to }),
+    receivables: (asOf: string, basis: 'BILL_DATE' | 'DUE_DATE'): Promise<ReceivableRow[]> =>
+      call(IPC_CHANNELS.REPORTS_RECEIVABLES, { asOf, basis }),
+    payables: (asOf: string, basis: 'BILL_DATE' | 'DUE_DATE'): Promise<ReceivableRow[]> =>
+      call(IPC_CHANNELS.REPORTS_PAYABLES, { asOf, basis }),
+    ageing: (asOf: string, basis: 'BILL_DATE' | 'DUE_DATE'): Promise<AgeingRow[]> =>
+      call(IPC_CHANNELS.REPORTS_AGEING, { asOf, basis }),
+    statement: (partyId: number, from: string, to: string): Promise<StatementRow[]> =>
+      call(IPC_CHANNELS.REPORTS_STATEMENT, { partyId, from, to }),
+    register: (type: 'SALES' | 'PURCHASE', from: string, to: string): Promise<RegisterRow[]> =>
+      call(IPC_CHANNELS.REPORTS_REGISTER, { type, from, to }),
+    stock: (): Promise<StockRow[]> => call(IPC_CHANNELS.REPORTS_STOCK)
+  },
+
   license: {
     status: (): Promise<LicenseStatus> => call(IPC_CHANNELS.LICENSE_STATUS)
   }
