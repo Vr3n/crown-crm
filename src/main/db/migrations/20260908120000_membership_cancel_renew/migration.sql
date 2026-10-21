@@ -1,0 +1,1 @@
+ALTER TABLE memberships ADD COLUMN cancellation_reason_code TEXT;

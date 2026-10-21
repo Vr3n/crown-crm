@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stock and bills module for small traders</title>
+<style>
+:root{--bg:#fff;--fg:#0b1f33;--mut:#5b6b7b;--brand:#051c2c;--acc:#0a7cff;--card:#eef3f8;--ok:#0f9d6b;--warn:#d9480f;--hl:#fff1a8;--ln:#c5d1dd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1620;--fg:#e8eef5;--mut:#9fb0c1;--brand:#e8eef5;--acc:#4da3ff;--card:#14242f;--ok:#37d6a0;--warn:#ff8a5c;--hl:#5a4a00;--ln:#2c3f4f}}
+:root[data-theme="dark"]{--bg:#0b1620;--fg:#e8eef5;--mut:#9fb0c1;--brand:#e8eef5;--acc:#4da3ff;--card:#14242f;--ok:#37d6a0;--warn:#ff8a5c;--hl:#5a4a00;--ln:#2c3f4f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:Georgia,"Times New Roman",serif;overflow:hidden}
+.s{position:absolute;inset:0;padding:4vh 6vw 9vh;display:none;flex-direction:column;gap:2vh;overflow-y:auto}
+.s.on{display:flex}
+h1,h2{font-family:Georgia,serif;color:var(--brand);margin:0;line-height:1.2}
+h2{font-size:clamp(20px,3.1vw,36px);border-bottom:3px solid var(--acc);padding-bottom:1.2vh}
+h1{font-size:clamp(28px,5vw,58px)}
+p,li,td,th{font-family:system-ui,Arial,sans-serif;font-size:clamp(14px,1.8vw,21px);line-height:1.45;margin:.4em 0}
+.v{background:var(--hl);font-weight:700;padding:0 .25em;border-radius:3px}
+.src{margin-top:auto;font:12px system-ui;color:var(--mut)}
+.row{display:flex;gap:2vw;flex-wrap:wrap}.row>*{flex:1 1 240px}
+.card{background:var(--card);border-left:5px solid var(--acc);padding:1.2vh 1.4vw;border-radius:4px}
+.num{font:700 clamp(28px,4vw,48px) Georgia;color:var(--acc)}
+svg{width:100%;max-height:52vh}svg text{font-family:system-ui,Arial,sans-serif;fill:var(--fg)}
+.bx{fill:var(--card);stroke:var(--acc);stroke-width:2}.ln{stroke:var(--mut);stroke-width:2;fill:none}
+.dot{fill:var(--warn)}
+.bars{display:flex;align-items:flex-end;gap:2vw;height:34vh;border-bottom:2px solid var(--fg);padding:0 2vw}
+.bar{flex:1;display:flex;align-items:flex-start;justify-content:center;color:#fff;font:700 20px system-ui;padding-top:6px;border-radius:4px 4px 0 0;transform-origin:bottom}
+.stack{display:flex;height:9vh;border:2px solid var(--fg);border-radius:4px;overflow:hidden}
+.stack div{transform-origin:left;color:#fff;font:700 14px system-ui;display:flex;align-items:center;justify-content:center;overflow:hidden}
+table{border-collapse:collapse;width:100%}th{background:var(--brand);color:var(--bg);text-align:left}td,th{padding:.8vh 1vw;border-bottom:1px solid var(--ln)}
+.leg{font:13px system-ui;color:var(--mut)}
+#bar{position:fixed;left:0;bottom:0;height:5px;background:var(--acc);width:0}
+#nav{position:fixed;right:2vw;bottom:calc(1.2vh + env(safe-area-inset-bottom,0px));display:flex;gap:8px;align-items:center;font:14px system-ui;color:var(--mut)}
+#nav button{background:var(--brand);color:var(--bg);border:0;border-radius:4px;padding:8px 14px;font-size:16px;cursor:pointer}
+</style></head><body>
+
+<section class="s on">
+<div style="margin:auto 0"><p class="a leg">INVENTORY + BILLS · PLAN FOR A VISUAL LEARNER</p>
+<h1 class="a">Build <span class="v">stock</span> and <span class="v">bills</span> for small traders in 4 steps</h1>
+<p class="a">Written in simple technical English. <span class="v">Yellow words</span> are key vocabulary.</p>
+<p class="a leg">Use the arrow keys or the buttons to move. Each slide has one message.</p></div>
+<div class="src">Source: Tally help pages; two sample GST invoices you gave; analysis</div></section>
+
+<section class="s">
+<h2 class="a">Summary: one bill makes two effects, so build one document with two outputs</h2>
+<div class="row">
+<div class="card a"><div class="num">1</div><p>A <span class="v">voucher</span> is one business document. A sale, a purchase, or a credit note is a voucher.</p></div>
+<div class="card a"><div class="num">2</div><p>Each voucher changes <span class="v">money</span> (ledger entries) and <span class="v">stock</span> (quantity movements).</p></div>
+<div class="card a"><div class="num">3</div><p>Never edit a stock number. Store each movement. The software <span class="v">adds them up</span>.</p></div></div>
+<p class="a">Your other modules are ready. This module adds <span class="v">items</span>, <span class="v">item lines</span>, and stock. Then reports follow from them.</p>
+<div class="src">Source: TallyPrime inventory documentation (help.tallysolutions.com)</div></section>
+<section class="s">
+<h2 class="a">Your sample bills show the customer: a small GST trader of computer parts</h2>
+<table><tr><th>The bills show</th><th>The software must</th></tr>
+<tr class="a"><td>SSD, ink, RAM, monitor, router; quantity 1 or 2</td><td>Find an <span class="v">item</span> fast; show <span class="v">HSN</span> and unit</td></tr>
+<tr class="a"><td>4,550 ÷ 1.18 = 3,855.93; a 15.254% discount that removes GST</td><td>Accept <span class="v">tax-inclusive</span> and tax-exclusive prices</td></tr>
+<tr class="a"><td>CGST 9% + SGST 9%; seller and buyer in state 27</td><td>Split <span class="v">CGST/SGST</span> or <span class="v">IGST</span> by place of supply</td></tr>
+<tr class="a"><td>36% interest after due date; cheque dishonour fee</td><td>Track <span class="v">due date</span> and outstanding per bill</td></tr>
+<tr class="a"><td>Warranty by service centre; no returns after 7 days</td><td>Store <span class="v">serial number</span> and warranty; support returns</td></tr></table>
+<div class="src">Source: your sales bill 84/2026-27 and purchase bill TC/2026-27/583</div></section>
+
+<section class="s">
+<h2 class="a">A paper bill line is only text, so the software must link each line to an item</h2>
+<svg viewBox="0 0 800 270">
+<g class="b"><rect class="bx" x="20" y="40" width="270" height="170" rx="8"/><text x="40" y="70" font-weight="700">PAPER BILL</text>
+<rect x="40" y="95" width="230" height="38" fill="var(--hl)"/><text x="50" y="120">8gb Ddr4 Ram  3,150.00</text>
+<text x="40" y="170" class="leg">text only · no item · no stock</text></g>
+<path class="ln" d="M300 125 H490" marker-end="url(#ar)"/>
+<defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--mut)"/></marker></defs>
+<g class="b"><rect class="bx" x="500" y="20" width="285" height="220" rx="8"/><text x="520" y="50" font-weight="700">TARGET: Item lines</text>
+<rect x="520" y="70" width="245" height="34" fill="var(--hl)"/><text x="530" y="93">8gb Ddr4 Ram · HSN 8473</text>
+<rect x="520" y="112" width="245" height="34" fill="var(--card)" stroke="var(--acc)"/><text x="530" y="135">Intel Core i5 · HSN 84733010</text>
+<rect x="520" y="154" width="245" height="34" fill="var(--card)" stroke="var(--acc)"/><text x="530" y="177">Tp-Link Router · HSN 8517</text>
+<text x="520" y="222" class="leg">each line links to an item · tax · stock</text></g></svg>
+<p class="a">The item gives HSN, tax rate, and unit. Add a <span class="v">service item</span> for charges with no stock, such as freight or repair.</p>
+<div class="src">Source: your two sample bills; design recommendation</div></section>
+
+<section class="s">
+<h2 class="a">The core pattern: every voucher splits into a money path and a stock path</h2>
+<svg viewBox="0 0 800 300">
+<rect class="bx b" x="290" y="10" width="220" height="64" rx="8"/><text class="b" x="400" y="48" text-anchor="middle" font-weight="700">VOUCHER (sale / purchase)</text>
+<path id="p1" class="ln" d="M400 74 C400 130 190 120 190 190"/><path id="p2" class="ln" d="M400 74 C400 130 610 120 610 190"/>
+<circle class="dot" data-p="p1" r="7"/><circle class="dot" data-p="p2" r="7"/>
+<g class="b"><rect class="bx" x="60" y="190" width="260" height="90" rx="8"/><text x="190" y="225" text-anchor="middle" font-weight="700">LEDGER ENTRIES</text><text x="190" y="252" text-anchor="middle" class="leg">money: debit and credit</text></g>
+<g class="b"><rect class="bx" x="480" y="190" width="260" height="90" rx="8"/><text x="610" y="225" text-anchor="middle" font-weight="700">STOCK MOVEMENTS</text><text x="610" y="252" text-anchor="middle" class="leg">quantity: in and out</text></g></svg>
+<p class="a">Staff enter one document. The software creates both paths. Staff never see <span class="v">debit</span> and <span class="v">credit</span>.</p>
+<div class="src">Source: Tally voucher model; analysis</div></section>
+
+<section class="s">
+<h2 class="a">Six tables carry the whole design; one voucher table serves all document types</h2>
+<svg viewBox="0 0 800 330">
+<g class="ln"><path d="M200 55H300"/><path d="M500 55H600"/><path d="M400 90V150"/><path d="M300 190H200"/><path d="M400 230V270"/><path d="M500 190C560 190 620 130 650 90"/></g>
+<g class="b"><rect class="bx" x="40" y="20" width="160" height="70" rx="6"/><text x="120" y="60" text-anchor="middle">PARTIES</text>
+<rect class="bx" x="300" y="20" width="200" height="70" rx="6"/><text x="400" y="60" text-anchor="middle" font-weight="700">VOUCHERS</text>
+<rect class="bx" x="600" y="20" width="160" height="70" rx="6"/><text x="680" y="60" text-anchor="middle">ITEMS</text>
+<rect class="bx" x="300" y="150" width="200" height="80" rx="6"/><text x="400" y="190" text-anchor="middle" font-weight="700">ITEM LINES</text>
+<rect class="bx" x="40" y="150" width="160" height="80" rx="6"/><text x="120" y="190" text-anchor="middle">LEDGER LINES</text>
+<rect class="bx" x="300" y="270" width="200" height="56" rx="6"/><text x="400" y="304" text-anchor="middle" font-weight="700">STOCK MOVEMENTS</text></g></svg>
+<p class="a">Add a <span class="v">bill allocation</span> table. It links each payment to the invoice it pays. You need it for <span class="v">outstanding</span> reports.</p>
+<div class="src">Source: schema proposed in previous message</div></section>
+
+<section class="s">
+<h2 class="a">Stock on hand is a sum of movements, so you never edit a quantity</h2>
+<div class="bars">
+<div class="bar" style="height:100%;background:var(--ok)">+10 buy</div>
+<div class="bar" style="height:30%;background:var(--warn)">−3 sell</div>
+<div class="bar" style="height:10%;background:var(--warn)">−1</div>
+<div class="bar" style="height:60%;background:var(--acc)"><span class="cnt" data-to="6">0</span>&nbsp;on hand</div></div>
+<p class="a"><span class="v">Stock on hand</span> = 10 − 3 − 1 = 6. A count of the shelf makes an <span class="v">adjustment</span> movement. It does not overwrite 6.</p>
+<p class="a">Allow <span class="v">negative stock</span> with a warning. Small shops often sell before they enter the purchase.</p>
+<div class="src">Source: TallyPrime Stock Journal and Physical Stock vouchers; analysis</div></section>
+
+<section class="s">
+<h2 class="a">A real purchase bill balances to the paisa once tax and round-off are separate lines</h2>
+<div class="stack">
+<div style="width:84.7%;background:var(--acc)">Taxable 13,173.33</div>
+<div style="width:7.6%;background:var(--ok)">CGST</div>
+<div style="width:7.6%;background:var(--warn)">SGST</div>
+<div style="width:.1%;background:#000"></div></div>
+<table><tr><th>Line</th><th>Amount (₹)</th></tr>
+<tr><td>Taxable value</td><td><span class="cnt" data-to="13173.33" data-d="2">0</span></td></tr>
+<tr><td>CGST 9% + SGST 9%</td><td><span class="cnt" data-to="2371.18" data-d="2">0</span></td></tr>
+<tr><td><span class="v">Round-off</span></td><td><span class="cnt" data-to="0.49" data-d="2">0</span></td></tr>
+<tr><td><b>Total</b></td><td><b><span class="cnt" data-to="15545" data-d="2">0</span></b></td></tr></table>
+<p class="a">Pick one <span class="v">rounding rule</span>: per line, per HSN group, or per invoice. The sample bill shows 1,185.59, but 9% of 13,173.33 is 1,185.60.</p>
+<div class="src">Source: your sample purchase bill TC/2026-27/583; analysis</div></section>
+
+<section class="s">
+<h2 class="a">Build in four phases, and test each phase with your two sample bills</h2>
+<svg viewBox="0 0 800 210">
+<g class="b"><path d="M10 40h180l25 45-25 45H10z" fill="var(--acc)"/><path d="M205 40h180l25 45-25 45H205z" fill="var(--acc)" opacity=".85"/><path d="M400 40h180l25 45-25 45H400z" fill="var(--acc)" opacity=".7"/><path d="M595 40h195v90H595z" fill="var(--acc)" opacity=".55"/></g>
+<g fill="#fff" font-weight="700" font-size="17"><text x="30" y="92">1 Masters</text><text x="225" y="92">2 Item lines</text><text x="420" y="92">3 Stock</text><text x="615" y="92">4 Reports</text></g>
+<g font-size="13"><text x="20" y="160">items, units,</text><text x="20" y="178">godown, tax</text><text x="215" y="160">many lines, tax,</text><text x="215" y="178">serial no., returns</text><text x="410" y="160">movements, purchase</text><text x="410" y="178">bill, count</text><text x="605" y="160">registers, GST,</text><text x="605" y="178">stock, ageing</text></g></svg>
+<p class="a"><span class="v">Opening stock</span>: enter the quantity on hand for each item as the first movement. Each later bill then adjusts it.</p>
+<div class="src">Source: analysis</div></section>
+
+<section class="s">
+<h2 class="a">Seven decisions to approve now, because later changes cost more</h2>
+<table><tr><th>Decision</th><th>Choice</th></tr>
+<tr><td><span class="v">Voucher table</span></td><td>One table for all types</td></tr>
+<tr><td><span class="v">Costing</span></td><td>Weighted average; save cost on each issue</td></tr>
+<tr><td><span class="v">Locking</span></td><td>Posted bill is locked; cancel and reissue; keep audit log</td></tr>
+<tr><td><span class="v">Numbering</span></td><td>No gaps per series per financial year</td></tr>
+<tr><td><span class="v">Tax</span></td><td>Save rate on each line; use place of supply for CGST/SGST or IGST</td></tr>
+<tr><td><span class="v">Price entry</span></td><td>Support tax-inclusive and tax-exclusive rates on each line</td></tr>
+<tr><td><span class="v">Serial numbers</span></td><td>Optional for each item; use for SSD and monitors</td></tr></table>
+<p class="a">Next step: create the <span class="v">items</span> table. Load the items from your two sample bills.</p>
+<div class="src">Source: analysis. Check GST numbering and e-invoice rules with current CBIC notices.</div></section>
+
+<div id="bar"></div>
+<div id="nav"><button id="pv" aria-label="Previous">◀</button><span id="ct"></span><button id="nx" aria-label="Next">▶</button></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+const S=[...document.querySelectorAll('.s')];let i=0,T=[];
+function anim(s){T.forEach(t=>t.kill());T=[];if(!window.gsap)return;const q=x=>s.querySelectorAll(x);
+T.push(gsap.from(q('.a'),{y:24,opacity:0,stagger:.15,duration:.6}));
+T.push(gsap.from(q('.b'),{scale:.7,opacity:0,transformOrigin:'50% 50%',stagger:.18,duration:.5,delay:.2}));
+T.push(gsap.from(q('.bar'),{scaleY:0,stagger:.25,duration:.7,ease:'back.out(1.4)'}));
+T.push(gsap.from(q('.stack div'),{scaleX:0,stagger:.2,duration:.7}));
+q('.ln path,path.ln').forEach(p=>{if(!p.getTotalLength)return;const L=p.getTotalLength();T.push(gsap.fromTo(p,{strokeDasharray:L,strokeDashoffset:L},{strokeDashoffset:0,duration:1,delay:.3}))});
+q('.cnt').forEach(e=>{const o={v:0},to=+e.dataset.to,d=+(e.dataset.d||0);T.push(gsap.to(o,{v:to,duration:1.4,delay:.4,onUpdate:()=>e.textContent=o.v.toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d})}))});
+q('.dot').forEach((c,k)=>{const p=s.querySelector('#'+c.dataset.p),L=p.getTotalLength(),o={t:0};T.push(gsap.to(o,{t:1,duration:2,repeat:-1,delay:k*.4,ease:'none',onUpdate:()=>{const pt=p.getPointAtLength(o.t*L);c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y)}}))})}
+function go(n){i=Math.max(0,Math.min(S.length-1,n));S.forEach((s,k)=>s.classList.toggle('on',k==i));document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';document.getElementById('ct').textContent=(i+1)+' / '+S.length;anim(S[i])}
+document.getElementById('pv').onclick=()=>go(i-1);document.getElementById('nx').onclick=()=>go(i+1);
+addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' '].includes(e.key))go(i+1);if(['ArrowLeft','PageUp'].includes(e.key))go(i-1)});
+let x0=0;addEventListener('touchstart',e=>x0=e.touches[0].clientX);addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-x0;if(Math.abs(d)>60)go(i+(d<0?1:-1))});
+go(0);
+</script></body></html>

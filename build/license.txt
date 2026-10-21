@@ -1,0 +1,108 @@
+CROWNCRM END-USER LICENSE AGREEMENT
+Version 1.0
+
+This End-User License Agreement ("Agreement") is a legal agreement
+between you (either as an individual, or on behalf of the gym or
+fitness facility you represent, "You") and Viren Patel ("Licensor",
+"we", "us") governing your use of CrownCRM, including the installer,
+the application, and any accompanying documentation (the "Software").
+
+BY CLICKING "I AGREE", INSTALLING, OR USING THE SOFTWARE, YOU AGREE
+TO BE BOUND BY THIS AGREEMENT. IF YOU DO NOT AGREE TO ALL OF ITS
+TERMS, DO NOT INSTALL OR USE THE SOFTWARE.
+
+1. LICENSE GRANT
+Subject to your compliance with this Agreement and payment of any
+applicable fees, Licensor grants you a limited, non-exclusive,
+non-transferable, revocable license to install and use the Software
+on a single computer that you own or control, solely for the internal
+business operations of one gym or fitness facility, including member
+management, billing, attendance, and related functions. All rights not
+expressly granted are reserved by Licensor. The Software is licensed,
+not sold.
+
+2. DEVICE BINDING
+On first launch the Software automatically generates a license file
+bound to the hardware identifiers of that computer. The license is
+valid only on that computer; copying the installation to another
+computer will fail verification. If hardware changes invalidate the
+license, contact virenspatel99@gmail.com for a reissue. You agree not
+to circumvent, tamper with, or attempt to bypass the license
+verification mechanism.
+
+3. RESTRICTIONS
+You agree not to, and will not permit others to: (a) copy the Software
+except for one archival backup copy; (b) sell, rent, lease,
+sublicense, distribute, or otherwise commercially exploit the
+Software; (c) modify, decompile, disassemble, reverse engineer, or
+attempt to derive the source code of the Software, except where
+applicable law expressly permits such activity; (d) remove, alter, or
+obscure any proprietary notice of Licensor; (e) use the Software to
+process data in violation of applicable law.
+
+4. OWNERSHIP
+The Software, including all copyrights, trademarks, trade secrets, and
+other intellectual property rights therein, is and shall remain the
+exclusive property of Licensor. This Agreement grants you a license to
+use the Software and does not transfer any ownership interest to you.
+
+5. YOUR DATA AND PRIVACY
+The Software stores gym and member data locally on your computer only.
+The Software does not transmit your data to Licensor. There is no
+cloud synchronisation, telemetry, or network phone-home. You are
+solely responsible for backing up your data and for complying with
+applicable data-protection laws, including the Digital Personal Data
+Protection Act, 2023 (India), with respect to the personal data of
+your members.
+
+6. UPDATES AND SUPPORT
+Updates are delivered as new installer versions and are governed by
+this Agreement. Support, if any, is as described in your purchase
+documentation. Licensor may modify or discontinue features in future
+versions of the Software.
+
+7. TERM AND TERMINATION
+This Agreement is effective until terminated. It terminates
+automatically, without notice, if you breach any of its terms. You may
+terminate it at any time by uninstalling the Software and deleting all
+copies. Upon termination you must cease all use of the Software and
+destroy all copies in your possession. Sections 4, 5 (your compliance
+duties), 8, and 9 survive termination.
+
+8. WARRANTY DISCLAIMER
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS
+PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS, IMPLIED, OR STATUTORY, INCLUDING IMPLIED WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+NON-INFRINGEMENT. LICENSOR DOES NOT WARRANT THAT THE SOFTWARE WILL BE
+ERROR-FREE, UNINTERRUPTED, OR FREE OF HARMFUL COMPONENTS.
+
+9. LIMITATION OF LIABILITY
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL
+LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA,
+OR GOODWILL, ARISING OUT OF OR RELATED TO YOUR USE OF OR INABILITY TO
+USE THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+LICENSOR'S TOTAL LIABILITY UNDER THIS AGREEMENT SHALL NOT EXCEED THE
+GREATER OF THE AMOUNT YOU PAID FOR THE SOFTWARE IN THE TWELVE (12)
+MONTHS PRECEDING THE CLAIM OR INR 4,000.
+
+10. GOVERNING LAW AND JURISDICTION
+This Agreement shall be governed by and construed in accordance with
+the laws of India, without regard to conflict-of-law principles. The
+courts at Mumbai, Maharashtra shall have exclusive jurisdiction over
+any dispute arising out of or in connection with this Agreement.
+
+11. ENTIRE AGREEMENT AND SEVERABILITY
+This Agreement constitutes the entire agreement between you and
+Licensor regarding the Software and supersedes all prior proposals and
+communications. If any provision is held unenforceable, it shall be
+modified to the minimum extent necessary, and the remaining provisions
+shall continue in full force.
+
+For questions about this Agreement, contact: virenspatel99@gmail.com
+
+---
+IMPORTANT NOTICE: This EULA was prepared from researched industry
+templates and public guidance. It is not legal advice. Have it reviewed
+by a qualified attorney before your first customer shipment.

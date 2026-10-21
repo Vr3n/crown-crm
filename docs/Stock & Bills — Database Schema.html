@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stock &amp; Bills — Database Schema</title>
+<style>
+:root{--bg:#fff;--fg:#0b1f33;--mut:#5b6b7b;--brand:#051c2c;--acc:#0a7cff;--card:#eef3f8;--ok:#0f9d6b;--warn:#d9480f;--hl:#fff1a8;--ln:#c5d1dd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1620;--fg:#e8eef5;--mut:#9fb0c1;--brand:#e8eef5;--acc:#4da3ff;--card:#14242f;--ok:#37d6a0;--warn:#ff8a5c;--hl:#5a4a00;--ln:#2c3f4f}}
+:root[data-theme="dark"]{--bg:#0b1620;--fg:#e8eef5;--mut:#9fb0c1;--brand:#e8eef5;--acc:#4da3ff;--card:#14242f;--ok:#37d6a0;--warn:#ff8a5c;--hl:#5a4a00;--ln:#2c3f4f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:Georgia,"Times New Roman",serif;overflow:hidden}
+.s{position:absolute;inset:0;padding:4vh 6vw 9vh;display:none;flex-direction:column;gap:2vh;overflow-y:auto}
+.s.on{display:flex}
+h1,h2{font-family:Georgia,serif;color:var(--brand);margin:0;line-height:1.2}
+h2{font-size:clamp(20px,3.1vw,36px);border-bottom:3px solid var(--acc);padding-bottom:1.2vh}
+h1{font-size:clamp(28px,5vw,58px)}
+p,li,td,th{font-family:system-ui,Arial,sans-serif;font-size:clamp(14px,1.8vw,21px);line-height:1.45;margin:.4em 0}
+.v{background:var(--hl);font-weight:700;padding:0 .25em;border-radius:3px}
+.src{margin-top:auto;font:12px system-ui;color:var(--mut)}
+.row{display:flex;gap:2vw;flex-wrap:wrap}.row>*{flex:1 1 240px}
+.card{background:var(--card);border-left:5px solid var(--acc);padding:1.2vh 1.4vw;border-radius:4px}
+.num{font:700 clamp(28px,4vw,48px) Georgia;color:var(--acc)}
+svg{width:100%;max-height:52vh}svg text{font-family:system-ui,Arial,sans-serif;fill:var(--fg)}
+.bx{fill:var(--card);stroke:var(--acc);stroke-width:2}.ln{stroke:var(--mut);stroke-width:2;fill:none}
+.dot{fill:var(--warn)}
+.bars{display:flex;align-items:flex-end;gap:2vw;height:34vh;border-bottom:2px solid var(--fg);padding:0 2vw}
+.bar{flex:1;display:flex;align-items:flex-start;justify-content:center;color:#fff;font:700 20px system-ui;padding-top:6px;border-radius:4px 4px 0 0;transform-origin:bottom}
+.stack{display:flex;height:9vh;border:2px solid var(--fg);border-radius:4px;overflow:hidden}
+.stack div{transform-origin:left;color:#fff;font:700 14px system-ui;display:flex;align-items:center;justify-content:center;overflow:hidden}
+table{border-collapse:collapse;width:100%}th{background:var(--brand);color:var(--bg);text-align:left}td,th{padding:.8vh 1vw;border-bottom:1px solid var(--ln)}
+.leg{font:13px system-ui;color:var(--mut)}
+#bar{position:fixed;left:0;bottom:0;height:5px;background:var(--acc);width:0}
+#nav{position:fixed;right:2vw;bottom:calc(1.2vh + env(safe-area-inset-bottom,0px));display:flex;gap:8px;align-items:center;font:14px system-ui;color:var(--mut)}
+#nav button{background:var(--brand);color:var(--bg);border:0;border-radius:4px;padding:8px 14px;font-size:16px;cursor:pointer}
+.m{font-family:ui-monospace,Menlo,monospace;font-size:.88em;background:var(--card);padding:1px 6px;border-radius:4px}.bg{fill:var(--ok);fill-opacity:.14;stroke:var(--ok);stroke-width:2}.bw{fill:var(--warn);fill-opacity:.12;stroke:var(--warn);stroke-width:2}</style></head><body>
+
+<section class="s on">
+<div style="margin:auto 0"><p class="a leg">STOCK &amp; BILLS · DATABASE SCHEMA · FOR SMALL GST TRADERS</p>
+<h1 class="a">The <span class="v">schema</span> for your trader app, built from the gym CRM patterns</h1>
+<p class="a">Seven gym ideas carry over. Two ideas are new: <span class="v">stock</span> and <span class="v">ledger posting</span>.</p>
+<p class="a leg">Use the arrow keys, the buttons, or a swipe. <span class="v">Yellow words</span> are key vocabulary.</p></div>
+<div class="src">Source: your gym CRM schema deck; your two sample GST bills; analysis</div></section>
+
+<section class="s">
+<h2 class="a">Seven gym patterns carry over, and two ideas are new</h2>
+<table><tr><th>Gym pattern</th><th>In the trader app</th></tr>
+<tr class="a"><td><span class="v">organization</span> on every row</td><td><span class="m">company_id</span> on every row</td></tr>
+<tr class="a"><td>One <span class="v">person</span> row</td><td>One <span class="m">parties</span> row: customer and supplier</td></tr>
+<tr class="a"><td>Price <span class="v">snapshot</span></td><td>Bill line copies name, HSN, rate, GST rate</td></tr>
+<tr class="a"><td>Money in <span class="v">three tables</span></td><td>Payments, bills, allocation bridge</td></tr>
+<tr class="a"><td>Derived status, <span class="v">paise</span></td><td>Paid status and stock are computed</td></tr>
+<tr class="a"><td>History added, never removed</td><td>Cancel a bill; never delete it</td></tr>
+<tr class="a"><td><span class="v">Idempotency</span> and guards</td><td>A double click posts once</td></tr>
+<tr class="a"><td><b>NEW</b></td><td><span class="v">Stock movements</span> and <span class="v">ledger lines</span></td></tr></table>
+<p class="a">You do not start from zero. The gym design already solves money, history, and safety.</p>
+<div class="src">Source: gym CRM schema deck; analysis</div></section>
+
+<section class="s">
+<h2 class="a">Almost every row names the company it belongs to</h2>
+<div class="row">
+<div class="card a"><div class="num">1</div><p>Gym tables carry <span class="m">organization_id</span>. Trader tables carry <span class="m">company_id</span>.</p></div>
+<div class="card a"><div class="num">2</div><p>One owner can run two firms with two GSTINs. Their books must never mix.</p></div>
+<div class="card a"><div class="num">3</div><p>Voucher numbers restart each <span class="v">financial year</span> in each series. The unique key is company + series + year + number.</p></div></div>
+<p class="a">This one column gives you multi-company books like Tally. Add it now. It is hard to add later.</p>
+<div class="src">Source: gym CRM tenancy pattern; TallyPrime company model</div></section>
+
+<section class="s">
+<h2 class="a">One party row holds the facts, and bills point to it</h2>
+<svg viewBox="0 0 800 250">
+<g class="b"><rect class="bx" x="20" y="40" width="250" height="150" rx="8"/><text x="38" y="68" font-weight="700">parties</text>
+<text x="38" y="94" class="leg">name, gstin, state_code</text><text x="38" y="114" class="leg">is_customer, is_supplier</text><text x="38" y="134" class="leg">credit_days, opening balance</text><text x="38" y="168" class="leg">one row per real business</text></g>
+<path id="pa1" class="ln" d="M270 90 C350 90 370 60 450 60"/><path id="pa2" class="ln" d="M270 140 C350 140 370 180 450 180"/>
+<circle class="dot" data-p="pa1" r="7"/><circle class="dot" data-p="pa2" r="7"/>
+<g class="b"><rect class="bg" x="450" y="30" width="330" height="62" rx="8"/><text x="468" y="58" font-weight="700">sale vouchers</text><text x="468" y="78" class="leg">the party is a customer</text>
+<rect class="bw" x="450" y="150" width="330" height="62" rx="8"/><text x="468" y="178" font-weight="700">purchase vouchers</text><text x="468" y="198" class="leg">the party is a supplier</text></g></svg>
+<p class="a">The same shop can buy from you and sell to you. A second table for suppliers would split one GSTIN into <span class="v">two records</span>. Use your customer module as <span class="m">parties</span> and add a supplier flag.</p>
+<div class="src">Source: gym CRM person pattern; analysis</div></section>
+
+<section class="s">
+<h2 class="a">A bill line copies the rate and tax, so later edits cannot change it</h2>
+<svg viewBox="0 0 800 260">
+<g class="b"><rect class="bx" x="20" y="20" width="250" height="110" rx="8"/><text x="38" y="48" font-weight="700">items</text><text x="38" y="72" class="leg">the live catalog</text><text x="38" y="92" class="leg">rate, gst_rate, hsn</text><text x="38" y="112" class="leg">this data can change</text></g>
+<path id="sn1" class="ln" d="M270 75 C340 75 360 150 430 160"/><circle class="dot" data-p="sn1" r="7"/><text x="300" y="118" class="leg" style="fill:var(--warn)">copied once</text>
+<g class="b"><rect class="bg" x="430" y="110" width="350" height="130" rx="8"/><text x="448" y="136" font-weight="700">voucher_item_lines</text>
+<text x="448" y="160" class="leg">item_name_snapshot, hsn_snapshot</text><text x="448" y="180" class="leg">entered_rate, rate_includes_tax</text><text x="448" y="200" class="leg">gst_rate, taxable value</text><text x="448" y="220" class="leg">cgst, sgst, igst amounts</text></g>
+<g class="b"><text x="20" y="180" font-weight="700" style="fill:var(--warn)">Without a snapshot</text><text x="20" y="202" class="leg">A new GST rate changes old bills</text><text x="20" y="220" class="leg">and breaks your filed returns.</text></g></svg>
+<p class="a">The catalog is a <span class="v">price list</span>. The bill line is a <span class="v">fact</span>. Your sample bills mix tax-inclusive and tax-exclusive rates. Store the entered rate, the flag, and the final taxable value.</p>
+<div class="src">Source: gym CRM snapshot pattern; sample purchase bill TC/2026-27/583</div></section>
+
+<section class="s">
+<h2 class="a">One voucher makes two effects: money and stock</h2>
+<svg viewBox="0 0 800 300">
+<g class="b"><rect class="bx" x="250" y="10" width="300" height="64" rx="8"/><text x="400" y="38" text-anchor="middle" font-weight="700">VOUCHER + ITEM LINES</text><text x="400" y="58" text-anchor="middle" class="leg">sale · purchase · credit note · debit note</text></g>
+<path id="tw1" class="ln" d="M330 74 C330 130 200 120 200 180"/><path id="tw2" class="ln" d="M470 74 C470 130 600 120 600 180"/>
+<circle class="dot" data-p="tw1" r="7"/><circle class="dot" data-p="tw2" r="7"/>
+<g class="b"><rect class="bx" x="20" y="180" width="360" height="110" rx="8"/><text x="38" y="206" font-weight="700">ledger_lines (money)</text><text x="38" y="228" class="leg">Dr Purchases 13,173.33 · Dr GST 2,371.18</text><text x="38" y="246" class="leg">Dr Round-off 0.49</text><text x="38" y="266" class="leg">Cr Supplier 15,545.00 · debit = credit</text></g>
+<g class="b"><rect class="bw" x="420" y="180" width="360" height="110" rx="8"/><text x="438" y="206" font-weight="700">stock_movements (quantity)</text><text x="438" y="228" class="leg">+1  8gb Ddr4 Ram · godown Main</text><text x="438" y="246" class="leg">+1  Intel Core i5 · godown Main</text><text x="438" y="266" class="leg">purchase = plus · sale = minus</text></g></svg>
+<p class="a">The gym has no stock, so this idea is <span class="v">new</span>. Staff enter one bill. The software <span class="v">posts</span> both paths in one transaction. Staff never see debit and credit.</p>
+<div class="src">Source: TallyPrime voucher model; your sample purchase bill; analysis</div></section>
+
+<section class="s">
+<h2 class="a">Money is three tables, and one payment can settle many bills</h2>
+<svg viewBox="0 0 800 270">
+<g class="b"><rect class="bg" x="20" y="90" width="210" height="80" rx="8"/><text x="38" y="120" font-weight="700">payments</text><text x="38" y="142" class="leg">one cheque: ₹10,000</text></g>
+<path id="pm1" class="ln" d="M230 120 C290 120 300 60 360 60"/><path id="pm2" class="ln" d="M230 140 C290 140 300 190 360 190"/>
+<circle class="dot" data-p="pm1" r="7"/><circle class="dot" data-p="pm2" r="7"/>
+<text x="250" y="30" class="leg">bill_allocations (the bridge)</text>
+<g class="b"><rect class="bx" x="360" y="30" width="190" height="60" rx="8"/><text x="376" y="56" font-weight="700">₹4,550 → bill A</text><text x="376" y="76" class="leg">bill A is paid</text>
+<rect class="bx" x="360" y="160" width="190" height="60" rx="8"/><text x="376" y="186" font-weight="700">₹5,450 → bill B</text><text x="376" y="206" class="leg">bill B is paid</text></g>
+<g class="b"><rect class="bw" x="590" y="20" width="190" height="100" rx="8"/><text x="604" y="46" font-weight="700">credit_notes</text><text x="604" y="68" class="leg">Goods return in 7 days.</text><text x="604" y="86" class="leg">A new row reverses it.</text><text x="604" y="104" class="leg">The bill is not edited.</text>
+<rect class="bx" x="590" y="140" width="190" height="90" rx="8"/><text x="604" y="166" font-weight="700">on-account</text><text x="604" y="188" class="leg">A payment with no bill</text><text x="604" y="206" class="leg">waits for a later bill.</text></g></svg>
+<p class="a">Keep your payments table. Add the <span class="v">bridge</span>. It gives <span class="v">outstanding</span> by bill and <span class="v">ageing</span> by party.</p>
+<div class="src">Source: gym CRM payment_allocations pattern; Tally bill-by-bill references</div></section>
+
+<section class="s">
+<h2 class="a">Bills store facts, while status and stock are computed</h2>
+<div class="bars">
+<div class="bar" style="height:100%;background:var(--ok)">+10 buy</div>
+<div class="bar" style="height:30%;background:var(--warn)">−3 sell</div>
+<div class="bar" style="height:10%;background:var(--warn)">−1</div>
+<div class="bar" style="height:60%;background:var(--acc)"><span class="cnt" data-to="6">0</span>&nbsp;on hand</div></div>
+<table><tr><th>Rule</th><th>Result</th></tr>
+<tr><td>Bill total</td><td>₹<span class="cnt" data-to="15545" data-d="2">0</span> saved as <span class="m">1554500</span> <span class="v">paise</span> (a whole number)</td></tr>
+<tr><td>Paid status</td><td>Total minus allocations equals zero. No status column.</td></tr>
+<tr><td>Stock count</td><td>A shelf count posts an <span class="v">adjustment</span>. It never overwrites a quantity.</td></tr>
+<tr><td>Rounding</td><td>Pick one rule. Save <span class="m">round_off</span> as its own value.</td></tr></table>
+<div class="src">Source: gym CRM derived-status and paise patterns; analysis</div></section>
+
+<section class="s">
+<h2 class="a">Four habits keep the books correct for years</h2>
+<div class="row">
+<div class="card a"><div class="num">1</div><p><span class="v">History is added.</span> A posted bill is locked. Cancel and reissue. Items are switched off, never deleted.</p></div>
+<div class="card a"><div class="num">2</div><p><span class="v">Idempotency.</span> Each post has a unique key. A double click posts once.</p></div>
+<div class="card a"><div class="num">3</div><p><span class="v">Guards.</span> The database refuses bad rows: debit and credit together, or an allocation above the amount owed.</p></div>
+<div class="card a"><div class="num">4</div><p><span class="v">Rules are rows.</span> GST rates, HSN codes, and voucher series have an effective date. A new rate is a new row.</p></div></div>
+<p class="a leg">Not copied from the gym: membership, lead pipeline, facility access. Keep the join-table idea for user roles per company.</p>
+<div class="src">Source: gym CRM history, idempotency, and guard patterns; analysis</div></section>
+
+<section class="s">
+<h2 class="a">Five sentences to take away</h2>
+<div class="row">
+<div class="card a"><div class="num">1</div><p>Every row names its <span class="v">company</span>. One <span class="v">party</span> row serves customer and supplier.</p></div>
+<div class="card a"><div class="num">2</div><p>A bill line <span class="v">copies</span> name, HSN, rate, and GST. Old bills never change.</p></div>
+<div class="card a"><div class="num">3</div><p>One <span class="v">voucher</span> posts ledger lines and stock movements together.</p></div>
+<div class="card a"><div class="num">4</div><p>Payments reach bills through a <span class="v">bridge</span>. Status and stock are computed.</p></div>
+<div class="card a"><div class="num">5</div><p>Money is <span class="v">whole paise</span>. Posts are idempotent. History is added.</p></div></div>
+<p class="a">Next step: create <span class="m">items</span>, <span class="m">voucher_item_lines</span>, and <span class="m">stock_movements</span>. Test them with your two sample bills.</p>
+<div class="src">Source: analysis</div></section>
+
+<div id="bar"></div>
+<div id="nav"><button id="pv" aria-label="Previous">◀</button><span id="ct"></span><button id="nx" aria-label="Next">▶</button></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+const S=[...document.querySelectorAll('.s')];let i=0,T=[];
+function anim(s){T.forEach(t=>t.kill());T=[];if(!window.gsap)return;const q=x=>s.querySelectorAll(x);
+T.push(gsap.from(q('.a'),{y:24,opacity:0,stagger:.15,duration:.6}));
+T.push(gsap.from(q('.b'),{scale:.7,opacity:0,transformOrigin:'50% 50%',stagger:.18,duration:.5,delay:.2}));
+T.push(gsap.from(q('.bar'),{scaleY:0,stagger:.25,duration:.7,ease:'back.out(1.4)'}));
+T.push(gsap.from(q('.stack div'),{scaleX:0,stagger:.2,duration:.7}));
+q('.ln path,path.ln').forEach(p=>{if(!p.getTotalLength)return;const L=p.getTotalLength();T.push(gsap.fromTo(p,{strokeDasharray:L,strokeDashoffset:L},{strokeDashoffset:0,duration:1,delay:.3}))});
+q('.cnt').forEach(e=>{const o={v:0},to=+e.dataset.to,d=+(e.dataset.d||0);T.push(gsap.to(o,{v:to,duration:1.4,delay:.4,onUpdate:()=>e.textContent=o.v.toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d})}))});
+q('.dot').forEach((c,k)=>{const p=s.querySelector('#'+c.dataset.p),L=p.getTotalLength(),o={t:0};T.push(gsap.to(o,{t:1,duration:2,repeat:-1,delay:k*.4,ease:'none',onUpdate:()=>{const pt=p.getPointAtLength(o.t*L);c.setAttribute('cx',pt.x);c.setAttribute('cy',pt.y)}}))})}
+function go(n){i=Math.max(0,Math.min(S.length-1,n));S.forEach((s,k)=>s.classList.toggle('on',k==i));document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';document.getElementById('ct').textContent=(i+1)+' / '+S.length;anim(S[i])}
+document.getElementById('pv').onclick=()=>go(i-1);document.getElementById('nx').onclick=()=>go(i+1);
+addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' '].includes(e.key))go(i+1);if(['ArrowLeft','PageUp'].includes(e.key))go(i-1)});
+let x0=0;addEventListener('touchstart',e=>x0=e.touches[0].clientX);addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-x0;if(Math.abs(d)>60)go(i+(d<0?1:-1))});
+go(0);
+</script></body></html>

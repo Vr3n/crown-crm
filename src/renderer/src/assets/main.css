@@ -1,0 +1,294 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/ibm-plex-sans';
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * CrownCRM design tokens — calm, premium operations workspace.
+ *
+ * Neutral system (from plan §2):
+ *   Page bg: #F5F8FA | Surfaces: #FFFFFF | Text: #202A32
+ *   Muted text: #76828B | Borders: #DFE6E9
+ *
+ * Rules:
+ *  - Teal is the primary brand signal. Pink, amber, emerald are reserved
+ *    for contextual meaning (secondary, warning, success).
+ *  - ONE radius scale: cards/inputs ~10px, small controls ~8px. No mixed
+ *    corner systems.
+ *  - Money, dates and IDs use --font-mono (tabular-nums) so columns scan
+ *    on a single edge.
+ *  - No purple gradients, neon accents, or arbitrary one-off colors.
+ */
+:root {
+  --radius: 0;
+
+  /* --- Neutral system (light) --- */
+  --background: oklch(0.965 0.004 240); /* #F5F8FA — page surface */
+  --foreground: oklch(0.215 0.018 250); /* #202A32 — primary text */
+  --card: oklch(1 0 0); /* #FFFFFF — card surface */
+  --card-foreground: oklch(0.215 0.018 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.215 0.018 250);
+
+  /* --- Accent: teal (primary brand) --- */
+  --primary: oklch(0.52 0.105 223.128);
+  --primary-foreground: oklch(0.984 0.019 200.873);
+
+  /* --- Accent: pink (secondary / hover emphasis) --- */
+  --secondary: oklch(0.525 0.223 3.958);
+  --secondary-foreground: oklch(0.971 0.014 343.198);
+
+  /* --- Muted / border --- */
+  --muted: oklch(0.965 0.004 240); /* #F5F8FA — tinted input bg */
+  --muted-foreground: oklch(0.515 0.015 250); /* #76828B — secondary text */
+  --accent: oklch(0.955 0.02 3.958);
+  --accent-foreground: oklch(0.21 0.02 4);
+
+  /* --- Semantic: status --- */
+  --destructive: oklch(0.577 0.245 27.325);
+  --success: oklch(0.596 0.145 163.225); /* emerald — paid / healthy */
+  --success-foreground: oklch(0.982 0.017 145.153);
+  --warning: oklch(0.769 0.188 70.08); /* amber — caution */
+  --warning-foreground: oklch(0.98 0.016 73.684);
+  --info: oklch(0.55 0.19 257);
+  --info-foreground: oklch(0.985 0.015 257);
+  --violet: oklch(0.55 0.2 292);
+  --violet-foreground: oklch(0.985 0.02 292);
+
+  /* --- Input / border --- */
+  --border: oklch(0.895 0.005 240); /* #DFE6E9 */
+  --input: oklch(0.895 0.005 240);
+  --ring: oklch(0.608 0.126 221.723);
+
+  /* --- Charts --- */
+  --chart-1: oklch(0.865 0.127 207.078);
+  --chart-2: oklch(0.715 0.143 215.221);
+  --chart-3: oklch(0.609 0.126 221.723);
+  --chart-4: oklch(0.52 0.105 223.128);
+  --chart-5: oklch(0.45 0.085 224.283);
+
+  /* --- Sidebar --- */
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.215 0.018 250);
+  --sidebar-primary: oklch(0.609 0.126 221.723);
+  --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
+  --sidebar-accent: oklch(0.953 0.022 3.958);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.895 0.005 240);
+  --sidebar-ring: oklch(0.608 0.126 221.723);
+}
+
+/*
+ * Dark mode — deep blue-charcoal surfaces, softened borders, teal focus.
+ * Preserves the same visual hierarchy rather than inverting every color.
+ */
+.dark {
+  --background: oklch(0.165 0.012 250); /* deep blue-charcoal page bg */
+  --foreground: oklch(0.93 0.005 240); /* softened white text */
+  --card: oklch(0.205 0.01 250); /* slightly elevated surface */
+  --card-foreground: oklch(0.93 0.005 240);
+  --popover: oklch(0.205 0.01 250);
+  --popover-foreground: oklch(0.93 0.005 240);
+
+  --primary: oklch(0.55 0.11 223); /* teal focus/active states */
+  --primary-foreground: oklch(0.984 0.019 200.873);
+
+  --secondary: oklch(0.459 0.187 3.815);
+  --secondary-foreground: oklch(0.971 0.014 343.198);
+
+  --muted: oklch(0.225 0.008 250); /* desaturated tinted bg */
+  --muted-foreground: oklch(0.65 0.01 240);
+  --accent: oklch(0.27 0.02 3.958);
+  --accent-foreground: oklch(0.985 0 0);
+
+  --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.696 0.17 162.48);
+  --success-foreground: oklch(0.145 0 0);
+  --warning: oklch(0.769 0.188 70.08);
+  --warning-foreground: oklch(0.28 0.04 67.5);
+  --info: oklch(0.68 0.18 257);
+  --info-foreground: oklch(0.16 0.02 257);
+  --violet: oklch(0.68 0.19 292);
+  --violet-foreground: oklch(0.16 0.02 292);
+
+  --border: oklch(1 0 0 / 8%); /* softened borders */
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.55 0.11 223);
+
+  --chart-1: oklch(0.865 0.127 207.078);
+  --chart-2: oklch(0.715 0.143 215.221);
+  --chart-3: oklch(0.609 0.126 221.723);
+  --chart-4: oklch(0.52 0.105 223.128);
+  --chart-5: oklch(0.45 0.085 224.283);
+
+  --sidebar: oklch(0.185 0.01 250);
+  --sidebar-foreground: oklch(0.93 0.005 240);
+  --sidebar-primary: oklch(0.715 0.143 215.221);
+  --sidebar-primary-foreground: oklch(0.302 0.056 229.695);
+  --sidebar-accent: oklch(0.27 0.02 3.958);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.55 0.11 223);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-violet: var(--violet);
+  --color-violet-foreground: var(--violet-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+  --font-sans: 'IBM Plex Sans Variable', sans-serif;
+  --font-heading: 'Space Grotesk Variable', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Quiet scrollbars so dense data stays calm in the main process. */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+}
+
+/* --- CrownCRM micro-interaction utilities --- */
+
+@layer utilities {
+  /* Quick-action button lift on hover */
+  .crm-hover-lift {
+    transition:
+      transform 180ms ease-out,
+      box-shadow 180ms ease-out,
+      border-color 180ms ease-out;
+  }
+  .crm-hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px oklch(0 0 0 / 6%);
+    border-color: oklch(0.52 0.105 223.128 / 0.3);
+  }
+  .crm-hover-lift:active {
+    transform: translateY(1px);
+    box-shadow: none;
+    transition-duration: 100ms;
+  }
+
+  /* Status pulse dot */
+  @keyframes crm-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  .crm-pulse {
+    animation: crm-pulse 2.5s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .crm-pulse {
+      animation: none;
+    }
+  }
+
+  /* Float animation for empty state icons */
+  @keyframes crm-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+  .crm-float {
+    animation: crm-float 3s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .crm-float {
+      animation: none;
+    }
+  }
+
+  /* Static gradient border for dashboard cards.
+   * Usage: class="crm-gradient-border" style="--gradient-start: var(--primary); --gradient-end: var(--success);" */
+  .crm-gradient-border {
+    --gradient-start: var(--primary);
+    --gradient-end: var(--primary);
+    border: 2px solid transparent !important;
+    background:
+      linear-gradient(var(--card), var(--card)) padding-box,
+      conic-gradient(
+          var(--gradient-start),
+          transparent 25%,
+          var(--gradient-end) 50%,
+          transparent 75%,
+          var(--gradient-start)
+        )
+        border-box;
+  }
+}

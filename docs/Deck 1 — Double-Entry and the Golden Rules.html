@@ -1,0 +1,139 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Deck 1 — Double-Entry and the Golden Rules</title>
+<style>
+:root{--bg:#fbfbfd;--bg2:#eef0f6;--fg:#1d1d1f;--mut:#5f6470;--ln:rgba(0,0,0,.14);--card:rgba(0,0,0,.045);--dr:#0066d6;--cr:#c25e00;--ok:#1a8f3c;--bad:#d1001a;--vo:#8a6500;--glow:rgba(0,102,214,.10);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#07080c;--bg2:#10131b;--fg:#f5f5f7;--mut:#9ba1b0;--ln:rgba(255,255,255,.14);--card:rgba(255,255,255,.06);--dr:#2997ff;--cr:#ff9f0a;--ok:#30d158;--bad:#ff453a;--vo:#ffd60a;--glow:rgba(41,151,255,.20)}}
+:root[data-theme="dark"]{--bg:#07080c;--bg2:#10131b;--fg:#f5f5f7;--mut:#9ba1b0;--ln:rgba(255,255,255,.14);--card:rgba(255,255,255,.06);--dr:#2997ff;--cr:#ff9f0a;--ok:#30d158;--bad:#ff453a;--vo:#ffd60a;--glow:rgba(41,151,255,.20)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:radial-gradient(60vw 50vh at 88% -8%,var(--glow),transparent),radial-gradient(50vw 40vh at -8% 112%,rgba(255,159,10,.08),transparent),var(--bg);color:var(--fg);font-family:-apple-system,"SF Pro Display","Inter","Segoe UI",system-ui,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+.s{position:absolute;inset:0;display:none;flex-direction:column;gap:2.2vh;padding:clamp(24px,5vh,56px) clamp(20px,6vw,96px) 11vh;overflow-y:auto}.s.on{display:flex}
+[data-st]{opacity:0;visibility:hidden}.no-g [data-st]{opacity:1!important;visibility:visible!important}
+.k{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);font-weight:600}
+h1{font-size:clamp(34px,6.4vw,84px);letter-spacing:-.04em;line-height:1.03;margin:0;font-weight:700}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--dr),var(--cr));-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{font-size:clamp(24px,3.7vw,48px);letter-spacing:-.03em;line-height:1.1;margin:0;font-weight:700;max-width:24ch}
+p{margin:0;line-height:1.45}.lead{font-size:clamp(16px,1.9vw,24px);color:var(--mut);max-width:46ch}.hint{font-size:13px;color:var(--mut)}
+.title{justify-content:center;gap:2.6vh}
+.v{color:var(--vo);font-weight:650}.dr{color:var(--dr);font-weight:700}.cr{color:var(--cr);font-weight:700}.ok{color:var(--ok);font-weight:700}.bad{color:var(--bad);font-weight:700}
+.cap{margin-top:auto;border-top:1px solid var(--ln);padding-top:1.4vh;font-size:clamp(14px,1.55vw,20px);display:flex;flex-direction:column;gap:.5vh}
+.row{display:flex;gap:1.6vw;flex-wrap:wrap;align-items:stretch}.row>*{flex:1 1 200px}
+.card,.box{background:var(--card);border:1px solid var(--ln);border-radius:18px;padding:1.8vh 1.4vw;backdrop-filter:blur(10px)}
+.card h3{margin:0 0 .4em;font-size:clamp(16px,1.8vw,23px);letter-spacing:-.02em}.card p{font-size:clamp(13px,1.35vw,17px);color:var(--mut);margin:.3em 0}
+.box{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4em}.box b{font-size:clamp(15px,1.8vw,22px)}
+.arrow{flex:0 0 auto;align-self:center;font-size:clamp(22px,3vw,40px);color:var(--mut)}
+.coin{display:inline-block;padding:.25em .8em;border-radius:99px;background:var(--vo);color:#000;font-weight:700;font-size:clamp(13px,1.5vw,18px)}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:1vw;font-size:clamp(18px,3vw,40px);font-weight:600}
+.ch{padding:.25em .7em;border-radius:14px;background:var(--card);border:1px solid var(--ln)}
+.seg{display:flex;gap:4px;flex:1}.seg i{font-style:normal;display:flex;align-items:center;padding:0 .8em;min-width:0;overflow:hidden;white-space:nowrap;height:6vh;border-radius:10px;color:#000;font-weight:650;font-size:clamp(11px,1.3vw,16px)}
+.br{display:flex;gap:1.2vw;align-items:center;margin:1vh 0}.br>b{flex:0 0 9ch;font-size:clamp(13px,1.5vw,18px)}
+.ta{flex:1 1 230px}.ta h4{margin:0;text-align:center;padding:.5em;border-bottom:2px solid var(--fg);font-size:clamp(15px,1.7vw,21px)}
+.ta .c{display:grid;grid-template-columns:1fr 1fr}.ta .l{border-right:2px solid var(--fg);padding:.5em .7em;min-height:6em;color:var(--dr)}.ta .r{padding:.5em .7em;text-align:right;color:var(--cr)}
+.ta .c div div{font-variant-numeric:tabular-nums;font-weight:650;font-size:clamp(14px,1.6vw,20px)}.ta small{display:block;color:var(--mut);font-weight:400;font-size:12px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);text-align:left;padding:.5em .8em;border-bottom:1px solid var(--ln)}
+td{padding:.55em .8em;border-bottom:1px solid var(--ln);font-size:clamp(13px,1.5vw,19px)}td.dr,td.cr{text-align:right}td.to{padding-left:2.4em;color:var(--mut)}tr.tot td{font-weight:700;border-top:2px solid var(--fg)}
+#bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--dr),var(--cr));width:0;transition:width .5s}
+#nav{position:fixed;right:max(2vw,16px);bottom:calc(1.6vh + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;font-size:13px;color:var(--mut)}
+#nav button{background:var(--card);color:var(--fg);border:1px solid var(--ln);border-radius:99px;width:38px;height:38px;font-size:14px;cursor:pointer}
+</style></head><body>
+<section class="s title on"><div class="a k">Core concept 1 of 3 · Double-entry bookkeeping</div><h1 class="a">Every deal has <em>two sides.</em></h1><p class="a lead">The three golden rules of accounting. Built from first principles, step by step.</p><p class="a hint">Press → or Space. Each press shows one new step. ← goes back.</p></section>
+
+<section class="s"><div class="a k">1 · The base idea</div><h2 class="a">Someone paid for everything the business owns</h2>
+<div class="eq a"><span class="ch">Assets</span>=<span class="ch">Liabilities</span>+<span class="ch">Equity</span></div>
+<p class="a lead"><span class="v">Assets</span> are what the business owns. <span class="v">Liabilities</span> are what it owes. <span class="v">Equity</span> is what is left for the owner.</p>
+<div><div class="br"><b>Assets</b><div class="seg"><i data-st="1" data-an="grow" style="flex:100 0 0;background:var(--ok)">Cash ₹100,000</i><i data-st="2" data-an="grow" style="flex:20 0 0;background:var(--dr)">Cash ₹20,000</i></div></div>
+<div class="br"><b>Paid by</b><div class="seg"><i data-st="1" data-an="grow" style="flex:100 0 0;background:var(--vo)">Owner equity ₹100,000</i><i data-st="2" data-an="grow" style="flex:20 0 0;background:var(--cr)">Loan ₹20,000</i></div></div></div>
+<div class="cap"><p data-st="1">The owner puts in ₹100,000. Assets go up. Equity goes up by the same amount.</p><p data-st="2">The bank lends ₹20,000. Assets go up. Liabilities go up by the same amount. <b>Both sides stay equal.</b></p></div></section>
+
+<section class="s"><div class="a k">2 · The two sides</div><h2 class="a">Each deal changes two accounts. One is <span class="dr">debit</span>. One is <span class="cr">credit</span>.</h2>
+<div class="row"><div class="ta a"><h4>Cash A/c</h4><div class="c"><div class="l"><small>DEBIT (Dr) · left</small><div data-st="1">100,000<small>Owner invests</small></div></div><div class="r"><small>CREDIT (Cr) · right</small><div data-st="2">30,000<small>Buy furniture</small></div></div></div><p style="text-align:center;padding:.6em" data-st="3">Balance: ₹<b data-count="70000">70,000</b> <span class="dr">Dr</span></p></div>
+<div class="card" data-st="4"><h3>Two words. No moral meaning.</h3><p><span class="dr">Debit</span> means the left side. <span class="cr">Credit</span> means the right side.</p><p>Debit does <b>not</b> mean decrease. Credit does <b>not</b> mean increase. The account type decides.</p></div></div>
+<div class="cap"><p>The total of all debits must always equal the total of all credits.</p></div></section>
+
+<section class="s"><div class="a k">3 · Account types</div><h2 class="a">Three traditional types cover every account</h2>
+<div class="row"><div class="card" data-st="1"><h3>Personal</h3><p>A person or an organisation.</p><p>Amit (customer), Ravi (supplier), Capital (owner), the bank.</p></div>
+<div class="card" data-st="2"><h3>Real</h3><p>A thing the business owns.</p><p>Cash, stock, furniture, machines, land. Also goodwill and patents.</p></div>
+<div class="card" data-st="3"><h3>Nominal</h3><p>An income, gain, expense, or loss.</p><p>Sales, rent, salary, commission, interest, discount.</p></div></div>
+<div class="cap"><p data-st="4">Personal and real accounts stay open year after year. <span class="v">Nominal</span> accounts close at year end. They feed the profit statement.</p></div></section>
+
+<section class="s"><div class="a k">4 · Golden rule 1 · Personal account</div><h2 class="a">Debit the <span class="dr">receiver</span>. Credit the <span class="cr">giver</span>.</h2>
+<p class="a lead">You pay ₹5,000 in cash to your supplier Ravi.</p>
+<div class="row" style="align-items:center"><div class="box" id="c1"><b>Cash</b>real account<span class="coin" data-st="1" data-an="fly" data-to="#r1">₹5,000</span></div><div class="arrow">→</div><div class="box" id="r1"><b>Ravi</b>personal account</div></div>
+<table><tr><th>Account</th><th>Debit</th><th>Credit</th></tr><tr data-st="2"><td>Ravi A/c <span class="dr">Dr</span></td><td class="dr">5,000</td><td></td></tr><tr data-st="3"><td class="to">To Cash A/c</td><td></td><td class="cr">5,000</td></tr></table>
+<div class="cap"><p data-st="2">Ravi <b>receives</b> money. So we debit Ravi. His account shows less owed to him.</p><p data-st="3">Cash <b>goes out</b>. So we credit Cash (rule 2).</p></div></section>
+
+<section class="s"><div class="a k">5 · Golden rule 2 · Real account</div><h2 class="a">Debit what <span class="dr">comes in</span>. Credit what <span class="cr">goes out</span>.</h2>
+<p class="a lead">You buy furniture for ₹30,000 and pay in cash.</p>
+<div class="row" style="align-items:center"><div class="box" id="c2"><b>Cash</b>real account<span class="coin" data-st="1" data-an="fly" data-to="#f2">₹30,000</span></div><div class="arrow">→</div><div class="box" id="f2"><b>Furniture</b>real account</div></div>
+<table><tr><th>Account</th><th>Debit</th><th>Credit</th></tr><tr data-st="2"><td>Furniture A/c <span class="dr">Dr</span></td><td class="dr">30,000</td><td></td></tr><tr data-st="3"><td class="to">To Cash A/c</td><td></td><td class="cr">30,000</td></tr></table>
+<div class="cap"><p data-st="2">Furniture <b>comes in</b>. Debit it. One asset goes up.</p><p data-st="3">Cash <b>goes out</b>. Credit it. Another asset goes down. Total assets did not change.</p></div></section>
+
+<section class="s"><div class="a k">6 · Golden rule 3 · Nominal account</div><h2 class="a">Debit all <span class="dr">expenses and losses</span>. Credit all <span class="cr">incomes and gains</span>.</h2>
+<div class="row"><div class="card" data-st="1"><h3>Pay rent ₹5,000 (expense)</h3><table><tr><td>Rent A/c <span class="dr">Dr</span></td><td class="dr">5,000</td><td></td></tr><tr><td class="to">To Cash A/c</td><td></td><td class="cr">5,000</td></tr></table><p>Rent is an expense. Debit it. Cash goes out. Credit it.</p></div>
+<div class="card" data-st="2"><h3>Earn commission ₹8,000 (income)</h3><table><tr><td>Cash A/c <span class="dr">Dr</span></td><td class="dr">8,000</td><td></td></tr><tr><td class="to">To Commission A/c</td><td></td><td class="cr">8,000</td></tr></table><p>Cash comes in. Debit it. Commission is income. Credit it.</p></div></div>
+<div class="cap"><p data-st="3">Expenses reduce equity, so they sit on the debit side. Incomes raise equity, so they sit on the credit side.</p></div></section>
+
+<section class="s"><div class="a k">7 · The modern view</div><h2 class="a">Five account types. One table shows every effect.</h2>
+<table><tr><th>Type</th><th>Debit</th><th>Credit</th><th>Traditional name</th></tr>
+<tr data-st="1"><td><b>Asset</b></td><td class="ok">▲ increases</td><td class="bad">▼ decreases</td><td>Real; some Personal (debtors)</td></tr>
+<tr data-st="2"><td><b>Expense</b></td><td class="ok">▲ increases</td><td class="bad">▼ decreases</td><td>Nominal</td></tr>
+<tr data-st="3"><td><b>Liability</b></td><td class="bad">▼ decreases</td><td class="ok">▲ increases</td><td>Personal (creditors)</td></tr>
+<tr data-st="4"><td><b>Equity</b></td><td class="bad">▼ decreases</td><td class="ok">▲ increases</td><td>Personal (capital)</td></tr>
+<tr data-st="5"><td><b>Income</b></td><td class="bad">▼ decreases</td><td class="ok">▲ increases</td><td>Nominal</td></tr></table>
+<div class="cap"><p data-st="6">Assets and expenses have a <span class="dr">debit</span> normal balance. Liabilities, equity, and income have a <span class="cr">credit</span> normal balance. Your software stores this on each account.</p></div></section>
+
+<section class="s"><div class="a k">8 · Worked example</div><h2 class="a">Four deals. Eight lines. Each deal balances.</h2>
+<table><tr><th>Deal</th><th>Account</th><th>Debit</th><th>Credit</th></tr>
+<tr data-st="1"><td rowspan="2">1 Owner invests</td><td>Cash</td><td class="dr">100,000</td><td></td></tr><tr data-st="1"><td class="to">To Capital</td><td></td><td class="cr">100,000</td></tr>
+<tr data-st="2"><td rowspan="2">2 Buy furniture</td><td>Furniture</td><td class="dr">30,000</td><td></td></tr><tr data-st="2"><td class="to">To Cash</td><td></td><td class="cr">30,000</td></tr>
+<tr data-st="3"><td rowspan="2">3 Pay rent</td><td>Rent</td><td class="dr">5,000</td><td></td></tr><tr data-st="3"><td class="to">To Cash</td><td></td><td class="cr">5,000</td></tr>
+<tr data-st="4"><td rowspan="2">4 Earn commission</td><td>Cash</td><td class="dr">8,000</td><td></td></tr><tr data-st="4"><td class="to">To Commission</td><td></td><td class="cr">8,000</td></tr></table>
+<div class="cap"><p>A <span class="v">journal</span> lists deals in date order. Next, each line posts to a <span class="v">ledger</span> account.</p></div></section>
+
+<section class="s"><div class="a k">9 · Proof</div><h2 class="a">The trial balance proves the books are in balance</h2>
+<table><tr><th>Ledger account</th><th>Debit</th><th>Credit</th></tr>
+<tr data-st="1"><td>Cash (100,000 − 30,000 − 5,000 + 8,000)</td><td class="dr">73,000</td><td></td></tr><tr data-st="1"><td>Furniture</td><td class="dr">30,000</td><td></td></tr><tr data-st="1"><td>Rent</td><td class="dr">5,000</td><td></td></tr><tr data-st="1"><td>Capital</td><td></td><td class="cr">100,000</td></tr><tr data-st="1"><td>Commission</td><td></td><td class="cr">8,000</td></tr>
+<tr class="tot" data-st="2"><td>Total</td><td class="dr">₹<span data-count="108000">108,000</span></td><td class="cr">₹<span data-count="108000">108,000</span></td></tr></table>
+<div class="row"><div class="card" data-st="3"><h3>Profit</h3><p>Income 8,000 − expense 5,000 = <b class="ok">₹3,000</b></p></div><div class="card" data-st="4"><h3>Balance sheet check</h3><p>Assets 73,000 + 30,000 = <b>103,000</b></p><p>Equity 100,000 + profit 3,000 = <b>103,000</b> <span class="ok">✓</span></p></div></div>
+<div class="cap"><p data-st="2">Debits equal credits. The books are in balance.</p><p data-st="4">The same numbers also prove <b>Assets = Liabilities + Equity</b>.</p></div></section>
+
+<section class="s"><div class="a k">10 · In your software</div><h2 class="a">The software must refuse any entry that does not balance</h2>
+<div class="row"><div class="card" data-st="1"><h3>Two lines at least</h3><p>One voucher posts two or more <b>ledger lines</b>. Each line has an account and one amount on one side.</p></div>
+<div class="card" data-st="2"><h3>Balance check</h3><p>Before commit: sum of debits = sum of credits. If not, the database rejects the post.</p></div>
+<div class="card" data-st="3"><h3>Typed accounts</h3><p>Each account has a type (asset, liability, equity, income, expense). The type gives its normal side.</p></div>
+<div class="card" data-st="4"><h3>No edits</h3><p>A posted line is final. A mistake is fixed by a reversing entry. Staff see simple bills, not Dr and Cr.</p></div></div>
+<div class="cap"><p>Account balance = total debits − total credits. It is always computed. It is never typed by hand.</p></div></section>
+
+<section class="s"><div class="a k">Summary</div><h2 class="a">Five sentences to remember</h2>
+<div class="row"><div class="card" data-st="1"><h3>1</h3><p>Assets = Liabilities + Equity. Every deal keeps this true.</p></div><div class="card" data-st="2"><h3>2</h3><p>Every deal has a debit side (left) and a credit side (right). Totals match.</p></div><div class="card" data-st="3"><h3>3</h3><p>Personal: debit the receiver, credit the giver.</p></div><div class="card" data-st="4"><h3>4</h3><p>Real: debit what comes in, credit what goes out.</p></div><div class="card" data-st="5"><h3>5</h3><p>Nominal: debit expenses and losses, credit incomes and gains.</p></div></div>
+<div class="cap"><p data-st="6">Next: deck 2 shows how a <span class="v">sale</span> uses these rules.</p></div></section>
+
+<div id="bar"></div><div id="nav"><span id="sp"></span><button id="pv" aria-label="Back">◀</button><span id="ct"></span><button id="nx" aria-label="Next">▶</button></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(()=>{const S=[...document.querySelectorAll('.s')],G=window.gsap,R=matchMedia('(prefers-reduced-motion: reduce)').matches,$=id=>document.getElementById(id);let i=0,j=0;
+if(!G)document.documentElement.classList.add('no-g');
+const st=s=>[...s.querySelectorAll('[data-st]')],mx=s=>Math.max(0,...st(s).map(e=>+e.dataset.st));
+const fmt=(v,d,p)=>(p||'')+v.toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d});
+function cnt(e,dur){const to=+e.dataset.count,d=+(e.dataset.d||0),p=e.dataset.pre||'',o={v:0};if(!G||!dur){e.textContent=fmt(to,d,p);return}G.to(o,{v:to,duration:dur*1.6,ease:'power2.out',onUpdate:()=>e.textContent=fmt(o.v,d,p)})}
+function show(e,inst){const d=inst||R||!G?0:.7,a=e.tagName==='TR'?'fade':e.dataset.an||'up';
+[e,...e.querySelectorAll('[data-count]')].forEach(c=>c.dataset.count!==undefined&&cnt(c,d));if(!G)return;
+if(a==='fly'){const t=document.querySelector(e.dataset.to);G.set(e,{autoAlpha:1,x:0,y:0});const b=e.getBoundingClientRect(),c=t.getBoundingClientRect(),dx=c.left+c.width/2-b.left-b.width/2,dy=c.top+c.height/2-b.top-b.height/2;
+if(!d){G.set(e,{autoAlpha:0,x:dx,y:dy});return}G.timeline().to(e,{x:dx,y:dy,duration:1.1,ease:'power3.inOut'}).to(e,{autoAlpha:0,scale:.4,duration:.3});return}
+if(!d){G.set(e,{autoAlpha:1,y:0,x:0,scale:1,scaleX:1});return}
+if(a==='grow')G.fromTo(e,{autoAlpha:1,scaleX:0,transformOrigin:'0% 50%'},{scaleX:1,duration:d*1.3,ease:'power3.out'});
+else if(a==='pop')G.fromTo(e,{autoAlpha:0,scale:.6},{autoAlpha:1,scale:1,duration:d,ease:'back.out(1.7)'});
+else if(a==='fade')G.fromTo(e,{autoAlpha:0},{autoAlpha:1,duration:d});
+else G.fromTo(e,{autoAlpha:0,y:18},{autoAlpha:1,y:0,duration:d,ease:'power3.out'})}
+function hide(e){if(G){G.killTweensOf(e);G.set(e,{autoAlpha:0,x:0,y:0,scale:1,scaleX:1})}}
+function ui(){const m=mx(S[i]);$('sp').textContent=m?'step '+j+' / '+m:'';$('bar').style.width=(i+1)/S.length*100+'%';$('ct').textContent=(i+1)+' / '+S.length}
+function render(n,full){i=n;S.forEach((s,k)=>s.classList.toggle('on',k==n));const s=S[n],all=st(s),A=s.querySelectorAll('.a');
+if(G){all.forEach(e=>G.killTweensOf(e));G.set(all,{clearProps:'opacity,visibility,transform'})}j=0;
+if(full){j=mx(s);all.forEach(e=>show(e,1));s.querySelectorAll('[data-count]').forEach(c=>{if(!c.closest('[data-st]'))cnt(c,0)});if(G)G.set(A,{clearProps:'all'})}
+else{s.querySelectorAll('[data-count]').forEach(c=>{if(!c.closest('[data-st]'))cnt(c,.7)});if(G&&!R)G.fromTo(A,{autoAlpha:0,y:22},{autoAlpha:1,y:0,duration:.8,stagger:.12,ease:'power3.out',clearProps:'transform'})}ui()}
+function next(){const s=S[i];if(j<mx(s)){j++;st(s).filter(e=>+e.dataset.st===j).forEach((e,k)=>G?G.delayedCall(k*.14,()=>show(e)):0);ui()}else if(i<S.length-1)render(i+1,false)}
+function prev(){if(j>0){st(S[i]).filter(e=>+e.dataset.st===j).forEach(hide);j--;ui()}else if(i>0)render(i-1,true)}
+$('nx').onclick=e=>{e.stopPropagation();next()};$('pv').onclick=e=>{e.stopPropagation();prev()};
+addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();next()}if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();prev()}});
+document.addEventListener('click',e=>{if(!e.target.closest('#nav'))next()});
+let x0=0;addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-x0;if(Math.abs(d)>60){e.preventDefault();d<0?next():prev()}});
+render(0,false)})();
+</script></body></html>

@@ -1,0 +1,20 @@
+node_modules
+dist
+out
+coverage
+.DS_Store
+.eslintcache
+*.log*
+*.tsbuildinfo
+
+# Vendor licensing (private key + ledger — never ship or commit)
+tools/license/keys/
+tools/license/ledger.json
+tools/license/issued/
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# Media processing binaries (shipped with the app via resources, not source-controlled)
+resources/ffmpeg/
