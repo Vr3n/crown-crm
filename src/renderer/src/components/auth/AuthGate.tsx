@@ -130,28 +130,13 @@ export function AuthGate({
           </div>
         </div>
 
-        <div className="max-w-[34ch] border-l-2 border-stamp pl-5">
+        <div className="my-auto max-w-[34ch] border-l-2 border-stamp pl-5">
           <h1 className="text-[2.625rem] font-semibold leading-[1.08] tracking-[-0.03em]">
             Run the business. We&apos;ll keep the books.
           </h1>
           <p className="mt-4 font-serif text-[1.0625rem] italic leading-relaxed text-paper/65">
             Invoices, payments, GST and stock in one ledger that always proves itself.
           </p>
-        </div>
-
-        <div className="grid grid-cols-3 gap-6 border-t border-paper/15 pt-5 text-[0.75rem] text-paper/55">
-          <div>
-            <div className="font-mono text-[1.125rem] text-paper">2</div>
-            sides of every entry
-          </div>
-          <div>
-            <div className="font-mono text-[1.125rem] text-paper">1</div>
-            write path
-          </div>
-          <div>
-            <div className="font-mono text-[1.125rem] text-paper">0</div>
-            stored balances
-          </div>
         </div>
       </aside>
 
