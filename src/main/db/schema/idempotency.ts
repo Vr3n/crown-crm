@@ -1,28 +1,31 @@
 import { sql } from 'drizzle-orm'
 import { index, integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
-import { organizations } from './identity'
+import { companies } from './identity'
 
 /**
- * Idempotency / Transaction Id for sensitive money operations.
- * Stripe pattern: client generates UUIDv7 (time-sortable), server stores
- * (organization_id, key) UNIQUE and returns first response on duplicate.
- * Keeps sale atomic across retries and Electron crash mid-tx.
+ * Idempotency for sensitive money operations.
+ *
+ * The renderer generates a request id. The main process stores the response
+ * against (company, channel, key) and returns the first result on a repeat. A
+ * repeat with a different payload is refused with IDEMPOTENCY_CONFLICT.
  */
 export const idempotencyKeys = sqliteTable(
   'idempotency_keys',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    organization_id: integer('organization_id')
+    company_id: integer('company_id')
       .notNull()
-      .references(() => organizations.id),
+      .references(() => companies.id),
+    channel: text('channel').notNull(),
     key: text('key').notNull(),
-    response: text('response'), // JSON stringified IpcResult
+    payload_hash: text('payload_hash'),
+    response: text('response'),
     created_at: text('created_at')
       .notNull()
       .default(sql`(datetime('now'))`)
   },
   (table) => [
-    unique().on(table.organization_id, table.key),
-    index('idx_idempotency_org_key').on(table.organization_id, table.key)
+    unique().on(table.company_id, table.channel, table.key),
+    index('idx_idempotency_company_key').on(table.company_id, table.key)
   ]
 )

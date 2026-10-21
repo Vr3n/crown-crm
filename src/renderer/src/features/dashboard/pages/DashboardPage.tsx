@@ -1,211 +1,297 @@
-import { Suspense, lazy, useCallback, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { DashboardHeader } from '../components/dashboard-header'
-import { DashboardActions } from '../components/dashboard-actions'
-import { UpcomingFollowupsTable } from '../components/upcoming-followups-table'
-import { RecentLeadsTable } from '../components/recent-leads-table'
-import { MembershipExpirationsTable } from '../components/membership-expirations-table'
-import { PaymentsDueTable } from '../components/payments-due-table'
-import { LeadsGoingColdTable } from '../components/leads-going-cold-table'
-import { FollowUpsTimelineCard } from '../components/follow-ups-timeline-card'
-import { NewLeadDialog } from '@/features/leads/components/new-lead-dialog'
-import { FollowUpDialog } from '@/features/leads/components/follow-up-dialog'
-import { LogActivityDialog } from '@/features/leads/components/log-activity-dialog'
-import { CompleteFollowUpDialog } from '@/features/followups/components/complete-follow-up-dialog'
-import { useLeads } from '@/features/leads/queries'
-import { can, useSession } from '@/context/session-context'
-import { findLeadForMember } from '../lead-match'
-import type { PaymentDue } from '../types'
-import type { PersonRef } from '../types'
-import type { Lead } from '@/features/leads/types'
-import type { FollowUpRow } from '@/features/followups/types'
+import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  CalendarClock,
+  ChevronRight,
+  Landmark,
+  Package,
+  Receipt,
+  Users
+} from 'lucide-react'
+import { useSession } from '@/context/session-context'
+import { formatMinor } from '@/lib/money'
+import { Badge } from '@/components/ui/badge'
 
-const RecordPaymentDialog = lazy(() =>
-  import('@/features/finance/components/record-payment-dialog').then((m) => ({
-    default: m.RecordPaymentDialog
-  }))
-)
-const EditLeadDialog = lazy(() =>
-  import('@/features/leads/components/edit-lead-dialog').then((m) => ({
-    default: m.EditLeadDialog
-  }))
-)
-const BlacklistDialog = lazy(() =>
-  import('@/features/people/components/blacklist-dialog').then((m) => ({
-    default: m.BlacklistDialog
-  }))
-)
-const EditFollowUpDialog = lazy(() =>
-  import('@/features/leads/components/edit-follow-up-dialog').then((m) => ({
-    default: m.EditFollowUpDialog
-  }))
-)
-const CancelFollowUpDialog = lazy(() =>
-  import('@/features/followups/components/cancel-follow-up-dialog').then((m) => ({
-    default: m.CancelFollowUpDialog
-  }))
-)
+const summaryKey = ['dashboard', 'summary'] as const
+
+function greeting(date = new Date()): string {
+  const hour = date.getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function longDate(date = new Date()): string {
+  return date.toLocaleDateString('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+}
 
 /**
- * Operational dashboard (Module 09 §58). Prioritises work, not vanity stats:
- * renewals due, unpaid dues and leads going cold. Composes the member-facing
- * mock read models with live lead data, all behind the same TanStack Query /
- * mock-store pattern as the leads feature.
+ * Books dashboard. Four questions, one screen: what is owed to us, what we owe,
+ * what is in the bank, and what needs doing next. All numbers are queries.
  */
 export function DashboardPage(): React.JSX.Element {
-  const navigate = useNavigate()
   const session = useSession()
-  const [newLeadOpen, setNewLeadOpen] = useState(false)
-  const [followUpOpen, setFollowUpOpen] = useState(false)
-  const [activityOpen, setActivityOpen] = useState(false)
-  const [paymentTarget, setPaymentTarget] = useState<PaymentDue | null>(null)
-  const [followUpTarget, setFollowUpTarget] = useState<PersonRef | null>(null)
-  const [completeTarget, setCompleteTarget] = useState<FollowUpRow | null>(null)
-  const [editingLead, setEditingLead] = useState<Lead | null>(null)
-  const [blacklistingLead, setBlacklistingLead] = useState<Lead | null>(null)
-  const [editingFollowUp, setEditingFollowUp] = useState<FollowUpRow | null>(null)
-  const [cancellingFollowUp, setCancellingFollowUp] = useState<FollowUpRow | null>(null)
+  const { data, isLoading } = useQuery({
+    queryKey: summaryKey,
+    queryFn: () => window.api.dashboard.summary()
+  })
 
-  const { data: leads } = useLeads()
-  const matchedLead = useMemo(
-    () => (followUpTarget ? findLeadForMember(followUpTarget, leads ?? []) : undefined),
-    [followUpTarget, leads]
-  )
-
-  const canBlacklist = can(session.permissions, session.isSuper, 'person.blacklist')
-
-  /** Edit is owner-or-admin, mirroring the leads page / backend enforcement. */
-  const canEditLead = useCallback(
-    (lead: Lead): boolean =>
-      can(session.permissions, session.isSuper, 'lead.edit') &&
-      (session.isSuper || lead.owner?.id === session.userId),
-    [session.permissions, session.isSuper, session.userId]
-  )
+  const firstName = session.userFullName.split(' ')[0]
+  const money = (minor: number | undefined): string => formatMinor(minor ?? 0, 'INR')
 
   return (
-    <main className="flex w-full flex-col gap-6 px-6 py-8">
-      <DashboardHeader />
+    <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5 p-6">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {longDate()}
+          </p>
+          <h1 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight">
+            {greeting()}, {firstName}
+          </h1>
+          <p className="mt-1 text-[12.5px] text-muted-foreground">
+            {session.companyName}. Here is where the books stand today.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/parties"
+            className="flex h-8 items-center gap-1.5 border border-border bg-card px-3 text-[12px] font-medium transition-colors hover:border-rule-strong"
+          >
+            <Users className="size-3.5" strokeWidth={1.75} />
+            Add a party
+          </Link>
+          <Link
+            to="/sales"
+            className="flex h-8 items-center gap-1.5 bg-primary px-3 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            <Receipt className="size-3.5" strokeWidth={1.75} />
+            New invoice
+          </Link>
+        </div>
+      </header>
 
-      <DashboardActions
-        onNewLead={() => setNewLeadOpen(true)}
-        onScheduleFollowUp={() => setFollowUpOpen(true)}
-        onScheduleActivity={() => setActivityOpen(true)}
-        onNewMembership={() => navigate('/memberships/sale')}
-      />
-
-      <section aria-label="Upcoming work" className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <UpcomingFollowupsTable
-          onComplete={(row) => setCompleteTarget(row)}
-          onEdit={setEditingFollowUp}
-          onCancel={setCancellingFollowUp}
+      <section className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
+        <Metric
+          label="Receivables"
+          value={money(data?.receivableMinor)}
+          hint={`${data?.partyCount ?? 0} parties on file`}
+          icon={ArrowDownLeft}
+          tone="credit"
+          loading={isLoading}
         />
-        <RecentLeadsTable
-          onEdit={setEditingLead}
-          onBlacklist={setBlacklistingLead}
-          canEditLead={canEditLead}
-          canBlacklist={canBlacklist}
+        <Metric
+          label="Payables"
+          value={money(data?.payableMinor)}
+          hint="Bills to pay suppliers"
+          icon={ArrowUpRight}
+          tone="debit"
+          loading={isLoading}
+        />
+        <Metric
+          label="Cash and bank"
+          value={money(data?.cashBankMinor)}
+          hint="Across all cash and bank accounts"
+          icon={Landmark}
+          loading={isLoading}
+        />
+        <Metric
+          label="Vouchers posted"
+          value={String(data?.voucherCount ?? 0)}
+          hint={`${data?.itemCount ?? 0} items on file`}
+          icon={CalendarClock}
+          loading={isLoading}
+          mono
         />
       </section>
 
-      <section aria-label="Member data" className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <MembershipExpirationsTable onFollowUp={(row) => setFollowUpTarget(row.member)} />
-        <PaymentsDueTable
-          onMakePayment={(row) => setPaymentTarget(row)}
-          onFollowUp={(row) => setFollowUpTarget(row.member)}
-        />
-      </section>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.6fr_1fr]">
+        <section className="border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+            <div>
+              <h2 className="text-[13px] font-semibold">Set up the books</h2>
+              <p className="text-[11.5px] text-muted-foreground">
+                Five steps to the first invoice.
+              </p>
+            </div>
+            <Badge variant="secondary">Phase 0 of 4</Badge>
+          </div>
+          <ol>
+            <Step
+              done
+              title="Company and financial year"
+              detail="GSTIN, state and books begin date are set."
+            />
+            <Step
+              done
+              title="Chart of accounts"
+              detail="19 groups and the reserved system accounts are seeded."
+            />
+            <Step
+              title="Parties"
+              detail="Customers, suppliers, credit days and opening balances."
+              phase="P1"
+            />
+            <Step title="Items" detail="HSN, unit, GST rate and opening stock." phase="P1" />
+            <Step
+              title="First purchase bill"
+              detail="Post a bill, write the ledger and move stock in one transaction."
+              phase="P2"
+            />
+          </ol>
+          <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-2.5">
+            <span className="text-[11.5px] text-muted-foreground">
+              Phase 1 adds the two master screens.
+            </span>
+            <Link
+              to="/parties"
+              className="flex items-center gap-1 text-[11.5px] font-medium text-primary hover:underline"
+            >
+              Open parties <ChevronRight className="size-3.5" />
+            </Link>
+          </div>
+        </section>
 
-      <section aria-label="Risk & follow-ups" className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <LeadsGoingColdTable />
-        <FollowUpsTimelineCard />
-      </section>
+        <section className="flex flex-col gap-5">
+          <div className="border border-border bg-card">
+            <div className="border-b border-border px-4 py-3">
+              <h2 className="text-[13px] font-semibold">What this version does</h2>
+            </div>
+            <div className="space-y-2.5 px-4 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
+              <p>
+                <span className="font-medium text-foreground">Debtors and creditors</span> with
+                bill-wise settlement, ageing and statements.
+              </p>
+              <p>
+                <span className="font-medium text-foreground">GST invoices and bills</span> with
+                inclusive or exclusive rates, CGST/SGST or IGST, and round off.
+              </p>
+              <p>
+                <span className="font-medium text-foreground">One write path</span> for every
+                document, so the trial balance always proves itself.
+              </p>
+            </div>
+          </div>
 
-      {newLeadOpen && <NewLeadDialog open onOpenChange={setNewLeadOpen} />}
-      {followUpOpen && <FollowUpDialog open onOpenChange={setFollowUpOpen} />}
-      {followUpTarget && (
-        <FollowUpDialog
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              setFollowUpTarget(null)
-              setFollowUpOpen(false)
-            }
-          }}
-          lead={matchedLead}
+          <div className="border border-border bg-accent-soft/60 px-4 py-3">
+            <h2 className="text-[12px] font-semibold text-primary">A note on data</h2>
+            <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">
+              This installation starts on a new database. The previous product file is untouched and
+              is never read by Crown Books.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <section className="border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-[13px] font-semibold">Recent vouchers</h2>
+          <Link to="/day-book" className="text-[11.5px] text-primary hover:underline">
+            Open day book
+          </Link>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
+          <Package className="size-5 text-muted-foreground" strokeWidth={1.5} />
+          <p className="text-[12.5px] font-medium">No vouchers yet</p>
+          <p className="max-w-[46ch] text-[11.5px] text-muted-foreground">
+            Post a purchase bill or a sales invoice and it will appear here with its ledger and
+            stock effect.
+          </p>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function Metric({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone,
+  loading,
+  mono
+}: {
+  label: string
+  value: string
+  hint: string
+  icon: typeof Package
+  tone?: 'credit' | 'debit'
+  loading: boolean
+  mono?: boolean
+}): React.JSX.Element {
+  return (
+    <div className="bg-card px-4 py-4">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          {label}
+        </span>
+        <Icon
+          className={
+            tone === 'credit'
+              ? 'size-4 text-success'
+              : tone === 'debit'
+                ? 'size-4 text-destructive'
+                : 'size-4 text-muted-foreground'
+          }
+          strokeWidth={1.6}
         />
-      )}
-      {activityOpen && <LogActivityDialog open onOpenChange={setActivityOpen} />}
-      {completeTarget && (
-        <CompleteFollowUpDialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setCompleteTarget(null)
-          }}
-          followUp={completeTarget}
-        />
-      )}
-      {editingFollowUp && (
-        <Suspense fallback={null}>
-          <EditFollowUpDialog
-            key={editingFollowUp.id}
-            open
-            onOpenChange={(open) => {
-              if (!open) setEditingFollowUp(null)
-            }}
-            followUp={editingFollowUp}
-          />
-        </Suspense>
-      )}
-      {cancellingFollowUp && (
-        <Suspense fallback={null}>
-          <CancelFollowUpDialog
-            key={cancellingFollowUp.id}
-            open
-            onOpenChange={(open) => {
-              if (!open) setCancellingFollowUp(null)
-            }}
-            followUp={cancellingFollowUp}
-          />
-        </Suspense>
-      )}
-      {editingLead && (
-        <Suspense fallback={null}>
-          <EditLeadDialog
-            key={editingLead.id}
-            open
-            onOpenChange={(open) => {
-              if (!open) setEditingLead(null)
-            }}
-            lead={editingLead}
-          />
-        </Suspense>
-      )}
-      {blacklistingLead && (
-        <Suspense fallback={null}>
-          <BlacklistDialog
-            key={blacklistingLead.id}
-            open
-            onOpenChange={(open) => {
-              if (!open) setBlacklistingLead(null)
-            }}
-            personId={blacklistingLead.personId}
-            personName={blacklistingLead.name}
-            isBlacklisted={blacklistingLead.isBlacklisted}
-          />
-        </Suspense>
-      )}
-      {paymentTarget ? (
-        <Suspense fallback={null}>
-          <RecordPaymentDialog
-            open={!!paymentTarget}
-            onOpenChange={(open) => {
-              if (!open) setPaymentTarget(null)
-            }}
-            preSelectedCustomer={paymentTarget.member}
-            preSelectedInvoiceId={paymentTarget.id}
-          />
-        </Suspense>
-      ) : null}
-    </main>
+      </div>
+      <div
+        className={
+          mono
+            ? 'mt-3 font-mono text-[26px] leading-none tracking-tight'
+            : 'mt-3 font-mono text-[26px] leading-none tracking-tight'
+        }
+      >
+        {loading ? <span className="text-muted-foreground">--</span> : value}
+      </div>
+      <div className="mt-2 text-[10.5px] text-muted-foreground">{hint}</div>
+    </div>
+  )
+}
+
+function Step({
+  done,
+  title,
+  detail,
+  phase
+}: {
+  done?: boolean
+  title: string
+  detail: string
+  phase?: string
+}): React.JSX.Element {
+  return (
+    <li className="flex items-start gap-3 border-b border-border px-4 py-3 last:border-b-0">
+      <span
+        className={
+          done
+            ? 'mt-0.5 flex size-4 items-center justify-center rounded-full bg-success text-[9px] text-white'
+            : 'mt-0.5 size-4 rounded-full border border-rule-strong'
+        }
+        aria-hidden="true"
+      >
+        {done ? '✓' : ''}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className={done ? 'text-[12.5px] font-medium' : 'text-[12.5px]'}>{title}</span>
+          {phase ? (
+            <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+              {phase}
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{detail}</p>
+      </div>
+    </li>
   )
 }

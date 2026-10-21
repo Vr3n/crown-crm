@@ -49,7 +49,7 @@ export function useIdentitySession(enabled: boolean): UseQueryResult<SessionCont
  * flips to the login phase instead of serving the stale `AUTHENTICATED` status
  * that the query cache held from before logout.
  */
-export function useLogout(): UseMutationResult<boolean, unknown, void, unknown> {
+export function useLogout(): UseMutationResult<void, unknown, void, unknown> {
   const qc = useQueryClient()
 
   return useMutation({

@@ -63,8 +63,8 @@ export function setDatabase(database: DatabaseSync | null): void {
 /**
  * Runs fn inside a write transaction. Nested calls are supported via SAVEPOINTs,
  * so a domain/repository function can safely wrap its own work even when it is
- * already running inside a caller's transaction (e.g. seedRolesForOrganization
- * called from setupOrganization). Only the outermost call issues BEGIN/COMMIT.
+ * already running inside a caller's transaction (e.g. seedRolesForCompany
+ * called from setupCompany). Only the outermost call issues BEGIN/COMMIT.
  *
  * If fn throws, the current (outermost or savepoint) transaction is rolled back
  * and the error re-thrown. This is the enforcement point for rule #2 (every

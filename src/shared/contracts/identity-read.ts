@@ -1,25 +1,7 @@
 /**
- * Shared contracts for identity read/update IPC surface.
- * Output types match the renderer's expected shapes exactly.
+ * Read models for the staff and role list IPC handlers. The company profile
+ * lives in `identity.ts` as `CompanyProfile`.
  */
-
-export interface OrganizationOutput {
-  id: number
-  slug: string
-  name: string
-  legalName: string | null
-  billingEmail: string | null
-  mobileNumber: string
-  timezone: string | null
-  currency: string
-  logo: string | null
-  status: string
-  planTier: string | null
-  invoiceTerms: string | null
-  receiptTerms: string | null
-  refundTerms: string | null
-  createdAt: string
-}
 
 export interface StaffMemberOutput {
   id: string

@@ -32,7 +32,7 @@ export function requirePermission(code: PermissionCode): void {
   }
 }
 
-/** The active organization id, for stamping onto org-scoped records. */
-export function currentOrganizationId(): number {
-  return requireSession().organizationId
+/** The active company id, for stamping onto org-scoped records. */
+export function currentCompanyId(): number {
+  return requireSession().companyId
 }

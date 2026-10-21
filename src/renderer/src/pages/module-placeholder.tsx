@@ -4,9 +4,9 @@ import { EmptyState } from '@/components/empty-state'
 import { Badge } from '@/components/ui/badge'
 
 /**
- * Honest landing for modules that are designed (docs/modules 01–15) but not yet
- * built. Renders the shared page-header convention plus an invitation, so the
- * shell's nav is fully navigable today without fake screens.
+ * Honest landing for a screen whose phase has not started. It says which phase
+ * delivers it and what the screen will do, so the navigation is complete
+ * without pretending a feature exists.
  */
 export function ModulePlaceholder({
   title,
@@ -28,8 +28,8 @@ export function ModulePlaceholder({
       />
       <EmptyState
         icon={Icon}
-        title={`${title} is on the roadmap`}
-        description="This module's read model isn't wired up yet. The shell is ready — the screen below will host it."
+        title={`${title} arrives in ${scope}`}
+        description="The shell, permissions and navigation are ready. This screen will be built in the phase shown above."
       />
     </div>
   )

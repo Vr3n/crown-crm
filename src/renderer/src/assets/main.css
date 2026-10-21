@@ -2,7 +2,6 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/ibm-plex-sans';
-@import '@fontsource-variable/space-grotesk';
 @import '@fontsource/ibm-plex-mono/400.css';
 @import '@fontsource/ibm-plex-mono/500.css';
 @import '@fontsource/ibm-plex-mono/600.css';
@@ -10,131 +9,110 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CrownCRM design tokens — calm, premium operations workspace.
+ * Ledger Paper.
  *
- * Neutral system (from plan §2):
- *   Page bg: #F5F8FA | Surfaces: #FFFFFF | Text: #202A32
- *   Muted text: #76828B | Borders: #DFE6E9
- *
- * Rules:
- *  - Teal is the primary brand signal. Pink, amber, emerald are reserved
- *    for contextual meaning (secondary, warning, success).
- *  - ONE radius scale: cards/inputs ~10px, small controls ~8px. No mixed
- *    corner systems.
- *  - Money, dates and IDs use --font-mono (tabular-nums) so columns scan
- *    on a single edge.
- *  - No purple gradients, neon accents, or arbitrary one-off colors.
+ * Warm paper ground, ink text, hairline rules, one ink blue accent. Numbers use
+ * IBM Plex Mono with tabular figures so columns scan on one edge. Corners are
+ * near sharp (2px); shadows are reserved for overlays only.
  */
 :root {
-  --radius: 0;
+  --radius: 2px;
 
-  /* --- Neutral system (light) --- */
-  --background: oklch(0.965 0.004 240); /* #F5F8FA — page surface */
-  --foreground: oklch(0.215 0.018 250); /* #202A32 — primary text */
-  --card: oklch(1 0 0); /* #FFFFFF — card surface */
-  --card-foreground: oklch(0.215 0.018 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.215 0.018 250);
+  --paper: #f4f2ec;
+  --ink: #12171c;
 
-  /* --- Accent: teal (primary brand) --- */
-  --primary: oklch(0.52 0.105 223.128);
-  --primary-foreground: oklch(0.984 0.019 200.873);
+  --background: oklch(0.957 0.008 88);
+  --foreground: oklch(0.21 0.012 250);
+  --card: oklch(0.988 0.006 92);
+  --card-foreground: oklch(0.21 0.012 250);
+  --popover: oklch(0.995 0.004 92);
+  --popover-foreground: oklch(0.21 0.012 250);
 
-  /* --- Accent: pink (secondary / hover emphasis) --- */
-  --secondary: oklch(0.525 0.223 3.958);
-  --secondary-foreground: oklch(0.971 0.014 343.198);
+  --primary: oklch(0.42 0.062 232);
+  --primary-foreground: oklch(0.985 0.008 90);
 
-  /* --- Muted / border --- */
-  --muted: oklch(0.965 0.004 240); /* #F5F8FA — tinted input bg */
-  --muted-foreground: oklch(0.515 0.015 250); /* #76828B — secondary text */
-  --accent: oklch(0.955 0.02 3.958);
-  --accent-foreground: oklch(0.21 0.02 4);
+  --secondary: oklch(0.93 0.012 88);
+  --secondary-foreground: oklch(0.25 0.012 250);
 
-  /* --- Semantic: status --- */
-  --destructive: oklch(0.577 0.245 27.325);
-  --success: oklch(0.596 0.145 163.225); /* emerald — paid / healthy */
-  --success-foreground: oklch(0.982 0.017 145.153);
-  --warning: oklch(0.769 0.188 70.08); /* amber — caution */
-  --warning-foreground: oklch(0.98 0.016 73.684);
-  --info: oklch(0.55 0.19 257);
-  --info-foreground: oklch(0.985 0.015 257);
-  --violet: oklch(0.55 0.2 292);
-  --violet-foreground: oklch(0.985 0.02 292);
+  --muted: oklch(0.945 0.01 88);
+  --muted-foreground: oklch(0.53 0.012 250);
+  --accent: oklch(0.94 0.014 230);
+  --accent-foreground: oklch(0.36 0.05 232);
+  --accent-soft: #e4ebef;
 
-  /* --- Input / border --- */
-  --border: oklch(0.895 0.005 240); /* #DFE6E9 */
-  --input: oklch(0.895 0.005 240);
-  --ring: oklch(0.608 0.126 221.723);
+  --destructive: oklch(0.49 0.15 28);
+  --success: oklch(0.46 0.08 158);
+  --warning: oklch(0.56 0.1 75);
+  --info: oklch(0.5 0.08 232);
 
-  /* --- Charts --- */
-  --chart-1: oklch(0.865 0.127 207.078);
-  --chart-2: oklch(0.715 0.143 215.221);
-  --chart-3: oklch(0.609 0.126 221.723);
-  --chart-4: oklch(0.52 0.105 223.128);
-  --chart-5: oklch(0.45 0.085 224.283);
+  --border: oklch(0.88 0.012 88);
+  --input: oklch(0.855 0.014 88);
+  --ring: oklch(0.42 0.062 232);
+  --rule-strong: #c3baa8;
 
-  /* --- Sidebar --- */
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.215 0.018 250);
-  --sidebar-primary: oklch(0.609 0.126 221.723);
-  --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
-  --sidebar-accent: oklch(0.953 0.022 3.958);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.895 0.005 240);
-  --sidebar-ring: oklch(0.608 0.126 221.723);
+  --chart-1: oklch(0.55 0.07 232);
+  --chart-2: oklch(0.62 0.07 158);
+  --chart-3: oklch(0.68 0.08 75);
+  --chart-4: oklch(0.55 0.12 28);
+  --chart-5: oklch(0.6 0.03 250);
+
+  --sidebar: #fbfaf6;
+  --sidebar-foreground: oklch(0.24 0.012 250);
+  --sidebar-primary: oklch(0.42 0.062 232);
+  --sidebar-primary-foreground: oklch(0.985 0.008 90);
+  --sidebar-accent: #eceff1;
+  --sidebar-accent-foreground: oklch(0.3 0.02 240);
+  --sidebar-border: #ddd7c9;
+  --sidebar-ring: oklch(0.42 0.062 232);
 }
 
-/*
- * Dark mode — deep blue-charcoal surfaces, softened borders, teal focus.
- * Preserves the same visual hierarchy rather than inverting every color.
- */
 .dark {
-  --background: oklch(0.165 0.012 250); /* deep blue-charcoal page bg */
-  --foreground: oklch(0.93 0.005 240); /* softened white text */
-  --card: oklch(0.205 0.01 250); /* slightly elevated surface */
-  --card-foreground: oklch(0.93 0.005 240);
-  --popover: oklch(0.205 0.01 250);
-  --popover-foreground: oklch(0.93 0.005 240);
+  --paper: #14171b;
+  --ink: #0d1116;
 
-  --primary: oklch(0.55 0.11 223); /* teal focus/active states */
-  --primary-foreground: oklch(0.984 0.019 200.873);
+  --background: oklch(0.19 0.008 250);
+  --foreground: oklch(0.93 0.008 90);
+  --card: oklch(0.225 0.008 250);
+  --card-foreground: oklch(0.93 0.008 90);
+  --popover: oklch(0.235 0.008 250);
+  --popover-foreground: oklch(0.93 0.008 90);
 
-  --secondary: oklch(0.459 0.187 3.815);
-  --secondary-foreground: oklch(0.971 0.014 343.198);
+  --primary: oklch(0.72 0.045 232);
+  --primary-foreground: oklch(0.2 0.01 250);
 
-  --muted: oklch(0.225 0.008 250); /* desaturated tinted bg */
-  --muted-foreground: oklch(0.65 0.01 240);
-  --accent: oklch(0.27 0.02 3.958);
-  --accent-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.29 0.008 250);
+  --secondary-foreground: oklch(0.93 0.008 90);
 
-  --destructive: oklch(0.704 0.191 22.216);
-  --success: oklch(0.696 0.17 162.48);
-  --success-foreground: oklch(0.145 0 0);
-  --warning: oklch(0.769 0.188 70.08);
-  --warning-foreground: oklch(0.28 0.04 67.5);
-  --info: oklch(0.68 0.18 257);
-  --info-foreground: oklch(0.16 0.02 257);
-  --violet: oklch(0.68 0.19 292);
-  --violet-foreground: oklch(0.16 0.02 292);
+  --muted: oklch(0.26 0.008 250);
+  --muted-foreground: oklch(0.66 0.01 250);
+  --accent: oklch(0.28 0.012 232);
+  --accent-foreground: oklch(0.9 0.01 232);
+  --accent-soft: #22303a;
 
-  --border: oklch(1 0 0 / 8%); /* softened borders */
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.55 0.11 223);
+  --destructive: oklch(0.68 0.14 28);
+  --success: oklch(0.68 0.09 158);
+  --warning: oklch(0.75 0.1 75);
+  --info: oklch(0.7 0.08 232);
 
-  --chart-1: oklch(0.865 0.127 207.078);
-  --chart-2: oklch(0.715 0.143 215.221);
-  --chart-3: oklch(0.609 0.126 221.723);
-  --chart-4: oklch(0.52 0.105 223.128);
-  --chart-5: oklch(0.45 0.085 224.283);
+  --border: oklch(0.31 0.008 250);
+  --input: oklch(0.34 0.008 250);
+  --ring: oklch(0.72 0.045 232);
+  --rule-strong: #3a424a;
 
-  --sidebar: oklch(0.185 0.01 250);
-  --sidebar-foreground: oklch(0.93 0.005 240);
-  --sidebar-primary: oklch(0.715 0.143 215.221);
-  --sidebar-primary-foreground: oklch(0.302 0.056 229.695);
-  --sidebar-accent: oklch(0.27 0.02 3.958);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.55 0.11 223);
+  --chart-1: oklch(0.72 0.045 232);
+  --chart-2: oklch(0.68 0.09 158);
+  --chart-3: oklch(0.75 0.1 75);
+  --chart-4: oklch(0.68 0.14 28);
+  --chart-5: oklch(0.55 0.02 250);
+
+  --sidebar: #191d22;
+  --sidebar-foreground: oklch(0.9 0.008 90);
+  --sidebar-primary: oklch(0.72 0.045 232);
+  --sidebar-primary-foreground: oklch(0.2 0.01 250);
+  --sidebar-accent: #242b32;
+  --sidebar-accent-foreground: oklch(0.92 0.008 90);
+  --sidebar-border: #2b3138;
+  --sidebar-ring: oklch(0.72 0.045 232);
 }
 
 @theme inline {
@@ -152,18 +130,17 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
-  --color-violet: var(--violet);
-  --color-violet-foreground: var(--violet-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-rule-strong: var(--rule-strong);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -178,15 +155,12 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --radius-sm: 0;
-  --radius-md: 0;
-  --radius-lg: 0;
-  --radius-xl: 0;
-  --radius-2xl: 0;
-  --radius-3xl: 0;
-  --radius-4xl: 0;
-  --font-sans: 'IBM Plex Sans Variable', sans-serif;
-  --font-heading: 'Space Grotesk Variable', sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --font-sans: 'IBM Plex Sans Variable', system-ui, sans-serif;
+  --font-heading: 'IBM Plex Sans Variable', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 }
 
 @layer base {
@@ -195,100 +169,33 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: 'ss01' on;
   }
   html {
     @apply font-sans;
   }
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--foreground);
+  }
 }
 
-/* Quiet scrollbars so dense data stays calm in the main process. */
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Quiet scrollbars. */
 @layer base {
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
   }
   ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-border;
+    @apply bg-border;
   }
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground/40;
-  }
-}
-
-/* --- CrownCRM micro-interaction utilities --- */
-
-@layer utilities {
-  /* Quick-action button lift on hover */
-  .crm-hover-lift {
-    transition:
-      transform 180ms ease-out,
-      box-shadow 180ms ease-out,
-      border-color 180ms ease-out;
-  }
-  .crm-hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px oklch(0 0 0 / 6%);
-    border-color: oklch(0.52 0.105 223.128 / 0.3);
-  }
-  .crm-hover-lift:active {
-    transform: translateY(1px);
-    box-shadow: none;
-    transition-duration: 100ms;
-  }
-
-  /* Status pulse dot */
-  @keyframes crm-pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-  .crm-pulse {
-    animation: crm-pulse 2.5s ease-in-out infinite;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .crm-pulse {
-      animation: none;
-    }
-  }
-
-  /* Float animation for empty state icons */
-  @keyframes crm-float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-4px);
-    }
-  }
-  .crm-float {
-    animation: crm-float 3s ease-in-out infinite;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .crm-float {
-      animation: none;
-    }
-  }
-
-  /* Static gradient border for dashboard cards.
-   * Usage: class="crm-gradient-border" style="--gradient-start: var(--primary); --gradient-end: var(--success);" */
-  .crm-gradient-border {
-    --gradient-start: var(--primary);
-    --gradient-end: var(--primary);
-    border: 2px solid transparent !important;
-    background:
-      linear-gradient(var(--card), var(--card)) padding-box,
-      conic-gradient(
-          var(--gradient-start),
-          transparent 25%,
-          var(--gradient-end) 50%,
-          transparent 75%,
-          var(--gradient-start)
-        )
-        border-box;
   }
 }

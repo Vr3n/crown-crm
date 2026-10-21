@@ -1,1 +1,0 @@
-CREATE INDEX `idx_leads_org_source` ON `leads` (`organization_id`,`source_id`);

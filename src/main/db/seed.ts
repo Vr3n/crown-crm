@@ -1,670 +1,363 @@
 import { and, eq } from 'drizzle-orm'
-import { getDrizzle } from './connection'
-import { withTransaction } from './connection'
+import { getDrizzle, withTransaction } from './connection'
 import {
-  cancellationPolicies,
-  freezePolicies,
-  leadActivityTypes,
-  leadLostReasons,
-  leadSources,
-  leadStages,
-  membershipPlans,
-  offers,
+  accountGroups,
+  accounts,
+  godowns,
   paymentMethods,
   permissions,
-  prorationPolicies,
   rolePermissions,
-  roles
+  roles,
+  stockGroups,
+  taxRates,
+  units
 } from './schema'
 import { ALL_PERMISSION_CODES } from './permissions'
 
 export interface SeedRole {
   name: string
-  is_system: boolean
-  is_super: boolean
+  isSystem: boolean
+  isSuper: boolean
+  description: string
   permissions: string[]
 }
 
 /**
- * The per-organization starter roles, shipped as editable data (not compiled logic).
- * Owner and Admin are the two system roles and are is_super; everything else is
- * ordinary and editable via RolePermission rows. Non-super grant sets follow the
- * Module 15 worked example, mapped onto the current permission catalog.
+ * Starter roles, shipped as editable data. Owner and Admin are system roles and
+ * super. The others are ordinary and changeable through RolePermission rows.
  */
 export const SEED_ROLES: SeedRole[] = [
-  { name: 'Owner', is_system: true, is_super: true, permissions: [] },
-  { name: 'Admin', is_system: true, is_super: true, permissions: [] },
   {
-    name: 'Manager',
-    is_system: false,
-    is_super: false,
+    name: 'Owner',
+    isSystem: true,
+    isSuper: true,
+    description: 'Full access to every part of the books',
+    permissions: []
+  },
+  {
+    name: 'Admin',
+    isSystem: true,
+    isSuper: true,
+    description: 'Full access, including users and settings',
+    permissions: []
+  },
+  {
+    name: 'Accountant',
+    isSystem: false,
+    isSuper: false,
+    description: 'Masters, vouchers, payments and reports',
     permissions: [
-      'org.view',
+      'company.view',
+      'party.view',
+      'party.create',
+      'party.edit',
+      'party.deactivate',
+      'item.view',
+      'item.create',
+      'item.edit',
+      'item.deactivate',
+      'voucher.view',
+      'voucher.create',
+      'voucher.post',
+      'voucher.cancel',
+      'receipt.view',
+      'receipt.record',
+      'payment.view',
+      'payment.record',
+      'note.view',
+      'note.create',
+      'journal.view',
+      'journal.create',
+      'report.view',
+      'report.export',
       'user.view',
       'role.view',
-      'person.blacklist',
-      'lead.view',
-      'lead.create',
-      'lead.assign',
-      'lead.record_activity',
-      'lead.update_stage',
-      'lead.mark_lost',
-      'lead.convert',
-      'lead.delete',
-      'lead.edit',
-      'followup.view',
-      'followup.create',
-      'followup.update',
-      'followup.cancel',
-      'followup.complete',
-      'plan.view',
-      'plan.create',
-      'plan.update',
-      'plan.deactivate',
-      'offer.view',
-      'offer.create',
-      'offer.update',
-      'offer.deactivate',
-      'membership.view',
-      'membership.create',
-      'membership.sell',
-      'membership.activate',
-      'membership.freeze',
-      'membership.unfreeze',
-      'membership.renew',
-      'membership.change_plan',
-      'membership.request_cancellation',
-      'membership.cancel',
-      'invoice.view',
-      'invoice.create',
-      'invoice.finalize',
-      'invoice.void',
-      'payment.view',
-      'payment.record',
-      'payment.allocate',
-      'refund.view',
-      'refund.create',
-      'credit.view',
-      'credit.create',
-      'credit.apply',
+      'backup.manage'
+    ]
+  },
+  {
+    name: 'Billing Clerk',
+    isSystem: false,
+    isSuper: false,
+    description: 'Raises bills and records receipts',
+    permissions: [
+      'party.view',
+      'party.create',
+      'item.view',
+      'voucher.view',
+      'voucher.create',
+      'voucher.post',
+      'receipt.view',
+      'receipt.record',
       'report.view'
     ]
   },
   {
-    name: 'Sales',
-    is_system: false,
-    is_super: false,
+    name: 'Auditor',
+    isSystem: false,
+    isSuper: false,
+    description: 'Read only access to books and reports',
     permissions: [
-      'person.blacklist',
-      'lead.view',
-      'lead.create',
-      'lead.record_activity',
-      'lead.update_stage',
-      'lead.convert',
-      'lead.delete',
-      'lead.edit',
-      'followup.view',
-      'followup.create',
-      'followup.update',
-      'followup.cancel',
-      'followup.complete',
-      'plan.view',
-      'offer.view',
-      'membership.view',
-      'membership.create',
-      'membership.sell',
-      'membership.activate'
-    ]
-  },
-  {
-    name: 'Front Desk',
-    is_system: false,
-    is_super: false,
-    permissions: [
-      'person.blacklist',
-      'lead.view',
-      'lead.record_activity',
-      'followup.view',
-      'followup.create',
-      'followup.update',
-      'followup.cancel',
-      'followup.complete',
-      'membership.view'
-    ]
-  },
-  {
-    name: 'Finance',
-    is_system: false,
-    is_super: false,
-    permissions: [
-      'invoice.view',
-      'invoice.finalize',
-      'invoice.void',
+      'company.view',
+      'party.view',
+      'item.view',
+      'voucher.view',
+      'receipt.view',
       'payment.view',
-      'payment.record',
-      'payment.allocate',
-      'refund.view',
-      'refund.create',
-      'credit.view',
-      'credit.create',
-      'credit.apply',
-      'report.view'
+      'note.view',
+      'journal.view',
+      'report.view',
+      'report.export',
+      'user.view',
+      'role.view'
     ]
   }
 ]
 
-/**
- * Seeds the global permission catalog once. Call after migrations. Uses
- * ON CONFLICT DO NOTHING so re-running after a catalog extension is a no-op
- * for codes that already exist (same semantics as the shipped INSERT OR IGNORE).
- */
+/** Inserts any permission code missing from the catalog table. Idempotent. */
 export function seedPermissions(): void {
   const db = getDrizzle()
-  db.insert(permissions)
-    .values(ALL_PERMISSION_CODES.map((code) => ({ code, description: null })))
-    .onConflictDoNothing()
-    .run()
+  const existing = new Set(
+    db
+      .select({ code: permissions.code })
+      .from(permissions)
+      .all()
+      .map((r) => r.code)
+  )
+  for (const code of ALL_PERMISSION_CODES) {
+    if (existing.has(code)) continue
+    db.insert(permissions).values({ code }).run()
+  }
 }
 
+/** Creates the starter roles for a company and grants their permissions. */
+export function seedRolesForCompany(companyId: number): void {
+  const db = getDrizzle()
+  for (const role of SEED_ROLES) {
+    const existing = db
+      .select({ id: roles.id })
+      .from(roles)
+      .where(and(eq(roles.company_id, companyId), eq(roles.name, role.name)))
+      .get()
+
+    const roleId =
+      existing?.id ??
+      db
+        .insert(roles)
+        .values({
+          company_id: companyId,
+          name: role.name,
+          is_system_role: role.isSystem,
+          is_super: role.isSuper,
+          description: role.description
+        })
+        .returning({ id: roles.id })
+        .get().id
+
+    if (role.isSuper) continue
+    for (const code of role.permissions) {
+      const permission = db
+        .select({ id: permissions.id })
+        .from(permissions)
+        .where(eq(permissions.code, code))
+        .get()
+      if (!permission) continue
+      db.insert(rolePermissions)
+        .values({ role_id: roleId, permission_id: permission.id })
+        .onConflictDoNothing()
+        .run()
+    }
+  }
+}
+
+const UNIT_SEED: { name: string; symbol: string; decimals: number }[] = [
+  { name: 'Nos', symbol: 'nos', decimals: 0 },
+  { name: 'Pcs', symbol: 'pcs', decimals: 0 },
+  { name: 'Kg', symbol: 'kg', decimals: 3 },
+  { name: 'Gm', symbol: 'gm', decimals: 0 },
+  { name: 'Ltr', symbol: 'ltr', decimals: 3 },
+  { name: 'Ml', symbol: 'ml', decimals: 0 },
+  { name: 'Mtr', symbol: 'mtr', decimals: 3 },
+  { name: 'Box', symbol: 'box', decimals: 0 },
+  { name: 'Pack', symbol: 'pack', decimals: 0 },
+  { name: 'Set', symbol: 'set', decimals: 0 },
+  { name: 'Hrs', symbol: 'hrs', decimals: 2 }
+]
+
+const GROUP_SEED: { name: string; nature: string; sort: number }[] = [
+  { name: 'Capital Account', nature: 'EQUITY', sort: 10 },
+  { name: 'Loans', nature: 'LIABILITY', sort: 20 },
+  { name: 'Current Liabilities', nature: 'LIABILITY', sort: 30 },
+  { name: 'Sundry Creditors', nature: 'LIABILITY', sort: 40 },
+  { name: 'Duties and Taxes', nature: 'LIABILITY', sort: 50 },
+  { name: 'Current Assets', nature: 'ASSET', sort: 60 },
+  { name: 'Cash in Hand', nature: 'ASSET', sort: 70 },
+  { name: 'Bank Accounts', nature: 'ASSET', sort: 80 },
+  { name: 'Sundry Debtors', nature: 'ASSET', sort: 90 },
+  { name: 'Stock in Hand', nature: 'ASSET', sort: 100 },
+  { name: 'Fixed Assets', nature: 'ASSET', sort: 110 },
+  { name: 'Sales', nature: 'INCOME', sort: 120 },
+  { name: 'Sales Returns', nature: 'INCOME', sort: 130 },
+  { name: 'Direct Incomes', nature: 'INCOME', sort: 140 },
+  { name: 'Indirect Incomes', nature: 'INCOME', sort: 150 },
+  { name: 'Purchases', nature: 'EXPENSE', sort: 160 },
+  { name: 'Purchase Returns', nature: 'EXPENSE', sort: 170 },
+  { name: 'Direct Expenses', nature: 'EXPENSE', sort: 180 },
+  { name: 'Indirect Expenses', nature: 'EXPENSE', sort: 190 }
+]
+
+const ACCOUNT_SEED: {
+  group: string
+  name: string
+  type: string
+  systemKey: string | null
+}[] = [
+  { group: 'Cash in Hand', name: 'Cash', type: 'ASSET', systemKey: 'CASH' },
+  { group: 'Bank Accounts', name: 'Bank', type: 'ASSET', systemKey: 'BANK' },
+  { group: 'Sales', name: 'Sales', type: 'INCOME', systemKey: 'SALES' },
+  { group: 'Sales Returns', name: 'Sales Returns', type: 'INCOME', systemKey: 'SALES_RETURNS' },
+  { group: 'Purchases', name: 'Purchases', type: 'EXPENSE', systemKey: 'PURCHASES' },
+  {
+    group: 'Purchase Returns',
+    name: 'Purchase Returns',
+    type: 'EXPENSE',
+    systemKey: 'PURCHASE_RETURNS'
+  },
+  { group: 'Duties and Taxes', name: 'Output CGST', type: 'LIABILITY', systemKey: 'OUTPUT_CGST' },
+  { group: 'Duties and Taxes', name: 'Output SGST', type: 'LIABILITY', systemKey: 'OUTPUT_SGST' },
+  { group: 'Duties and Taxes', name: 'Output IGST', type: 'LIABILITY', systemKey: 'OUTPUT_IGST' },
+  { group: 'Duties and Taxes', name: 'Input CGST', type: 'ASSET', systemKey: 'INPUT_CGST' },
+  { group: 'Duties and Taxes', name: 'Input SGST', type: 'ASSET', systemKey: 'INPUT_SGST' },
+  { group: 'Duties and Taxes', name: 'Input IGST', type: 'ASSET', systemKey: 'INPUT_IGST' },
+  { group: 'Indirect Expenses', name: 'Round Off', type: 'EXPENSE', systemKey: 'ROUND_OFF' },
+  {
+    group: 'Direct Expenses',
+    name: 'Cost of Goods Sold',
+    type: 'EXPENSE',
+    systemKey: 'COGS'
+  },
+  { group: 'Stock in Hand', name: 'Inventory', type: 'ASSET', systemKey: 'INVENTORY' },
+  {
+    group: 'Indirect Expenses',
+    name: 'Stock Adjustment',
+    type: 'EXPENSE',
+    systemKey: 'STOCK_ADJUSTMENT'
+  },
+  {
+    group: 'Capital Account',
+    name: 'Opening Balance Difference',
+    type: 'EQUITY',
+    systemKey: 'OPENING_DIFF'
+  },
+  {
+    group: 'Indirect Expenses',
+    name: 'Discount Given',
+    type: 'EXPENSE',
+    systemKey: 'DISCOUNT_GIVEN'
+  },
+  {
+    group: 'Indirect Incomes',
+    name: 'Discount Received',
+    type: 'INCOME',
+    systemKey: 'DISCOUNT_RECEIVED'
+  }
+]
+
+const TAX_RATES = [0, 5, 12, 18, 28]
+
+const PAYMENT_METHOD_SEED = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Cheque', 'NEFT', 'RTGS']
+
 /**
- * Creates the starter roles for a given organization. Runs inside its own
- * transaction; should be called within the org-setup flow. Role rows are
- * inserted unconditionally — a second call for the same org violates the
- * (organization_id, name) unique constraint, matching the shipped behavior.
+ * Seeds the reference data a company needs before its first voucher: chart of
+ * accounts, units, tax rates, payment methods, one godown and number series.
+ * Idempotent, so it is safe to run on an existing company during upgrade.
  */
-export function seedRolesForOrganization(organizationId: number): void {
+export function seedCompanyDefaults(companyId: number, booksBeginDate: string): void {
   withTransaction(() => {
     const db = getDrizzle()
 
-    const permissionIds = new Map(
-      db
-        .select({ id: permissions.id, code: permissions.code })
-        .from(permissions)
-        .all()
-        .map((row) => [row.code, row.id])
-    )
-
-    for (const role of SEED_ROLES) {
-      const inserted = db
-        .insert(roles)
+    for (const unit of UNIT_SEED) {
+      db.insert(units)
         .values({
-          organization_id: organizationId,
-          name: role.name,
-          is_system_role: role.is_system,
-          is_super: role.is_super,
-          description: null
+          company_id: companyId,
+          name: unit.name,
+          symbol: unit.symbol,
+          decimals: unit.decimals,
+          is_system: true
         })
-        .returning({ id: roles.id })
-        .get()
-      const roleId = inserted.id
+        .onConflictDoNothing()
+        .run()
+    }
 
-      for (const code of role.permissions) {
-        const permissionId = permissionIds.get(code)
-        if (permissionId === undefined) continue
-        db.insert(rolePermissions)
-          .values({ role_id: roleId, permission_id: permissionId })
-          .onConflictDoNothing()
+    for (const group of GROUP_SEED) {
+      db.insert(accountGroups)
+        .values({
+          company_id: companyId,
+          name: group.name,
+          nature: group.nature,
+          sort_order: group.sort,
+          is_system: true
+        })
+        .onConflictDoNothing()
+        .run()
+    }
+
+    const groupRows = db
+      .select({ id: accountGroups.id, name: accountGroups.name })
+      .from(accountGroups)
+      .where(eq(accountGroups.company_id, companyId))
+      .all()
+    const groupId = new Map(groupRows.map((g) => [g.name, g.id]))
+
+    for (const account of ACCOUNT_SEED) {
+      const group = groupId.get(account.group)
+      if (!group) continue
+      db.insert(accounts)
+        .values({
+          company_id: companyId,
+          group_id: group,
+          name: account.name,
+          type: account.type,
+          system_key: account.systemKey,
+          is_system: account.systemKey !== null
+        })
+        .onConflictDoNothing()
+        .run()
+    }
+
+    db.insert(stockGroups)
+      .values({ company_id: companyId, name: 'General' })
+      .onConflictDoNothing()
+      .run()
+
+    db.insert(godowns)
+      .values({ company_id: companyId, name: 'Main Location' })
+      .onConflictDoNothing()
+      .run()
+
+    const existingRates = db
+      .select({ id: taxRates.id })
+      .from(taxRates)
+      .where(eq(taxRates.company_id, companyId))
+      .all()
+    if (existingRates.length === 0) {
+      for (const rate of TAX_RATES) {
+        db.insert(taxRates)
+          .values({
+            company_id: companyId,
+            gst_rate_bps: rate * 100,
+            cess_rate_bps: 0,
+            description: rate === 0 ? 'Exempt' : `GST ${rate}%`,
+            effective_from: booksBeginDate
+          })
           .run()
       }
     }
-  })
-}
 
-/** The recommended starter stage pipeline (Module 01 §Lead Stage). */
-export const SEED_STAGES: Array<{
-  name: string
-  isInitial?: boolean
-  isWon?: boolean
-  isLost?: boolean
-  suppressFollowups?: boolean
-}> = [
-  { name: 'NEW', isInitial: true },
-  { name: 'CONTACTED' },
-  { name: 'INTERESTED' },
-  { name: 'VISIT_SCHEDULED' },
-  { name: 'VISITED' },
-  { name: 'TRIAL' },
-  { name: 'NEGOTIATION' },
-  { name: 'WON', isWon: true },
-  { name: 'LOST', isLost: true },
-  { name: 'DO_NOT_DISTURB', suppressFollowups: true },
-  { name: 'NOT_INTERESTED', suppressFollowups: true }
-]
-
-/** Recommended enquiry sources (Module 01 §Lead Source). */
-export const SEED_SOURCES = [
-  'Walk-in',
-  'Phone',
-  'Referral',
-  'Instagram',
-  'Website',
-  'Advertisement',
-  'Existing Member Referral',
-  'Other'
-]
-
-/** Recommended activity vocabulary (Module 01 §Lead Activity). */
-export const SEED_ACTIVITY_TYPES = [
-  'PHONE_CALL',
-  'WALK_IN',
-  'WHATSAPP',
-  'GYM_TOUR',
-  'TRIAL',
-  'NOTE',
-  'PRICE_DISCUSSION',
-  'MEMBERSHIP_PROPOSAL',
-  'OWNER_CHANGE'
-]
-
-/** Recommended lost-lead reasons (Module 01 §Lost Lead). */
-export const SEED_LOST_REASONS = [
-  'Too Expensive',
-  'Joined Competitor',
-  'Not Interested',
-  'No Response',
-  'Moved Away',
-  'Medical Reason',
-  'Wrong Contact',
-  'Other'
-]
-
-/** Default payment methods (Module 05). */
-export const SEED_PAYMENT_METHODS = ['UPI', 'CASH', 'CREDIT CARD', 'DEBIT CARD']
-
-export interface SeedPlan {
-  name: string
-  duration: string
-  billing: string
-  basePriceMinor: number
-  accessWindow: string
-  startTime: string | null
-  endTime: string | null
-  active: boolean
-  description: string
-}
-
-/**
- * Recommended starter plans (Module 03 §Catalog). Mirrors the renderer's demo
- * catalog so a fresh install has something to sell and the lead form has plans
- * to pick from. Prices are integer minor units (paise).
- */
-export const SEED_PLANS: SeedPlan[] = [
-  {
-    name: 'Annual',
-    duration: 'YEARLY',
-    billing: 'YEARLY',
-    basePriceMinor: 800000,
-    accessWindow: 'ALL_HOURS',
-    startTime: '06:00',
-    endTime: '23:00',
-    active: true,
-    description: 'Full-facility access for a year, billed yearly.'
-  },
-  {
-    name: 'Quarterly',
-    duration: 'QUARTERLY',
-    billing: 'QUARTERLY',
-    basePriceMinor: 400000,
-    accessWindow: 'ALL_HOURS',
-    startTime: '06:00',
-    endTime: '23:00',
-    active: true,
-    description: 'Full-facility access for a quarter, billed quarterly.'
-  },
-  {
-    name: 'Monthly',
-    duration: 'MONTHLY',
-    billing: 'ONE_TIME',
-    basePriceMinor: 500000,
-    accessWindow: 'ALL_HOURS',
-    startTime: '06:00',
-    endTime: '23:00',
-    active: true,
-    description: 'Full-facility access for one month, paid upfront.'
-  }
-]
-
-/**
- * Provisions the org's sales reference data: stages, sources, activity types,
- * and lost reasons. Runs inside its own transaction and is called from the
- * org-setup flow right after `seedRolesForOrganization`. The (organization_id,
- * name) unique constraints guard against double-seeding; a second call for the
- * same org would violate them, matching the shipped role-seed behavior.
- */
-export function seedSalesReferenceData(organizationId: number): void {
-  withTransaction(() => {
-    const db = getDrizzle()
-
-    SEED_STAGES.forEach((s, i) => {
-      db.insert(leadStages)
-        .values({
-          organization_id: organizationId,
-          name: s.name,
-          sort_order: i,
-          is_initial: Boolean(s.isInitial),
-          is_won: Boolean(s.isWon),
-          is_lost: Boolean(s.isLost),
-          suppress_followups: Boolean(s.suppressFollowups)
-        })
-        .run()
-    })
-
-    SEED_SOURCES.forEach((name, i) => {
-      db.insert(leadSources).values({ organization_id: organizationId, name, sort_order: i }).run()
-    })
-
-    SEED_ACTIVITY_TYPES.forEach((name) => {
-      db.insert(leadActivityTypes).values({ organization_id: organizationId, name }).run()
-    })
-
-    SEED_LOST_REASONS.forEach((name, i) => {
-      db.insert(leadLostReasons)
-        .values({ organization_id: organizationId, name, sort_order: i })
-        .run()
-    })
-  })
-}
-
-/**
- * Provisions the org's starter membership plans. Runs inside its own transaction
- * and is called from the org-setup flow right after `seedSalesReferenceData`.
- * The (organization_id, name) unique constraint guards against double-seeding.
- */
-export function seedPlansForOrganization(organizationId: number): void {
-  withTransaction(() => {
-    const db = getDrizzle()
-    for (const plan of SEED_PLANS) {
-      db.insert(membershipPlans)
-        .values({
-          organization_id: organizationId,
-          name: plan.name,
-          description: plan.description,
-          duration: plan.duration,
-          billing_frequency: plan.billing,
-          base_price_minor: plan.basePriceMinor,
-          access_window: plan.accessWindow,
-          start_time: plan.startTime,
-          end_time: plan.endTime,
-          active: plan.active,
-          available_from: new Date().toISOString().slice(0, 10),
-          available_to: null
-        })
-        .run()
-    }
-  })
-}
-
-export interface SeedOffer {
-  name: string
-  description: string
-  discountType: string
-  valueMinor: number
-  applicablePlanIds: number[]
-  validFrom: string
-  validTo: string | null
-  maxUsage: number | null
-  minPurchaseMinor: number | null
-  eligibility: string | null
-  active: boolean
-}
-
-/** Starter discount rules (Module 03 §Offers). Seeded per org so a fresh install
- * has usable discounts at sale time. The (organization_id, name) unique
- * constraint guards against double-seeding. */
-export const SEED_OFFERS: SeedOffer[] = [
-  {
-    name: 'BARGAINING_DISCOUNT',
-    description: 'Use this when customer is bargaining while creating invoice.',
-    discountType: 'PERCENTAGE',
-    valueMinor: 10,
-    applicablePlanIds: [],
-    validFrom: new Date().toISOString().slice(0, 10),
-    validTo: null,
-    maxUsage: null,
-    minPurchaseMinor: null,
-    eligibility: null,
-    active: true
-  }
-]
-
-/**
- * Provisions the org's starter discount offers. Runs inside its own transaction
- * and is called from the org-setup flow right after `seedPlansForOrganization`.
- * The (organization_id, name) unique constraint guards against double-seeding.
- */
-export function seedOffersForOrganization(organizationId: number): void {
-  withTransaction(() => {
-    const db = getDrizzle()
-    for (const offer of SEED_OFFERS) {
-      db.insert(offers)
-        .values({
-          organization_id: organizationId,
-          name: offer.name,
-          description: offer.description,
-          discount_type: offer.discountType,
-          value_minor: offer.valueMinor,
-          applicable_plan_ids: JSON.stringify(offer.applicablePlanIds),
-          valid_from: offer.validFrom,
-          valid_to: offer.validTo,
-          max_usage: offer.maxUsage,
-          min_purchase_minor: offer.minPurchaseMinor,
-          eligibility: offer.eligibility,
-          active: offer.active
-        })
-        .run()
-    }
-  })
-}
-
-export interface SeedFreezePolicy {
-  name: string
-  billingBehavior: string
-  accessBehavior: string
-  extendOrCredit: string
-  feeMinor: number
-  freeFreezeCountPerYear: number
-  description: string
-}
-
-export interface SeedProrationPolicy {
-  name: string
-  rule: string
-  description: string
-}
-
-export interface SeedCancellationPolicy {
-  name: string
-  effectiveRule: string
-  noticeDays: number | null
-  description: string
-}
-
-/**
- * Default membership policies (Module 03, ADR-0008: policy is data, referenced
- * by the plan). Seeded per org so a fresh install has sensible defaults and the
- * plan editor has lookups to pick from.
- */
-export const SEED_FREEZE_POLICIES: SeedFreezePolicy[] = [
-  {
-    name: 'Standard Freeze',
-    billingBehavior: 'SUSPEND_BILLING',
-    accessBehavior: 'NO_ACCESS',
-    extendOrCredit: 'EXTEND_END_DATE',
-    feeMinor: 0,
-    freeFreezeCountPerYear: 2,
-    description: 'Billing pauses and the end date extends for the frozen period.'
-  },
-  {
-    name: 'Credit Freeze',
-    billingBehavior: 'SUSPEND_BILLING',
-    accessBehavior: 'LIMITED_ACCESS',
-    extendOrCredit: 'CREDIT_PERIOD',
-    feeMinor: 0,
-    freeFreezeCountPerYear: 1,
-    description: 'Billing pauses and the frozen time is credited back to the member.'
-  },
-  {
-    name: 'Paid Freeze',
-    billingBehavior: 'SUSPEND_BILLING',
-    accessBehavior: 'NO_ACCESS',
-    extendOrCredit: 'EXTEND_END_DATE',
-    feeMinor: 19900,
-    freeFreezeCountPerYear: 0,
-    description: 'Every freeze beyond the free allowance is charged a flat fee.'
-  }
-]
-
-export const SEED_PRORATION_POLICIES: SeedProrationPolicy[] = [
-  {
-    name: 'Standard Proration',
-    rule: 'UPGRADE_CREDIT_UNUSED',
-    description: 'Upgrades credit the unused value of the current period.'
-  },
-  {
-    name: 'Downgrade Remainder',
-    rule: 'DOWNGRADE_CHARGE_REMAINDER',
-    description: 'Downgrades charge the remainder of the current period at the new rate.'
-  },
-  {
-    name: 'No Partial Credit',
-    rule: 'NO_PARTIAL_CREDIT',
-    description: 'Mid-term changes take effect at the next billing period with no proration.'
-  }
-]
-
-export const SEED_CANCELLATION_POLICIES: SeedCancellationPolicy[] = [
-  {
-    name: 'Immediate',
-    effectiveRule: 'IMMEDIATE',
-    noticeDays: null,
-    description: 'Cancellation takes effect immediately and the remaining time is forfeited.'
-  },
-  {
-    name: 'End of Period',
-    effectiveRule: 'END_OF_PERIOD',
-    noticeDays: null,
-    description: 'Cancellation takes effect at the end of the current billing period.'
-  },
-  {
-    name: '14 Days Notice',
-    effectiveRule: 'NOTICE_DAYS',
-    noticeDays: 14,
-    description: 'A 14-day notice is required before cancellation takes effect.'
-  }
-]
-
-/** Defaults attached to seeded plans: freeze, proration, cancellation by name. */
-export const DEFAULT_POLICY_NAMES = {
-  freeze: 'Standard Freeze',
-  proration: 'Standard Proration',
-  cancellation: 'End of Period'
-} as const
-
-/**
- * Provisions the org's default freeze/proration/cancellation policies and
- * attaches them to the org's seeded plans. Runs inside its own transaction and
- * is called from the org-setup flow right after `seedPlansForOrganization`. The
- * (organization_id, name) unique constraints guard against double-seeding.
- */
-export function seedCatalogPoliciesForOrganization(organizationId: number): void {
-  withTransaction(() => {
-    const db = getDrizzle()
-
-    for (const policy of SEED_FREEZE_POLICIES) {
-      db.insert(freezePolicies)
-        .values({
-          organization_id: organizationId,
-          name: policy.name,
-          billing_behavior: policy.billingBehavior,
-          access_behavior: policy.accessBehavior,
-          extend_or_credit: policy.extendOrCredit,
-          fee_minor: policy.feeMinor,
-          free_freeze_count_per_year: policy.freeFreezeCountPerYear,
-          description: policy.description
-        })
-        .run()
-    }
-
-    for (const policy of SEED_PRORATION_POLICIES) {
-      db.insert(prorationPolicies)
-        .values({
-          organization_id: organizationId,
-          name: policy.name,
-          rule: policy.rule,
-          description: policy.description
-        })
-        .run()
-    }
-
-    for (const policy of SEED_CANCELLATION_POLICIES) {
-      db.insert(cancellationPolicies)
-        .values({
-          organization_id: organizationId,
-          name: policy.name,
-          effective_rule: policy.effectiveRule,
-          notice_days: policy.noticeDays,
-          description: policy.description
-        })
-        .run()
-    }
-
-    const freeze = db
-      .select({ id: freezePolicies.id })
-      .from(freezePolicies)
-      .where(
-        and(
-          eq(freezePolicies.organization_id, organizationId),
-          eq(freezePolicies.name, DEFAULT_POLICY_NAMES.freeze)
-        )
-      )
-      .get()
-    const proration = db
-      .select({ id: prorationPolicies.id })
-      .from(prorationPolicies)
-      .where(
-        and(
-          eq(prorationPolicies.organization_id, organizationId),
-          eq(prorationPolicies.name, DEFAULT_POLICY_NAMES.proration)
-        )
-      )
-      .get()
-    const cancellation = db
-      .select({ id: cancellationPolicies.id })
-      .from(cancellationPolicies)
-      .where(
-        and(
-          eq(cancellationPolicies.organization_id, organizationId),
-          eq(cancellationPolicies.name, DEFAULT_POLICY_NAMES.cancellation)
-        )
-      )
-      .get()
-
-    db.update(membershipPlans)
-      .set({
-        freeze_policy_id: freeze?.id ?? null,
-        proration_policy_id: proration?.id ?? null,
-        cancellation_policy_id: cancellation?.id ?? null
-      })
-      .where(eq(membershipPlans.organization_id, organizationId))
-      .run()
-  })
-}
-
-/**
- * Provisions the org's default payment methods. Runs inside its own transaction
- * and is called from the org-setup flow. The (organization_id, name) unique
- * constraint guards against double-seeding.
- */
-export function seedPaymentMethodsForOrganization(organizationId: number): void {
-  withTransaction(() => {
-    const db = getDrizzle()
-    SEED_PAYMENT_METHODS.forEach((name, i) => {
+    PAYMENT_METHOD_SEED.forEach((name, index) => {
       db.insert(paymentMethods)
-        .values({
-          organization_id: organizationId,
-          name,
-          sort_order: i
-        })
+        .values({ company_id: companyId, name, sort_order: index })
+        .onConflictDoNothing()
         .run()
     })
   })

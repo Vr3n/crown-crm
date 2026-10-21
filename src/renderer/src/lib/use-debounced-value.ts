@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 /**
  * Returns `value` once it has been stable for `delayMs`. Used to debounce query
- * inputs (e.g. typing an organization name before running a backend check).
+ * inputs (e.g. typing an company name before running a backend check).
  */
 export function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value)

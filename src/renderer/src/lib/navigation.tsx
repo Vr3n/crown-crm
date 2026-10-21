@@ -1,38 +1,42 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard,
-  Kanban,
-  BellRing,
-  PhoneCall,
+  BookOpen,
+  FileText,
+  ShoppingCart,
+  ArrowDownLeft,
+  ArrowUpRight,
+  NotebookPen,
   Users,
-  CreditCard,
+  Truck,
+  Contact,
   Package,
-  BadgePercent,
-  Receipt,
+  Boxes,
+  TrendingUp,
+  TrendingDown,
+  CalendarClock,
+  Scale,
+  PieChart,
   Landmark,
-  Wallet,
-  Undo2,
-  BarChart3,
-  UserCog,
-  Building2
+  ListTree,
+  Percent,
+  Ruler,
+  Building2,
+  ShieldCheck
 } from 'lucide-react'
 
 /**
- * Application shell navigation — maps every bounded context (docs/modules 01–15)
- * to a nav item. `requires` is a permission code (Module 15); items with no code
- * are visible to every signed-in user. Module permission codes (lead.view,
- * invoice.view, …) are designed-but-not-yet-seeded, so business groups are open to
- * all authenticated users for now — add the code here the moment it exists.
+ * Application navigation. Groups follow the workflow, not the database:
+ * Home, Books, Parties, Items, Reports, Masters, Admin.
  */
 export interface NavItem {
   to: string
   label: string
-  description?: string
   icon: LucideIcon
-  /** Permission code that gates this item; undefined = visible to all signed-in users. */
+  /** Permission code that gates the item. Undefined means every signed-in user. */
   requires?: string
-  /** Optional live count (badge). Renderer subscribes via its own query key. */
-  badge?: 'overdue-followups' | 'outstanding-dues'
+  /** Phase in which this screen becomes real. Used by the placeholder pages. */
+  phase?: string
 }
 
 export interface NavGroup {
@@ -43,57 +47,65 @@ export interface NavGroup {
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    id: 'command',
+    id: 'home',
     items: [{ to: '/', label: 'Dashboard', icon: LayoutDashboard }]
   },
   {
-    id: 'sales',
-    label: 'Sales',
+    id: 'books',
+    label: 'Books',
     items: [
-      { to: '/leads', label: 'Pipeline', icon: Kanban },
-      { to: '/followups', label: 'Follow-ups', icon: BellRing, badge: 'overdue-followups' },
-      { to: '/activities', label: 'Activities', icon: PhoneCall }
+      { to: '/day-book', label: 'Day Book', icon: BookOpen, phase: 'P2' },
+      { to: '/sales', label: 'Sales', icon: FileText, phase: 'P3' },
+      { to: '/purchases', label: 'Purchases', icon: ShoppingCart, phase: 'P4' },
+      { to: '/receipts', label: 'Receipts', icon: ArrowDownLeft, phase: 'P3' },
+      { to: '/payments', label: 'Payments', icon: ArrowUpRight, phase: 'P4' },
+      { to: '/journals', label: 'Journals', icon: NotebookPen, phase: 'P2' }
     ]
   },
   {
-    id: 'people',
-    label: 'People',
+    id: 'parties',
+    label: 'Parties',
     items: [
-      { to: '/customers', label: 'Customers', icon: Users },
-      { to: '/memberships', label: 'Memberships', icon: CreditCard }
+      { to: '/parties', label: 'All Parties', icon: Contact, phase: 'P1' },
+      { to: '/customers', label: 'Customers', icon: Users, phase: 'P1' },
+      { to: '/suppliers', label: 'Suppliers', icon: Truck, phase: 'P1' }
     ]
   },
   {
-    id: 'catalog',
-    label: 'Catalog',
+    id: 'items',
+    label: 'Items',
     items: [
-      { to: '/plans', label: 'Plans', icon: Package },
-      { to: '/offers', label: 'Offers', icon: BadgePercent }
+      { to: '/items', label: 'Items', icon: Package, phase: 'P1' },
+      { to: '/stock', label: 'Stock Summary', icon: Boxes, phase: 'P5' }
     ]
   },
   {
-    id: 'billing',
-    label: 'Billing',
+    id: 'reports',
+    label: 'Reports',
     items: [
-      { to: '/invoices', label: 'Invoices', icon: Receipt },
-      { to: '/collections', label: 'Daily Collection', icon: Landmark }
+      { to: '/reports/receivables', label: 'Receivables', icon: TrendingUp, phase: 'P3' },
+      { to: '/reports/payables', label: 'Payables', icon: TrendingDown, phase: 'P4' },
+      { to: '/reports/ageing', label: 'Ageing', icon: CalendarClock, phase: 'P3' },
+      { to: '/reports/trial-balance', label: 'Trial Balance', icon: Scale, phase: 'P2' },
+      { to: '/reports/profit-loss', label: 'Profit and Loss', icon: PieChart, phase: 'P6' },
+      { to: '/reports/balance-sheet', label: 'Balance Sheet', icon: Landmark, phase: 'P6' }
     ]
   },
   {
-    id: 'finance',
-    label: 'Finance',
+    id: 'masters',
+    label: 'Masters',
     items: [
-      { to: '/payments', label: 'Payments', icon: Wallet },
-      { to: '/refunds', label: 'Refunds & Credits', icon: Undo2 },
-      { to: '/reports', label: 'Reports', icon: BarChart3 }
+      { to: '/masters/accounts', label: 'Chart of Accounts', icon: ListTree, phase: 'P1' },
+      { to: '/masters/tax-rates', label: 'Tax Rates', icon: Percent, phase: 'P1' },
+      { to: '/masters/units', label: 'Units', icon: Ruler, phase: 'P1' }
     ]
   },
   {
-    id: 'settings',
-    label: 'Administration',
+    id: 'admin',
+    label: 'Admin',
     items: [
-      { to: '/settings/users', label: 'Users & Roles', icon: UserCog, requires: 'user.view' },
-      { to: '/settings/organization', label: 'Organization', icon: Building2, requires: 'org.view' }
+      { to: '/settings/company', label: 'Company', icon: Building2, requires: 'company.view' },
+      { to: '/settings/users', label: 'Users and Roles', icon: ShieldCheck, requires: 'user.view' }
     ]
   }
 ]
@@ -107,4 +119,14 @@ export function visibleGroups(
     ...group,
     items: group.items.filter((item) => can(permissions, isSuper, item.requires))
   })).filter((group) => group.items.length > 0)
+}
+
+export function titleForPath(pathname: string): string {
+  for (const group of NAV_GROUPS) {
+    for (const item of group.items) {
+      if (item.to === pathname) return item.label
+    }
+  }
+  if (pathname.startsWith('/reports/')) return 'Report'
+  return 'Crown Books'
 }

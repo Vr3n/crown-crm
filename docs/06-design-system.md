@@ -215,3 +215,41 @@ No spring physics in a data entry tool. No infinite animation. `prefers-reduced-
 - No card grid for lists that should be a table.
 - No rounded avatar circles in accounting rows. Initials in a 24px square, if any.
 - No gradients, no glass, no hero sections.
+
+## 12. Research: what we take from TallyPrime and QuickBooks
+
+The voucher screen and the registers were reviewed against real TallyPrime screens (sales voucher creation, day book, sales register) published by Tally Solutions, and against Intuit's published help documentation for QuickBooks Online lists, chart of accounts and invoice entry. QuickBooks product screenshots were not reachable from the build machine, so the QuickBooks observations below come from its documentation and long standing interface patterns rather than a live capture.
+
+### From TallyPrime
+
+1. **Entry is a document, not a form.** The sales voucher fills the window with a title band, a label and value header, then the item grid. There is no card, no modal, no wizard.
+2. **The header reads like a paper voucher.** Voucher type and number on the left, date and weekday on the right. Party and sales ledger are label and value pairs, with the party's current balance shown underneath in muted italic.
+3. **The grid is narrow.** Item, quantity, rate, per, amount. Numbers are right aligned, rows are tall, and there are no vertical rules. End of list is an explicit row.
+4. **Totals sit at the bottom right, narration at the bottom left.** Nothing floats or overlays.
+5. **Registers are dense and flat.** The day book repeats the date on every row and shows voucher type and number between the particulars and the amounts. The sales register groups by month and carries a closing balance with a Dr or Cr suffix.
+6. **Selection is amber.** The current row is a single amber band, not a border or a badge.
+7. **The period is stated in the header**, top right, above the columns.
+
+### From QuickBooks Online
+
+1. **Navigation follows the workflow**, not the database: Sales, Expenses, Reports, Taxes, Accounting. A persistent primary action sits in the top bar.
+2. **Lists carry their own toolbar**: search, filter, column settings, batch actions, export. Status is a word, not only a colour.
+3. **Forms have a right hand summary rail** with subtotal, tax and total, and often a recent transactions panel beside the form.
+4. **Detail pages combine profile, transactions and balance** on one screen, with notes and attachments close by.
+5. **Reports lead with filters and a period**, then summary figures, then the table with a totals row.
+6. **Empty states explain the next action** and offer it as a button.
+
+### What Crown Books does with this
+
+| Decision | Source |
+|---|---|
+| Voucher entry is a full page with a title band, label and value header, six column grid, bottom narration and totals | Tally structure, our tokens |
+| Party balance and credit position shown inline under the party field | Tally current balance, QuickBooks customer context |
+| Registers and day book use a flat table with a blue header band, amber selection and a totals row | Tally |
+| Every list gets a toolbar with search, filter chips, export and a primary action | QuickBooks |
+| Detail pages use a right hand summary rail for balance and open bills | QuickBooks |
+| Status is always a word with a small mark, never colour alone | Both |
+| Keyboard first: Alt shortcuts for voucher types, F2 date, F4 party, Ctrl+Enter post | Tally |
+| No pale tinted background, no card grid for data | Our Ledger Paper system |
+
+The result is Tally's speed with QuickBooks' legibility: dense documents, calm navigation, and numbers that line up.

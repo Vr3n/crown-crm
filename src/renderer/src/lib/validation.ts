@@ -48,11 +48,11 @@ export function mobileError(value: string): string | undefined {
   return undefined
 }
 
-/** Granular organization-name error. */
-export function organizationNameError(value: string): string | undefined {
+/** Granular company-name error. */
+export function companyNameError(value: string): string | undefined {
   const trimmed = value.trim()
-  if (trimmed.length === 0) return 'Organization name is required'
-  if (trimmed.length < 2) return 'Organization name must be at least 2 characters'
+  if (trimmed.length === 0) return 'Company name is required'
+  if (trimmed.length < 2) return 'Company name must be at least 2 characters'
   return undefined
 }
 
