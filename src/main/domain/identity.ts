@@ -1,28 +1,32 @@
 export type { SessionContext } from '../../shared/contracts/identity'
 
-export type OrgStatus = 'ACTIVE' | 'SUSPENDED' | 'TRIAL'
+export type CompanyStatus = 'ACTIVE' | 'SUSPENDED'
 export type UserStatus = 'ACTIVE' | 'DISABLED'
 export type StaffStatus = 'ACTIVE' | 'INVITED' | 'DISABLED'
+export type CostingMethod = 'WEIGHTED_AVERAGE' | 'FIFO'
+export type RoundOffMode = 'INVOICE' | 'LINE' | 'NONE'
 
-export interface Organization {
+export interface Company {
   id: number
   slug: string
   name: string
   legalName: string | null
-  billingEmail: string | null
-  mobileNumber: string
-  timezone: string | null
+  gstin: string | null
+  pan: string | null
+  stateCode: string
+  address: string | null
+  city: string | null
+  pincode: string | null
+  phone: string | null
+  email: string | null
   currency: string
-  logo: string | null
-  status: OrgStatus
-  planTier: string | null
-  /** Free-text T&C printed on Invoice Document footers (live-read on print). */
+  fyStartMonth: number
+  booksBeginDate: string
   invoiceTerms: string | null
-  /** Free-text T&C printed on Payment Receipt footers (live-read on print). */
-  receiptTerms: string | null
-  /** Free-text T&C printed on Refund Receipt footers (live-read on print). */
-  refundTerms: string | null
-  createdAt: string
+  costingMethod: CostingMethod
+  roundOffMode: RoundOffMode
+  allowNegativeStock: boolean
+  status: CompanyStatus
 }
 
 export interface User {
@@ -36,16 +40,16 @@ export interface User {
 
 export interface Role {
   id: number
-  organizationId: number
+  companyId: number
   name: string
   isSystemRole: boolean
   isSuper: boolean
   description: string | null
 }
 
-export interface OrganizationStaff {
+export interface CompanyStaff {
   id: number
-  organizationId: number
+  companyId: number
   userId: number
   roleId: number
   status: StaffStatus

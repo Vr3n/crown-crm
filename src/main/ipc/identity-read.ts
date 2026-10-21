@@ -1,40 +1,37 @@
 import { and, eq, sql } from 'drizzle-orm'
 import { getDrizzle } from '../db/connection'
-import {
-  organizations,
-  organizationStaff,
-  users,
-  roles,
-  rolePermissions,
-  permissions
-} from '../db/schema'
-import { currentOrganizationId } from '../auth/session'
+import { companies, companyUsers, users, roles, rolePermissions, permissions } from '../db/schema'
+import { currentCompanyId } from '../auth/session'
 import { IPC_CHANNELS } from '../../shared/contracts/ipc.channels'
 import { handle } from './handle'
 
 /**
- * Identity IPC handlers for reading/updating organization, staff, and roles.
+ * Identity IPC handlers for reading/updating company, staff, and roles.
  * Returns data in the renderer's expected shapes.
  */
 
-interface OrgRow {
+interface CompanyRow {
   id: number
   slug: string
   name: string
   legal_name: string | null
-  billing_email: string | null
-  mobile_number: string
-  timezone: string | null
+  gstin: string | null
+  pan: string | null
+  state_code: string
+  address: string | null
+  city: string | null
+  pincode: string | null
+  phone: string | null
+  email: string | null
   currency: string
-  logo: string | null
-  status: string
-  plan_tier: string | null
+  fy_start_month: number
+  books_begin_date: string
   invoice_terms: string | null
-  receipt_terms: string | null
-  refund_terms: string | null
-  created_at: string
+  costing_method: string
+  round_off_mode: string
+  allow_negative_stock: boolean
+  status: string
 }
-
 interface UserRow {
   id: number
   full_name: string
@@ -59,40 +56,41 @@ interface StaffRow {
 }
 
 export function registerIdentityReadIpc(): void {
-  handle(IPC_CHANNELS.IDENTITY_ORGANIZATION, () => {
-    const organizationId = currentOrganizationId()
-    const row = getDrizzle()
-      .select()
-      .from(organizations)
-      .where(eq(organizations.id, organizationId))
-      .get() as OrgRow | undefined
+  handle(IPC_CHANNELS.IDENTITY_COMPANY, () => {
+    const companyId = currentCompanyId()
+    const row = getDrizzle().select().from(companies).where(eq(companies.id, companyId)).get() as
+      CompanyRow | undefined
     if (!row) return null
     return {
       id: row.id,
       slug: row.slug,
       name: row.name,
       legalName: row.legal_name,
-      billingEmail: row.billing_email,
-      mobileNumber: row.mobile_number,
-      timezone: row.timezone,
+      gstin: row.gstin,
+      pan: row.pan,
+      stateCode: row.state_code,
+      address: row.address,
+      city: row.city,
+      pincode: row.pincode,
+      phone: row.phone,
+      email: row.email,
       currency: row.currency,
-      logo: row.logo ?? null,
-      status: row.status,
-      planTier: row.plan_tier,
+      fyStartMonth: row.fy_start_month,
+      booksBeginDate: row.books_begin_date,
       invoiceTerms: row.invoice_terms,
-      receiptTerms: row.receipt_terms,
-      refundTerms: row.refund_terms,
-      createdAt: row.created_at
+      costingMethod: row.costing_method,
+      roundOffMode: row.round_off_mode,
+      allowNegativeStock: row.allow_negative_stock,
+      status: row.status
     }
   })
-
   handle(IPC_CHANNELS.IDENTITY_STAFF, () => {
-    const organizationId = currentOrganizationId()
+    const companyId = currentCompanyId()
 
     const staffRows = getDrizzle()
       .select()
-      .from(organizationStaff)
-      .where(eq(organizationStaff.organization_id, organizationId))
+      .from(companyUsers)
+      .where(eq(companyUsers.company_id, companyId))
       .all() as StaffRow[]
 
     if (staffRows.length === 0) return []
@@ -142,12 +140,12 @@ export function registerIdentityReadIpc(): void {
   })
 
   handle(IPC_CHANNELS.IDENTITY_ROLES, () => {
-    const organizationId = currentOrganizationId()
+    const companyId = currentCompanyId()
 
     const roleRows = getDrizzle()
       .select()
       .from(roles)
-      .where(eq(roles.organization_id, organizationId))
+      .where(eq(roles.company_id, companyId))
       .all() as RoleRow[]
 
     return roleRows.map((r) => {
@@ -169,13 +167,8 @@ export function registerIdentityReadIpc(): void {
       // Count staff with this role
       const staffCount = getDrizzle()
         .select({ n: sql<number>`count(*)` })
-        .from(organizationStaff)
-        .where(
-          and(
-            eq(organizationStaff.organization_id, organizationId),
-            eq(organizationStaff.role_id, r.id)
-          )
-        )
+        .from(companyUsers)
+        .where(and(eq(companyUsers.company_id, companyId), eq(companyUsers.role_id, r.id)))
         .get()
 
       return {

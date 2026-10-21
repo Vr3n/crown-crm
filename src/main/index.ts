@@ -7,34 +7,22 @@ import { runMigrations } from './db/migrations'
 import { seedPermissions } from './db/seed'
 import { logger } from './lib/logger'
 import { registerIdentityIpc } from './ipc/identity'
-import { registerSalesIpc } from './ipc/sales'
-import { registerCatalogIpc } from './ipc/catalog'
-import { registerBillingIpc } from './ipc/billing'
-import { registerFinanceIpc } from './ipc/finance'
-import { registerCustomersIpc } from './ipc/customers'
-import { registerInvoicesIpc } from './ipc/invoices'
-import { registerMembershipsIpc } from './ipc/memberships'
-import { registerDashboardIpc } from './ipc/dashboard'
-import { registerCollectionsIpc } from './ipc/collections'
 import { registerIdentityReadIpc } from './ipc/identity-read'
-import { registerPdfIpc } from './ipc/pdf'
-import { registerExportIpc } from './ipc/export'
+import { registerDashboardIpc } from './ipc/dashboard'
 import { registerLicenseIpc } from './ipc/license'
-import { registerBlacklistIpc } from './ipc/blacklist'
-import { registerPersonPhotoIpc } from './ipc/person'
-import { registerOrgLogoIpc } from './ipc/organization-logo'
-import { configurePhotoStorage } from './lib/photo-storage'
 import { restoreRememberedLogin } from './application/identity'
-import { processScheduledRefunds } from './application/finance'
 import { ensureInstallLock } from './licensing/ensure'
 import { generateInstallLock, getInstallDir } from './licensing/install-lock'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1440,
+    height: 900,
+    minWidth: 1180,
+    minHeight: 720,
     show: false,
     autoHideMenuBar: true,
+    backgroundColor: '#F6F4EF',
     ...(process.platform === 'win32' ? { icon } : {}),
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -60,11 +48,9 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('com.crowncrm.app')
+  electronApp.setAppUserModelId('com.crownbooks.app')
 
-  // Install-time machine binding: the NSIS installer runs the freshly
-  // installed exe with --generate-binding (elevated) to write machine.lock
-  // into the install directory. Do nothing else and exit immediately.
+  // Install-time machine binding, unchanged from the previous product.
   if (process.argv.includes('--generate-binding')) {
     try {
       generateInstallLock(getInstallDir())
@@ -77,55 +63,29 @@ app.whenReady().then(async () => {
     return
   }
 
-  // Ensure the install lock exists (no-op on a normally installed app);
-  // verifyInstallLock / LicenseGate refuse to run when it is missing or the
-  // machine does not match.
   ensureInstallLock()
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // Database foundation: connection -> migrations -> seeds
+  // Database foundation: connection -> migrations -> permission catalog
   logger.info('main process started', {
-    logLevel: process.env.GYMCRM_LOG_LEVEL ?? 'info',
-    database: join(app.getPath('userData'), 'CrownCRM.db')
+    logLevel: process.env.CROWN_BOOKS_LOG_LEVEL ?? 'info',
+    database: join(app.getPath('userData'), 'crown-books.db')
   })
-  openDatabase(join(app.getPath('userData'), 'CrownCRM.db'))
+  openDatabase(join(app.getPath('userData'), 'crown-books.db'))
   runMigrations()
   seedPermissions()
 
-  // Issue any scheduled refunds whose cancellation date has arrived
-  // (offline app — runs on every launch; also triggered from the Refunds page).
-  processScheduledRefunds()
-
-  // Configure photo storage with the app's userData directory
-  configurePhotoStorage(app.getPath('userData'))
-
-  // Restore any remembered login BEFORE the window loads, so the renderer's first
-  // identity.status() already reports AUTHENTICATED (no login-screen flash).
-  // Ordering matters: seedPermissions() must run first because the session context
-  // resolves Role -> Permission mappings that live in the seeded permissions table.
+  // Restore a remembered login before the window loads, so the renderer's first
+  // status call does not flash the login screen.
   await restoreRememberedLogin()
 
-  // IPC (channels are the only way the renderer touches the database)
   registerIdentityIpc()
-  registerSalesIpc()
-  registerCatalogIpc()
-  registerBillingIpc()
-  registerFinanceIpc()
-  registerCustomersIpc()
-  registerInvoicesIpc()
-  registerMembershipsIpc()
-  registerDashboardIpc()
-  registerCollectionsIpc()
   registerIdentityReadIpc()
-  registerPdfIpc()
-  registerExportIpc()
+  registerDashboardIpc()
   registerLicenseIpc()
-  registerBlacklistIpc()
-  registerPersonPhotoIpc()
-  registerOrgLogoIpc()
 
   createWindow()
 

@@ -3,9 +3,9 @@ import { ValidationError } from './errors'
 /**
  * Shared business-date / timezone primitives (Module 04 §36, #110).
  *
- * Central rule: a business date is an Organization-local calendar day, while
+ * Central rule: a business date is an Company-local calendar day, while
  * `created_at` is an audit timestamp. `finalized_at` is instant-shaped storage
- * with day-precision business meaning — the Organization-local date
+ * with day-precision business meaning — the Company-local date
  * represented at noon, converted to UTC. Noon-anchoring keeps ±14h offsets
  * (including DST zones) from flipping the calendar day.
  *
@@ -45,7 +45,7 @@ export function assertValidBusinessDate(value: string, field = 'date'): void {
   }
 }
 
-/** Today's Organization-local wall date as YYYY-MM-DD. */
+/** Today's Company-local wall date as YYYY-MM-DD. */
 export function todayInOrgTz(timezone: string, now: Date = new Date()): string {
   const tz = resolveTimezone(timezone)
   return new Intl.DateTimeFormat('en-CA', {
@@ -72,7 +72,7 @@ export function tzOffsetMinutes(tz: string, date: Date): number {
 
 /**
  * Business date → UTC ISO instant for storage/transport.
- * Anchors at 12:00 Organization-local so the UTC instant always falls on the
+ * Anchors at 12:00 Company-local so the UTC instant always falls on the
  * same calendar day in every timezone.
  */
 export function businessDateToUtc(dateOnly: string, timezone: string): string {
@@ -100,7 +100,7 @@ export function parseStoredInstant(raw: string): Date | null {
 }
 
 /**
- * True instant → Excel cell Date showing Organization-local wall time.
+ * True instant → Excel cell Date showing Company-local wall time.
  * Excel carries no timezone: the serial is built from the wall fields via
  * `Date.UTC`, so the formatted cell reads the gym's wall clock.
  */

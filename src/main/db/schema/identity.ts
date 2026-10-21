@@ -2,50 +2,39 @@ import { sql } from 'drizzle-orm'
 import { index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 
 /**
- * Identity & tenancy schema (foundation). Mirrors the shipped migration
- * `identity_tenancy` + `app_meta` exactly: column names, nullability, defaults,
- * unique constraints, and indexes are the source of truth that the generated
- * `0000_identity` migration is created from, and that existing databases are
- * reconciled against at startup.
+ * Tenancy and access.
+ *
+ * A company is one set of books. Version 1 runs one active company per
+ * installation, but every table in the product carries `company_id`, so adding
+ * a company switcher later needs no migration.
  */
-
-export const organizations = sqliteTable('organizations', {
+export const companies = sqliteTable('companies', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   slug: text('slug').notNull().unique(),
   name: text('name').notNull(),
   legal_name: text('legal_name'),
-  billing_email: text('billing_email'),
-  mobile_number: text('mobile_number').notNull(),
-  timezone: text('timezone'),
-  currency: text('currency').notNull().default('INR'),
-  org_invoice_prefix: text('org_invoice_prefix'),
-  logo: text('logo'),
-  address: text('address'),
   gstin: text('gstin'),
-  /**
-   * Free-text Terms & Conditions printed on Invoice Document footers (live-read
-   * on each print, never snapshotted). Edited in Organization settings; a
-   * seeded default is supplied so new receipts are never blank.
-   */
+  pan: text('pan'),
+  state_code: text('state_code').notNull(),
+  address: text('address'),
+  city: text('city'),
+  pincode: text('pincode'),
+  phone: text('phone'),
+  email: text('email'),
+  currency: text('currency').notNull().default('INR'),
+  fy_start_month: integer('fy_start_month').notNull().default(4),
+  books_begin_date: text('books_begin_date').notNull(),
+  logo: text('logo'),
+  invoice_prefix: text('invoice_prefix'),
   invoice_terms: text('invoice_terms').default(
-    "1. This is a computer-generated invoice and is valid without a signature.\n2. Fees for the agreed membership period are payable in full once billed.\n3. Report any billing discrepancy within 7 days of the invoice date.\n4. This invoice is subject to the gym cancellation, freeze and proration policies in force."
+    '1. This is a computer generated invoice and is valid without a signature.\n2. Goods once sold will not be taken back after 7 days.\n3. Report any discrepancy within 7 days of the invoice date.'
   ),
-  /**
-   * Free-text Terms & Conditions printed on Payment Receipt footers (live-read
-   * on each print, never snapshotted). Edited in Organization settings.
-   */
-  receipt_terms: text('receipt_terms').default(
-    "1. This receipt acknowledges payment received for the stated membership.\n2. Please keep this receipt for your records.\n3. This is a computer-generated document and needs no signature."
-  ),
-  /**
-   * Free-text Terms & Conditions printed on Refund Receipt footers (live-read
-   * on each print, never snapshotted). Edited in Organization settings.
-   */
-  refund_terms: text('refund_terms').default(
-    "1. Refunds are issued per the applicable cancellation policy.\n2. Refunded value returns via the method shown above.\n3. This is a computer-generated document and needs no signature."
-  ),
+  costing_method: text('costing_method').notNull().default('WEIGHTED_AVERAGE'),
+  round_off_mode: text('round_off_mode').notNull().default('INVOICE'),
+  allow_negative_stock: integer('allow_negative_stock', { mode: 'boolean' })
+    .notNull()
+    .default(true),
   status: text('status').notNull().default('ACTIVE'),
-  plan_tier: text('plan_tier'),
   created_at: text('created_at')
     .notNull()
     .default(sql`(datetime('now'))`)
@@ -66,15 +55,15 @@ export const roles = sqliteTable(
   'roles',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    organization_id: integer('organization_id')
+    company_id: integer('company_id')
       .notNull()
-      .references(() => organizations.id),
+      .references(() => companies.id),
     name: text('name').notNull(),
     is_system_role: integer('is_system_role', { mode: 'boolean' }).notNull().default(false),
     is_super: integer('is_super', { mode: 'boolean' }).notNull().default(false),
     description: text('description')
   },
-  (table) => [unique().on(table.organization_id, table.name)]
+  (table) => [unique().on(table.company_id, table.name)]
 )
 
 export const permissions = sqliteTable('permissions', {
@@ -96,13 +85,13 @@ export const rolePermissions = sqliteTable(
   (table) => [primaryKey({ columns: [table.role_id, table.permission_id] })]
 )
 
-export const organizationStaff = sqliteTable(
-  'organization_staff',
+export const companyUsers = sqliteTable(
+  'company_users',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    organization_id: integer('organization_id')
+    company_id: integer('company_id')
       .notNull()
-      .references(() => organizations.id),
+      .references(() => companies.id),
     user_id: integer('user_id')
       .notNull()
       .references(() => users.id),
@@ -115,9 +104,9 @@ export const organizationStaff = sqliteTable(
       .default(sql`(datetime('now'))`)
   },
   (table) => [
-    unique().on(table.organization_id, table.user_id),
-    index('idx_staff_org').on(table.organization_id),
-    index('idx_staff_user').on(table.user_id)
+    unique().on(table.company_id, table.user_id),
+    index('idx_company_users_company').on(table.company_id),
+    index('idx_company_users_user').on(table.user_id)
   ]
 )
 

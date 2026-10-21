@@ -24,9 +24,7 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 function daysBetween(from: string, to: string): number {
   const [fy, fm, fd] = from.split('-').map(Number)
   const [ty, tm, td] = to.split('-').map(Number)
-  return Math.round(
-    (Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86_400_000
-  )
+  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86_400_000)
 }
 
 /** Financial year label for a YYYY-MM-DD date (April–March), e.g. "FY 2025-26". */

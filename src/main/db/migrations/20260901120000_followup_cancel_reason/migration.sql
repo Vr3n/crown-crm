@@ -1,1 +1,0 @@
-ALTER TABLE `lead_followups` ADD `cancelled_reason` text;

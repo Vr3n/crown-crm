@@ -7,7 +7,7 @@ export interface OrgBranding {
   gstin?: string | null
   mobileNumber: string
   invoicePrefix?: string | null
-  /** Organization timezone — `generatedAt` is rendered in it. */
+  /** Company timezone — `generatedAt` is rendered in it. */
   timezone?: string | null
   /** Terms & Conditions printed on Invoice Document footers. */
   invoiceTerms?: string | null

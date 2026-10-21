@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Search, Sun, Moon, LogOut, UserRound, Command, Crown } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Search, Sun, Moon, LogOut, UserRound, Command } from 'lucide-react'
+import { toast } from 'sonner'
 import { useSession } from '@/context/session-context'
 import { useTheme } from '@/lib/theme'
-import { NAV_GROUPS } from '@/lib/navigation'
+import { titleForPath } from '@/lib/navigation'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -14,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,70 +26,79 @@ import {
 } from '@/components/ui/alert-dialog'
 import { initials } from '@/lib/validation'
 
-function currentTitle(pathname: string): string {
-  for (const group of NAV_GROUPS) {
-    for (const item of group.items) {
-      if (item.to === pathname) return item.label
-    }
-  }
-  return 'Dashboard'
+function financialYearLabel(date = new Date()): string {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const start = month >= 3 ? year : year - 1
+  return `FY ${start}-${String((start + 1) % 100).padStart(2, '0')}`
 }
 
-export function Topbar({ onOpenSearch }: { onOpenSearch: () => void }): React.JSX.Element {
+export function Topbar(): React.JSX.Element {
   const location = useLocation()
   const session = useSession()
   const { theme, setTheme } = useTheme()
   const [signOutOpen, setSignOutOpen] = useState(false)
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
-      {/* Mobile brand mark — visible only when sidebar is hidden */}
-      <div className="flex items-center gap-2 lg:hidden">
-        <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Crown className="size-4" />
-        </div>
-        <span className="truncate font-heading text-sm font-semibold tracking-tight">
-          {session.organizationName}
-        </span>
-      </div>
-
-      <h1 className="hidden shrink-0 font-heading text-base font-semibold tracking-tight lg:block">
-        {currentTitle(location.pathname)}
+    <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card px-5">
+      <h1 className="shrink-0 text-[13.5px] font-semibold tracking-tight">
+        {titleForPath(location.pathname)}
       </h1>
+
+      <span className="hidden shrink-0 border-l border-border pl-3 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground sm:inline">
+        {financialYearLabel()}
+      </span>
 
       <button
         type="button"
-        onClick={onOpenSearch}
-        className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border bg-muted/50 px-3 text-sm text-muted-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+        onClick={() =>
+          toast.info('Search arrives with the first vouchers', {
+            description: 'Party, item and voucher search lands in Phase 2.'
+          })
+        }
+        className="ml-4 flex h-8 min-w-0 flex-1 items-center gap-2 border border-border bg-background px-2.5 text-[12px] text-muted-foreground transition-colors hover:border-rule-strong hover:text-foreground"
       >
-        <Search className="size-4" />
-        <span className="flex-1 truncate text-left">Search people, invoices…</span>
-        <kbd className="flex items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+        <Search className="size-3.5" strokeWidth={1.75} />
+        <span className="flex-1 truncate text-left">Search parties, items, vouchers</span>
+        <kbd className="hidden items-center gap-0.5 border border-border bg-muted px-1 py-0.5 font-mono text-[9px] sm:flex">
           <Command className="size-2.5" />K
         </kbd>
       </button>
 
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1">
         <Button
           variant="ghost"
           size="icon"
           aria-label="Toggle theme"
+          className="size-8"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         >
-          {theme === 'dark' ? <Sun className="size-4.5" /> : <Moon className="size-4.5" />}
+          {theme === 'dark' ? (
+            <Sun className="size-4" strokeWidth={1.75} />
+          ) : (
+            <Moon className="size-4" strokeWidth={1.75} />
+          )}
         </Button>
+
+        <span className="mx-1 h-5 w-px bg-border" />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex items-center gap-2 rounded-md p-1 transition-colors hover:bg-accent"
+              className="flex items-center gap-2 px-1 py-1 transition-colors hover:bg-accent"
               aria-label="Account menu"
             >
-              <Avatar className="size-8">
-                <AvatarFallback className="bg-primary/10 font-heading text-sm font-semibold text-primary">
-                  {initials(session.userFullName)}
-                </AvatarFallback>
-              </Avatar>
+              <span className="flex size-7 items-center justify-center bg-accent-soft text-[10.5px] font-semibold text-primary">
+                {initials(session.userFullName)}
+              </span>
+              <span className="hidden text-left md:block">
+                <span className="block text-[11.5px] font-medium leading-tight">
+                  {session.userFullName}
+                </span>
+                <span className="block text-[10px] leading-tight text-muted-foreground">
+                  {session.roleName}
+                </span>
+              </span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -98,7 +106,7 @@ export function Topbar({ onOpenSearch }: { onOpenSearch: () => void }): React.JS
               <div className="flex flex-col">
                 <span className="truncate text-sm font-medium">{session.userFullName}</span>
                 <span className="truncate text-xs font-normal text-muted-foreground">
-                  {session.roleName} · {session.organizationName}
+                  {session.roleName} · {session.companyName}
                 </span>
               </div>
             </DropdownMenuLabel>
@@ -108,11 +116,7 @@ export function Topbar({ onOpenSearch }: { onOpenSearch: () => void }): React.JS
               Account settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => setSignOutOpen(true)}
-              className={cn('text-destructive focus:text-destructive')}
-            >
+            <DropdownMenuItem variant="destructive" onClick={() => setSignOutOpen(true)}>
               <LogOut className="size-4" />
               Sign out
             </DropdownMenuItem>
@@ -122,24 +126,17 @@ export function Topbar({ onOpenSearch }: { onOpenSearch: () => void }): React.JS
 
       <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
         <AlertDialogContent>
-          <div className="flex size-11 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-            <LogOut className="size-5" />
-          </div>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl">
-              Sign out of {session.organizationName}?
+            <AlertDialogTitle className="text-lg">
+              Sign out of {session.companyName}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              You will need to log back in to continue.
+              You will need to sign in again to continue.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="ghost"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive/20"
-              onClick={() => void session.onSignOut()}
-            >
+            <AlertDialogAction variant="ghost" onClick={() => void session.onSignOut()}>
               Sign out
             </AlertDialogAction>
           </AlertDialogFooter>

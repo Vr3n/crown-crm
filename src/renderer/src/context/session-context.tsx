@@ -3,9 +3,9 @@ import { createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
 
 export interface SessionContextValue {
-  organizationId: number
-  organizationSlug: string
-  organizationName: string
+  companyId: number
+  companySlug: string
+  companyName: string
   userId: number
   userFullName: string
   userEmail: string

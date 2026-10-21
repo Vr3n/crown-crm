@@ -1,7 +1,7 @@
 {
-  "name": "CrownCRM",
-  "version": "1.0.1",
-  "description": "CrownCRM — offline-first gym membership CRM desktop app",
+  "name": "crown-books",
+  "version": "0.1.0",
+  "description": "Crown Books - offline-first accounting for small businesses",
   "main": "./out/main/index.js",
   "author": "Viren Patel",
   "repository": {

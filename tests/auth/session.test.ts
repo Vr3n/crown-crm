@@ -4,7 +4,7 @@ import {
   setSession,
   requireSession,
   requirePermission,
-  currentOrganizationId
+  currentCompanyId
 } from '../../src/main/auth/session'
 import { PERMISSIONS } from '../../src/main/db/permissions'
 import { ForbiddenError, UnauthenticatedError } from '../../src/main/domain/errors'
@@ -12,9 +12,9 @@ import type { SessionContext } from '../../src/main/domain/identity'
 
 function makeSession(overrides: Partial<SessionContext> = {}): SessionContext {
   return {
-    organizationId: 1,
-    organizationSlug: 'example-gym',
-    organizationName: 'Example Gym',
+    companyId: 1,
+    companySlug: 'example-gym',
+    companyName: 'Example Gym',
     userId: 1,
     userFullName: 'Neha',
     userEmail: 'neha@example.com',
@@ -68,7 +68,7 @@ describe('requirePermission', () => {
 
   it('grants every permission to a super role without enumeration', () => {
     setSession(makeSession({ isSuper: true, permissions: [] }))
-    expect(() => requirePermission(PERMISSIONS.ORG_MANAGE)).not.toThrow()
+    expect(() => requirePermission(PERMISSIONS.COMPANY_MANAGE)).not.toThrow()
     expect(() => requirePermission(PERMISSIONS.USER_CREATE)).not.toThrow()
     expect(() => requirePermission(PERMISSIONS.ROLE_MANAGE)).not.toThrow()
   })
@@ -84,13 +84,13 @@ describe('requirePermission', () => {
   })
 })
 
-describe('currentOrganizationId', () => {
-  it('returns the active organization from the session', () => {
-    setSession(makeSession({ organizationId: 7 }))
-    expect(currentOrganizationId()).toBe(7)
+describe('currentCompanyId', () => {
+  it('returns the active company from the session', () => {
+    setSession(makeSession({ companyId: 7 }))
+    expect(currentCompanyId()).toBe(7)
   })
 
   it('throws when unauthenticated', () => {
-    expect(() => currentOrganizationId()).toThrow()
+    expect(() => currentCompanyId()).toThrow()
   })
 })

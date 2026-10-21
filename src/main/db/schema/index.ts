@@ -1,517 +1,247 @@
 import { defineRelations } from 'drizzle-orm'
 import {
   appMeta,
-  organizationStaff,
-  organizations,
+  companies,
+  companyUsers,
   permissions,
   rolePermissions,
   roles,
   users
 } from './identity'
 import {
-  leadActivities,
-  leadActivityTypes,
-  leadFollowups,
-  leadLostReasons,
-  leadSources,
-  leadStageHistory,
-  leadStages,
-  leads,
-  people
-} from './sales'
+  accountGroups,
+  accounts,
+  godowns,
+  items,
+  partyAccounts,
+  parties,
+  stockGroups,
+  taxRates,
+  units
+} from './accounting'
 import {
-  cancellationPolicies,
-  freezePolicies,
-  membershipPlanVersions,
-  membershipPlans,
-  offerRedemptions,
-  offerVersions,
-  offers,
-  prorationPolicies
-} from './catalog'
-import { customers, memberships, membershipFreezes, membershipEvents } from './membership'
-import { invoices, invoiceLines, invoiceSequence } from './billing'
-import {
-  paymentMethods,
-  payments,
-  paymentAllocations,
-  refunds,
-  credits,
-  creditAllocations
-} from './finance'
+  billAllocations,
+  ledgerLines,
+  stockMovements,
+  voucherItemLines,
+  voucherSequences,
+  vouchers
+} from './documents'
+import { auditEvents, paymentMethods } from './operations'
 import { idempotencyKeys } from './idempotency'
 
 export * from './identity'
-export * from './sales'
-export * from './catalog'
-export * from './membership'
-export * from './billing'
-export * from './finance'
+export * from './accounting'
+export * from './documents'
+export * from './operations'
 export * from './idempotency'
 
-/**
- * The combined schema object passed to `drizzle()`. All tables from every module
- * are registered here.
- */
 export const schema = {
   appMeta,
-  cancellationPolicies,
-  creditAllocations,
-  credits,
-  customers,
-  freezePolicies,
-  idempotencyKeys,
-  invoiceLines,
-  invoiceSequence,
-  invoices,
-  leadActivities,
-  leadActivityTypes,
-  leadFollowups,
-  leadLostReasons,
-  leadSources,
-  leadStageHistory,
-  leadStages,
-  leads,
-  membershipEvents,
-  membershipFreezes,
-  membershipPlanVersions,
-  membershipPlans,
-  memberships,
-  offerRedemptions,
-  offerVersions,
-  offers,
-  organizationStaff,
-  organizations,
-  paymentAllocations,
-  paymentMethods,
-  payments,
-  people,
+  companies,
+  companyUsers,
   permissions,
-  prorationPolicies,
-  refunds,
   rolePermissions,
   roles,
-  users
+  users,
+  accountGroups,
+  accounts,
+  godowns,
+  items,
+  partyAccounts,
+  parties,
+  stockGroups,
+  taxRates,
+  units,
+  billAllocations,
+  ledgerLines,
+  stockMovements,
+  voucherItemLines,
+  voucherSequences,
+  vouchers,
+  auditEvents,
+  paymentMethods,
+  idempotencyKeys
 }
 
 /**
- * Relational config. Declared for schema completeness; repositories query with
- * explicit joins via the Drizzle select builder (never `db.query.*`), per the
- * ORM conventions.
+ * Relational config passed to `drizzle()`. Repositories query with explicit
+ * joins; this exists so `db.query` remains usable for small reads.
  */
 export const relations = defineRelations(schema, (helpers) => ({
-  organizations: {
-    roles: helpers.many.roles({
-      from: helpers.organizations.id,
-      to: helpers.roles.organization_id
+  companies: {
+    roles: helpers.many.roles({ from: helpers.companies.id, to: helpers.roles.company_id }),
+    staff: helpers.many.companyUsers({
+      from: helpers.companies.id,
+      to: helpers.companyUsers.company_id
     }),
-    staff: helpers.many.organizationStaff({
-      from: helpers.organizations.id,
-      to: helpers.organizationStaff.organization_id
-    })
+    parties: helpers.many.parties({ from: helpers.companies.id, to: helpers.parties.company_id }),
+    items: helpers.many.items({ from: helpers.companies.id, to: helpers.items.company_id }),
+    vouchers: helpers.many.vouchers({ from: helpers.companies.id, to: helpers.vouchers.company_id })
   },
   users: {
-    staff: helpers.many.organizationStaff({
-      from: helpers.users.id,
-      to: helpers.organizationStaff.user_id
-    })
+    staff: helpers.many.companyUsers({ from: helpers.users.id, to: helpers.companyUsers.user_id })
   },
   roles: {
-    organization: helpers.one.organizations({
-      from: helpers.roles.organization_id,
-      to: helpers.organizations.id
-    }),
-    staff: helpers.many.organizationStaff({
-      from: helpers.roles.id,
-      to: helpers.organizationStaff.role_id
-    }),
+    company: helpers.one.companies({ from: helpers.roles.company_id, to: helpers.companies.id }),
     permissions: helpers.many.rolePermissions({
       from: helpers.roles.id,
       to: helpers.rolePermissions.role_id
     })
   },
-  permissions: {
-    roles: helpers.many.rolePermissions({
-      from: helpers.permissions.id,
-      to: helpers.rolePermissions.permission_id
-    })
-  },
   rolePermissions: {
-    role: helpers.one.roles({
-      from: helpers.rolePermissions.role_id,
-      to: helpers.roles.id
-    }),
+    role: helpers.one.roles({ from: helpers.rolePermissions.role_id, to: helpers.roles.id }),
     permission: helpers.one.permissions({
       from: helpers.rolePermissions.permission_id,
       to: helpers.permissions.id
     })
   },
-  organizationStaff: {
-    organization: helpers.one.organizations({
-      from: helpers.organizationStaff.organization_id,
-      to: helpers.organizations.id
+  companyUsers: {
+    company: helpers.one.companies({
+      from: helpers.companyUsers.company_id,
+      to: helpers.companies.id
     }),
-    user: helpers.one.users({
-      from: helpers.organizationStaff.user_id,
-      to: helpers.users.id
+    user: helpers.one.users({ from: helpers.companyUsers.user_id, to: helpers.users.id }),
+    role: helpers.one.roles({ from: helpers.companyUsers.role_id, to: helpers.roles.id })
+  },
+  accounts: {
+    company: helpers.one.companies({ from: helpers.accounts.company_id, to: helpers.companies.id }),
+    group: helpers.one.accountGroups({
+      from: helpers.accounts.group_id,
+      to: helpers.accountGroups.id
     }),
-    role: helpers.one.roles({
-      from: helpers.organizationStaff.role_id,
-      to: helpers.roles.id
+    ledgerLines: helpers.many.ledgerLines({
+      from: helpers.accounts.id,
+      to: helpers.ledgerLines.account_id
     })
   },
-  people: {
-    organization: helpers.one.organizations({
-      from: helpers.people.organization_id,
-      to: helpers.organizations.id
+  parties: {
+    company: helpers.one.companies({ from: helpers.parties.company_id, to: helpers.companies.id }),
+    accounts: helpers.many.partyAccounts({
+      from: helpers.parties.id,
+      to: helpers.partyAccounts.party_id
     }),
-    leads: helpers.many.leads({
-      from: helpers.people.id,
-      to: helpers.leads.person_id
+    vouchers: helpers.many.vouchers({ from: helpers.parties.id, to: helpers.vouchers.party_id })
+  },
+  partyAccounts: {
+    party: helpers.one.parties({ from: helpers.partyAccounts.party_id, to: helpers.parties.id }),
+    account: helpers.one.accounts({
+      from: helpers.partyAccounts.account_id,
+      to: helpers.accounts.id
     })
   },
-  leads: {
-    organization: helpers.one.organizations({
-      from: helpers.leads.organization_id,
-      to: helpers.organizations.id
+  items: {
+    company: helpers.one.companies({ from: helpers.items.company_id, to: helpers.companies.id }),
+    unit: helpers.one.units({ from: helpers.items.uom_id, to: helpers.units.id }),
+    stockGroup: helpers.one.stockGroups({
+      from: helpers.items.stock_group_id,
+      to: helpers.stockGroups.id
     }),
-    person: helpers.one.people({
-      from: helpers.leads.person_id,
-      to: helpers.people.id
-    }),
-    source: helpers.one.leadSources({
-      from: helpers.leads.source_id,
-      to: helpers.leadSources.id
-    }),
-    currentStage: helpers.one.leadStages({
-      from: helpers.leads.current_stage_id,
-      to: helpers.leadStages.id
-    }),
-    owner: helpers.one.users({
-      from: helpers.leads.owner_user_id,
-      to: helpers.users.id
-    }),
-    plan: helpers.one.membershipPlans({
-      from: helpers.leads.plan_id,
-      to: helpers.membershipPlans.id
-    }),
-    activities: helpers.many.leadActivities({
-      from: helpers.leads.id,
-      to: helpers.leadActivities.lead_id
-    }),
-    followups: helpers.many.leadFollowups({
-      from: helpers.leads.id,
-      to: helpers.leadFollowups.lead_id
-    }),
-    stageHistory: helpers.many.leadStageHistory({
-      from: helpers.leads.id,
-      to: helpers.leadStageHistory.lead_id
+    stockMovements: helpers.many.stockMovements({
+      from: helpers.items.id,
+      to: helpers.stockMovements.item_id
     })
   },
-  leadStages: {
-    organization: helpers.one.organizations({
-      from: helpers.leadStages.organization_id,
-      to: helpers.organizations.id
+  vouchers: {
+    company: helpers.one.companies({ from: helpers.vouchers.company_id, to: helpers.companies.id }),
+    party: helpers.one.parties({ from: helpers.vouchers.party_id, to: helpers.parties.id }),
+    itemLines: helpers.many.voucherItemLines({
+      from: helpers.vouchers.id,
+      to: helpers.voucherItemLines.voucher_id
+    }),
+    ledgerLines: helpers.many.ledgerLines({
+      from: helpers.vouchers.id,
+      to: helpers.ledgerLines.voucher_id
+    }),
+    stockMovements: helpers.many.stockMovements({
+      from: helpers.vouchers.id,
+      to: helpers.stockMovements.voucher_id
     })
   },
-  membershipPlans: {
-    organization: helpers.one.organizations({
-      from: helpers.membershipPlans.organization_id,
-      to: helpers.organizations.id
+  voucherItemLines: {
+    voucher: helpers.one.vouchers({
+      from: helpers.voucherItemLines.voucher_id,
+      to: helpers.vouchers.id
     }),
-    leads: helpers.many.leads({
-      from: helpers.membershipPlans.id,
-      to: helpers.leads.plan_id
+    item: helpers.one.items({ from: helpers.voucherItemLines.item_id, to: helpers.items.id })
+  },
+  ledgerLines: {
+    voucher: helpers.one.vouchers({
+      from: helpers.ledgerLines.voucher_id,
+      to: helpers.vouchers.id
     }),
-    versions: helpers.many.membershipPlanVersions({
-      from: helpers.membershipPlans.id,
-      to: helpers.membershipPlanVersions.plan_id
+    account: helpers.one.accounts({
+      from: helpers.ledgerLines.account_id,
+      to: helpers.accounts.id
     }),
-    freezePolicy: helpers.one.freezePolicies({
-      from: helpers.membershipPlans.freeze_policy_id,
-      to: helpers.freezePolicies.id
+    party: helpers.one.parties({ from: helpers.ledgerLines.party_id, to: helpers.parties.id })
+  },
+  stockMovements: {
+    voucher: helpers.one.vouchers({
+      from: helpers.stockMovements.voucher_id,
+      to: helpers.vouchers.id
     }),
-    prorationPolicy: helpers.one.prorationPolicies({
-      from: helpers.membershipPlans.proration_policy_id,
-      to: helpers.prorationPolicies.id
+    item: helpers.one.items({ from: helpers.stockMovements.item_id, to: helpers.items.id }),
+    godown: helpers.one.godowns({ from: helpers.stockMovements.godown_id, to: helpers.godowns.id })
+  },
+  billAllocations: {
+    from: helpers.one.vouchers({
+      from: helpers.billAllocations.from_voucher_id,
+      to: helpers.vouchers.id
     }),
-    cancellationPolicy: helpers.one.cancellationPolicies({
-      from: helpers.membershipPlans.cancellation_policy_id,
-      to: helpers.cancellationPolicies.id
+    to: helpers.one.vouchers({
+      from: helpers.billAllocations.to_voucher_id,
+      to: helpers.vouchers.id
     })
   },
-  membershipPlanVersions: {
-    organization: helpers.one.organizations({
-      from: helpers.membershipPlanVersions.organization_id,
-      to: helpers.organizations.id
-    }),
-    plan: helpers.one.membershipPlans({
-      from: helpers.membershipPlanVersions.plan_id,
-      to: helpers.membershipPlans.id
+  voucherSequences: {
+    company: helpers.one.companies({
+      from: helpers.voucherSequences.company_id,
+      to: helpers.companies.id
     })
   },
-  offers: {
-    organization: helpers.one.organizations({
-      from: helpers.offers.organization_id,
-      to: helpers.organizations.id
+  accountGroups: {
+    company: helpers.one.companies({
+      from: helpers.accountGroups.company_id,
+      to: helpers.companies.id
     }),
-    redemptions: helpers.many.offerRedemptions({
-      from: helpers.offers.id,
-      to: helpers.offerRedemptions.offer_id
+    accounts: helpers.many.accounts({
+      from: helpers.accountGroups.id,
+      to: helpers.accounts.group_id
     })
   },
-  offerRedemptions: {
-    organization: helpers.one.organizations({
-      from: helpers.offerRedemptions.organization_id,
-      to: helpers.organizations.id
-    }),
-    offer: helpers.one.offers({
-      from: helpers.offerRedemptions.offer_id,
-      to: helpers.offers.id
-    }),
-    createdBy: helpers.one.users({
-      from: helpers.offerRedemptions.created_by,
-      to: helpers.users.id
+  units: {
+    company: helpers.one.companies({ from: helpers.units.company_id, to: helpers.companies.id })
+  },
+  stockGroups: {
+    company: helpers.one.companies({
+      from: helpers.stockGroups.company_id,
+      to: helpers.companies.id
     })
   },
-  freezePolicies: {
-    organization: helpers.one.organizations({
-      from: helpers.freezePolicies.organization_id,
-      to: helpers.organizations.id
-    }),
-    plans: helpers.many.membershipPlans({
-      from: helpers.freezePolicies.id,
-      to: helpers.membershipPlans.freeze_policy_id
+  godowns: {
+    company: helpers.one.companies({ from: helpers.godowns.company_id, to: helpers.companies.id })
+  },
+  taxRates: {
+    company: helpers.one.companies({ from: helpers.taxRates.company_id, to: helpers.companies.id })
+  },
+  paymentMethods: {
+    company: helpers.one.companies({
+      from: helpers.paymentMethods.company_id,
+      to: helpers.companies.id
     })
   },
-  prorationPolicies: {
-    organization: helpers.one.organizations({
-      from: helpers.prorationPolicies.organization_id,
-      to: helpers.organizations.id
+  auditEvents: {
+    company: helpers.one.companies({
+      from: helpers.auditEvents.company_id,
+      to: helpers.companies.id
     }),
-    plans: helpers.many.membershipPlans({
-      from: helpers.prorationPolicies.id,
-      to: helpers.membershipPlans.proration_policy_id
-    })
+    actor: helpers.one.users({ from: helpers.auditEvents.actor_user_id, to: helpers.users.id })
   },
-  cancellationPolicies: {
-    organization: helpers.one.organizations({
-      from: helpers.cancellationPolicies.organization_id,
-      to: helpers.organizations.id
-    }),
-    plans: helpers.many.membershipPlans({
-      from: helpers.cancellationPolicies.id,
-      to: helpers.membershipPlans.cancellation_policy_id
-    })
-  },
-  leadSources: {
-    organization: helpers.one.organizations({
-      from: helpers.leadSources.organization_id,
-      to: helpers.organizations.id
-    })
-  },
-  leadLostReasons: {
-    organization: helpers.one.organizations({
-      from: helpers.leadLostReasons.organization_id,
-      to: helpers.organizations.id
-    })
-  },
-  leadActivityTypes: {
-    organization: helpers.one.organizations({
-      from: helpers.leadActivityTypes.organization_id,
-      to: helpers.organizations.id
-    })
-  },
-  leadActivities: {
-    lead: helpers.one.leads({
-      from: helpers.leadActivities.lead_id,
-      to: helpers.leads.id
-    }),
-    type: helpers.one.leadActivityTypes({
-      from: helpers.leadActivities.type_id,
-      to: helpers.leadActivityTypes.id
-    }),
-    createdBy: helpers.one.users({
-      from: helpers.leadActivities.created_by,
-      to: helpers.users.id
-    })
-  },
-  leadFollowups: {
-    lead: helpers.one.leads({
-      from: helpers.leadFollowups.lead_id,
-      to: helpers.leads.id
-    }),
-    createdBy: helpers.one.users({
-      from: helpers.leadFollowups.created_by,
-      to: helpers.users.id
-    })
-  },
-  leadStageHistory: {
-    lead: helpers.one.leads({
-      from: helpers.leadStageHistory.lead_id,
-      to: helpers.leads.id
-    }),
-    fromStage: helpers.one.leadStages({
-      from: helpers.leadStageHistory.from_stage_id,
-      to: helpers.leadStages.id
-    }),
-    toStage: helpers.one.leadStages({
-      from: helpers.leadStageHistory.to_stage_id,
-      to: helpers.leadStages.id
-    }),
-    activity: helpers.one.leadActivities({
-      from: helpers.leadStageHistory.activity_id,
-      to: helpers.leadActivities.id
-    }),
-    changedBy: helpers.one.users({
-      from: helpers.leadStageHistory.changed_by,
-      to: helpers.users.id
-    })
-  },
-  customers: {
-    organization: helpers.one.organizations({
-      from: helpers.customers.organization_id,
-      to: helpers.organizations.id
-    }),
-    person: helpers.one.people({
-      from: helpers.customers.person_id,
-      to: helpers.people.id
-    }),
-    memberships: helpers.many.memberships({
-      from: helpers.customers.id,
-      to: helpers.memberships.customer_id
-    })
-  },
-  memberships: {
-    organization: helpers.one.organizations({
-      from: helpers.memberships.organization_id,
-      to: helpers.organizations.id
-    }),
-    customer: helpers.one.customers({
-      from: helpers.memberships.customer_id,
-      to: helpers.customers.id
-    }),
-    plan: helpers.one.membershipPlans({
-      from: helpers.memberships.plan_id,
-      to: helpers.membershipPlans.id
-    }),
-    offer: helpers.one.offers({
-      from: helpers.memberships.offer_id,
-      to: helpers.offers.id
-    }),
-    freezes: helpers.many.membershipFreezes({
-      from: helpers.memberships.id,
-      to: helpers.membershipFreezes.membership_id
-    }),
-    events: helpers.many.membershipEvents({
-      from: helpers.memberships.id,
-      to: helpers.membershipEvents.membership_id
-    })
-  },
-  membershipFreezes: {
-    membership: helpers.one.memberships({
-      from: helpers.membershipFreezes.membership_id,
-      to: helpers.memberships.id
-    }),
-    createdBy: helpers.one.users({
-      from: helpers.membershipFreezes.created_by,
-      to: helpers.users.id
-    })
-  },
-  membershipEvents: {
-    membership: helpers.one.memberships({
-      from: helpers.membershipEvents.membership_id,
-      to: helpers.memberships.id
-    }),
-    createdBy: helpers.one.users({
-      from: helpers.membershipEvents.created_by,
-      to: helpers.users.id
-    })
-  },
-  invoices: {
-    organization: helpers.one.organizations({
-      from: helpers.invoices.organization_id,
-      to: helpers.organizations.id
-    }),
-    customer: helpers.one.customers({
-      from: helpers.invoices.customer_id,
-      to: helpers.customers.id
-    }),
-    lines: helpers.many.invoiceLines({
-      from: helpers.invoices.id,
-      to: helpers.invoiceLines.invoice_id
-    })
-  },
-  invoiceLines: {
-    invoice: helpers.one.invoices({
-      from: helpers.invoiceLines.invoice_id,
-      to: helpers.invoices.id
-    }),
-    plan: helpers.one.membershipPlans({
-      from: helpers.invoiceLines.plan_id,
-      to: helpers.membershipPlans.id
-    }),
-    offer: helpers.one.offers({
-      from: helpers.invoiceLines.offer_id,
-      to: helpers.offers.id
-    })
-  },
-  payments: {
-    organization: helpers.one.organizations({
-      from: helpers.payments.organization_id,
-      to: helpers.organizations.id
-    }),
-    customer: helpers.one.customers({
-      from: helpers.payments.customer_id,
-      to: helpers.customers.id
-    }),
-    allocations: helpers.many.paymentAllocations({
-      from: helpers.payments.id,
-      to: helpers.paymentAllocations.payment_id
-    }),
-    refunds: helpers.many.refunds({
-      from: helpers.payments.id,
-      to: helpers.refunds.payment_id
-    })
-  },
-  paymentAllocations: {
-    payment: helpers.one.payments({
-      from: helpers.paymentAllocations.payment_id,
-      to: helpers.payments.id
-    }),
-    invoice: helpers.one.invoices({
-      from: helpers.paymentAllocations.invoice_id,
-      to: helpers.invoices.id
-    })
-  },
-  refunds: {
-    payment: helpers.one.payments({
-      from: helpers.refunds.payment_id,
-      to: helpers.payments.id
-    })
-  },
-  credits: {
-    organization: helpers.one.organizations({
-      from: helpers.credits.organization_id,
-      to: helpers.organizations.id
-    }),
-    customer: helpers.one.customers({
-      from: helpers.credits.customer_id,
-      to: helpers.customers.id
-    }),
-    allocations: helpers.many.creditAllocations({
-      from: helpers.credits.id,
-      to: helpers.creditAllocations.credit_id
-    })
-  },
-  creditAllocations: {
-    credit: helpers.one.credits({
-      from: helpers.creditAllocations.credit_id,
-      to: helpers.credits.id
-    }),
-    invoice: helpers.one.invoices({
-      from: helpers.creditAllocations.invoice_id,
-      to: helpers.invoices.id
+  idempotencyKeys: {
+    company: helpers.one.companies({
+      from: helpers.idempotencyKeys.company_id,
+      to: helpers.companies.id
     })
   }
 }))

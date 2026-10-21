@@ -1,5 +1,5 @@
-appId: com.crowncrm.app
-productName: CrownCRM
+appId: com.crownbooks.app
+productName: Crown Books
 afterPack: scripts/after-pack.ts
 directories:
   buildResources: build

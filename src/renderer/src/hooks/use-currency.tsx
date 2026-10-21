@@ -1,11 +1,8 @@
 import type { CurrencyCode } from '../../../shared/contracts/money'
-import { useOrganization } from '../features/identity/queries'
+import { useCompanyProfile } from '../lib/company-queries'
 
-/**
- * Returns the active organization's currency code, defaulting to `'INR'`
- * while the organization profile is still loading.
- */
+/** The active company's currency. Version 1 is INR only, but read it from data. */
 export function useCurrency(): CurrencyCode {
-  const { data: org } = useOrganization()
-  return (org?.currency ?? 'INR') as CurrencyCode
+  const { data } = useCompanyProfile()
+  return (data?.currency ?? 'INR') as CurrencyCode
 }

@@ -1,1 +1,0 @@
-ALTER TABLE `lead_stages` ADD `suppress_followups` integer NOT NULL DEFAULT 0;

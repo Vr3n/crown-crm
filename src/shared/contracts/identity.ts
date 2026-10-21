@@ -2,21 +2,15 @@ import { z } from 'zod'
 import { currencyCodeSchema } from './money'
 
 /**
- * Canonical contracts for the identity/tenancy IPC surface (Module 14/15).
- * Input shapes are Zod-validated at the IPC boundary (guidelines §15); the
- * derived types are the single source of truth for main, preload, and renderer
- * (resolves known-gap #6 — no more duplicated SessionContext declarations).
- *
- * Boundary schemas validate shape (presence, length, primitives); domain rules
- * (mobile number format, password length, uniqueness) are enforced in the
- * application layer, where the shipped behavior lives.
+ * Identity and company contracts. Input shapes are validated at the IPC
+ * boundary; domain rules (password length, GSTIN shape, state codes) are
+ * enforced in the application layer.
  */
 
-/** The Organization Context — the active org, user, role, and resolved permissions. */
 export interface SessionContext {
-  organizationId: number
-  organizationSlug: string
-  organizationName: string
+  companyId: number
+  companySlug: string
+  companyName: string
   userId: number
   userFullName: string
   userEmail: string
@@ -27,9 +21,9 @@ export interface SessionContext {
 }
 
 export const sessionContextSchema = z.object({
-  organizationId: z.number(),
-  organizationSlug: z.string(),
-  organizationName: z.string(),
+  companyId: z.number(),
+  companySlug: z.string(),
+  companyName: z.string(),
   userId: z.number(),
   userFullName: z.string(),
   userEmail: z.string(),
@@ -41,29 +35,28 @@ export const sessionContextSchema = z.object({
 
 export type AuthStatus = 'SETUP_REQUIRED' | 'LOGIN_REQUIRED' | 'AUTHENTICATED'
 
-export const setupOrganizationInputSchema = z.object({
+/** Indian state codes are two digits, 01 to 38 (plus 97 for other territory). */
+export const stateCodeSchema = z.string().regex(/^\d{2}$/, 'State code must be two digits')
+
+export const setupCompanyInputSchema = z.object({
   name: z.string().min(1).max(120),
   slug: z.string().min(1).max(120).optional(),
   currency: currencyCodeSchema.optional(),
-  timezone: z.string().max(64).optional(),
   ownerFullName: z.string().min(1).max(120),
   ownerEmail: z.string().min(1).max(254),
   ownerPassword: z.string().min(1).max(256),
-  mobileNumber: z.string().min(1).max(24),
-  /**
-   * Optional gym logo (BrandMark) picked during first-run setup. Same
-   * constraints as the settings uploader (jpg/png/webp, 5MB); stored as a
-   * file with only the filename persisted. Absent stays a valid setup.
-   */
-  logo: z
-    .object({
-      filename: z.string().min(1).max(255),
-      /** Base64-encoded image data (no data-URL prefix). */
-      data: z.string().min(1)
-    })
-    .optional()
+  stateCode: stateCodeSchema.default('27'),
+  gstin: z.string().max(15).optional(),
+  phone: z.string().max(24).optional(),
+  booksBeginDate: z.string().max(10).optional()
 })
-export type SetupOrganizationInput = z.infer<typeof setupOrganizationInputSchema>
+export type SetupCompanyInput = z.infer<typeof setupCompanyInputSchema>
+
+export const setupCompanyLogoInputSchema = z.object({
+  filename: z.string().min(1).max(255),
+  data: z.string().min(1)
+})
+export type SetupCompanyLogoInput = z.infer<typeof setupCompanyLogoInputSchema>
 
 export const loginInputSchema = z.object({
   email: z.string().min(1).max(254),
@@ -71,12 +64,11 @@ export const loginInputSchema = z.object({
 })
 export type LoginInput = z.infer<typeof loginInputSchema>
 
-export const organizationExistenceInputSchema = z.object({
+export const companyExistenceInputSchema = z.object({
   name: z.string().min(1).max(120),
-  ownerEmail: z.string().min(1).max(254),
-  mobileNumber: z.string().min(1).max(24)
+  ownerEmail: z.string().min(1).max(254)
 })
-export type OrganizationExistenceInput = z.infer<typeof organizationExistenceInputSchema>
+export type CompanyExistenceInput = z.infer<typeof companyExistenceInputSchema>
 
 export const createStaffMemberInputSchema = z.object({
   fullName: z.string().min(1).max(120),
@@ -91,19 +83,46 @@ export const createdStaffMemberSchema = z.object({
 })
 export type CreatedStaffMember = z.infer<typeof createdStaffMemberSchema>
 
-export const updateOrganizationInputSchema = z.object({
-  legalName: z.string().max(120).optional().nullable(),
-  billingEmail: z.string().max(254).optional().nullable(),
-  mobileNumber: z.string().min(1).max(24),
-  timezone: z.string().max(64).optional().nullable(),
-  currency: currencyCodeSchema,
-  /**
-   * Per-document Terms & Conditions. Length capped at the boundary (max ~2000
-   * chars each) so a PDF footer stays a single page; domain trimming happens in
-   * the application layer.
-   */
+export const updateCompanyInputSchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  legalName: z.string().max(200).optional().nullable(),
+  gstin: z.string().max(15).optional().nullable(),
+  pan: z.string().max(10).optional().nullable(),
+  stateCode: stateCodeSchema.optional(),
+  address: z.string().max(500).optional().nullable(),
+  city: z.string().max(120).optional().nullable(),
+  pincode: z.string().max(10).optional().nullable(),
+  phone: z.string().max(24).optional().nullable(),
+  email: z.string().max(254).optional().nullable(),
   invoiceTerms: z.string().max(2000).optional().nullable(),
-  receiptTerms: z.string().max(2000).optional().nullable(),
-  refundTerms: z.string().max(2000).optional().nullable()
+  fyStartMonth: z.number().int().min(1).max(12).optional(),
+  booksBeginDate: z.string().max(10).optional(),
+  costingMethod: z.enum(['WEIGHTED_AVERAGE', 'FIFO']).optional(),
+  roundOffMode: z.enum(['INVOICE', 'LINE', 'NONE']).optional(),
+  allowNegativeStock: z.boolean().optional()
 })
-export type UpdateOrganizationInput = z.infer<typeof updateOrganizationInputSchema>
+export type UpdateCompanyInput = z.infer<typeof updateCompanyInputSchema>
+
+/** Read model returned to the renderer. */
+export interface CompanyProfile {
+  id: number
+  slug: string
+  name: string
+  legalName: string | null
+  gstin: string | null
+  pan: string | null
+  stateCode: string
+  address: string | null
+  city: string | null
+  pincode: string | null
+  phone: string | null
+  email: string | null
+  currency: string
+  fyStartMonth: number
+  booksBeginDate: string
+  invoiceTerms: string | null
+  costingMethod: string
+  roundOffMode: string
+  allowNegativeStock: boolean
+  status: string
+}
