@@ -4,7 +4,7 @@
 
 Crown Books replaces the gym CRM this repository started as (CrownCRM). The product is now a double-entry accounting application for small and medium trading or service businesses: the daily work a shop does in TallyPrime or QuickBooks, without the cloud.
 
-Status: design and planning. No accounting code is implemented yet. The documents in `docs/` are the specification the build follows.
+Status: version 1 implemented. The documents in `docs/` are the specification the build follows; `docs/implementation/` records what shipped.
 
 ## What version 1 does
 
@@ -13,14 +13,15 @@ Status: design and planning. No accounting code is implemented yet. The document
 - GST sales invoices and purchase bills with multi line entry, discount, tax inclusive or exclusive rates, CGST/SGST or IGST, and round off
 - Receipts and payments applied against specific bills, plus advances and on account money
 - Credit notes and debit notes for returns
-- Receivables, payables, ageing, party statements, day book, ledger, trial balance, profit and loss, balance sheet
-- Print and PDF: tax invoice, statement of account
+- Receivables, payables, ageing, day book, ledger, trial balance, profit and loss, balance sheet
+- Statement of account data through the report API
+- Print: voucher detail with the company header
 - Roles: owner, accountant, billing clerk, auditor
 - Local database, local backup, no telemetry
 
 ## What version 1 does not do
 
-Sales pipeline, memberships, plans and offers are deleted, not hidden. Inventory reports, GST filing working papers, bank reconciliation, reminders and e-invoicing come in later phases. See `docs/00-product-brief.md` for the cut line.
+Sales pipeline, memberships, plans and offers are deleted, not hidden. GST filing working papers, bank reconciliation, reminders, e-invoicing and the extended parity items in phase 9 are not built yet. See `docs/implementation/phase-1-to-8-report.md` for the precise gaps.
 
 ## Documentation
 
@@ -74,13 +75,13 @@ npm start            # run the built app
 npm run build:win    # Windows installer
 ```
 
-## Quality
+## Testing
 
 ```bash
 npm run typecheck
 npm run lint
-npm test
-npm run test:e2e
+npm test              # 180 unit and integration tests
+npm run test:e2e      # Playwright against the built Electron app
 ```
 
 ## Data
