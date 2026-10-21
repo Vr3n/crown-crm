@@ -44,15 +44,16 @@ function mapParty(row: Record<string, unknown>): PartyRow {
 
 export const partyRepo = {
   list(companyId: number, input: PartyListInput): PartyRow[] {
-    const clauses = [sql`p.company_id = ${companyId}`]
-    if (!input.includeInactive) clauses.push(sql`p.is_active = 1`)
-    if (input.role === 'CUSTOMER') clauses.push(sql`p.is_customer = 1`)
-    if (input.role === 'SUPPLIER') clauses.push(sql`p.is_supplier = 1`)
+    let where = 'p.company_id = ?'
+    const params: unknown[] = [companyId]
+    if (!input.includeInactive) where += ' AND p.is_active = 1'
+    if (input.role === 'CUSTOMER') where += ' AND p.is_customer = 1'
+    if (input.role === 'SUPPLIER') where += ' AND p.is_supplier = 1'
     if (input.query) {
       const q = `%${input.query.toLowerCase()}%`
-      clauses.push(
-        sql`(lower(p.name) LIKE ${q} OR lower(COALESCE(p.phone,'')) LIKE ${q} OR lower(COALESCE(p.gstin,'')) LIKE ${q})`
-      )
+      where +=
+        " AND (lower(p.name) LIKE ? OR lower(COALESCE(p.phone,'')) LIKE ? OR lower(COALESCE(p.gstin,'')) LIKE ?)"
+      params.push(q, q, q)
     }
 
     const rows = getDb()
@@ -66,10 +67,10 @@ export const partyRepo = {
             WHERE pa.party_id = p.id AND l.company_id = p.company_id
           ), 0) AS balance_minor
          FROM parties p
-         WHERE ${clauses.join(' AND ')}
+         WHERE ${where}
          ORDER BY p.name COLLATE NOCASE`
       )
-      .all() as Record<string, unknown>[]
+      .all(...params) as Record<string, unknown>[]
     return rows.map(mapParty)
   },
 

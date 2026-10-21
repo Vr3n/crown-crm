@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crown Books: end-to-end flow</title>
+<style>
+  :root{
+    --paper:#f4f2ec; --sheet:#fbfaf6; --ink:#12171c; --ink2:#3e474f; --muted:#6e7780;
+    --rule:#dcd6c8; --accent:#1b4c68; --accent-soft:#e4ebef; --ok:#2e6b4e; --bad:#a03a2b;
+    --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:48px 28px 80px}
+  header.top{border-bottom:1px solid var(--ink);padding-bottom:22px;margin-bottom:8px}
+  .kicker{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  h1{font-size:42px;line-height:1.1;letter-spacing:-.03em;margin:10px 0 10px;max-width:22ch}
+  h1 em{font-family:Georgia,serif;font-style:italic;font-weight:400}
+  .lead{font-size:15px;color:var(--ink2);max-width:72ch;margin:0}
+  .meta{display:flex;gap:28px;flex-wrap:wrap;margin-top:22px;border-top:1px solid var(--rule);padding-top:14px}
+  .meta div{font-size:11.5px;color:var(--muted)}
+  .meta b{display:block;font-family:var(--mono);font-size:19px;color:var(--ink);font-weight:600}
+  nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 38px}
+  nav.toc a{font-size:11.5px;text-decoration:none;color:var(--ink2);border:1px solid var(--rule);padding:5px 9px;background:var(--sheet)}
+  nav.toc a:hover{border-color:var(--accent);color:var(--accent)}
+  section.phase{border-top:1px solid var(--ink);padding-top:22px;margin-top:44px}
+  .phase-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .phase-tag{font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid #c6d6df;background:var(--accent-soft);padding:3px 8px}
+  h2{font-size:24px;letter-spacing:-.02em;margin:0}
+  .phase p{font-size:13.5px;color:var(--ink2);max-width:88ch}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:20px 0 8px}
+  .grid.one{grid-template-columns:1fr}
+  figure{margin:0;border:1px solid var(--rule);background:var(--sheet)}
+  figure img{display:block;width:100%;height:auto}
+  figcaption{padding:9px 12px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--rule)}
+  figcaption b{color:var(--ink);font-weight:600}
+  .note{border-left:3px solid var(--accent);padding:6px 0 6px 12px;font-size:12.5px;color:var(--ink2);margin:14px 0}
+  .note.warn{border-color:var(--bad)}
+  .note.ok{border-color:var(--ok)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin:14px 0}
+  th{text-align:left;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 10px 8px 0;border-bottom:1px solid var(--rule)}
+  td{padding:8px 10px 8px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+  td.mono,th.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  code,pre{font-family:var(--mono)}
+  pre{background:#101820;color:#e8e3d7;padding:16px 18px;overflow:auto;font-size:11.5px;line-height:1.7}
+  .status{display:inline-block;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border:1px solid}
+  .done{color:var(--ok);border-color:#c6d8cd;background:#edf4f0}
+  .partial{color:#9a6b18;border-color:#e0d0ae;background:#f7f1e2}
+  .none{color:var(--bad);border-color:#dec7bf;background:#f7eeea}
+  footer{margin-top:56px;border-top:1px solid var(--ink);padding-top:14px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:32px}}
+  @media print{body{background:#fff}.wrap{max-width:none;padding:0}nav.toc{display:none}figure{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">Crown Books · end-to-end evidence · October 2026</div>
+  <h1>The whole flow, phase by phase, driven through the <em>real app.</em></h1>
+  <p class="lead">Ten Playwright tests launch the packaged Electron build, create a company, post bills and receipts, pay suppliers, and read every report. Screenshots below are captured during those runs, not mocked.</p>
+  <div class="meta">
+    <div><b>10</b>Playwright tests</div>
+    <div><b>27</b>captured screens</div>
+    <div><b>180</b>unit and integration tests</div>
+    <div><b>0</b>console errors</div>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#run">How to run</a>
+  <a href="#p0">P0 Setup</a>
+  <a href="#p1">P1 Masters</a>
+  <a href="#p2">P2/P4 Purchase and payment</a>
+  <a href="#p3">P3 Sales and receipt</a>
+  <a href="#p5">P5/P6 Stock and reports</a>
+  <a href="#p8">P2/P8 Journals and backup</a>
+  <a href="#restart">Persistence</a>
+  <a href="#coverage">Coverage</a>
+</nav>
+
+<section class="phase" id="run">
+  <div class="phase-head"><span class="phase-tag">RUN</span><h2>One command reproduces the flow</h2></div>
+  <p>The suite uses a throwaway user data directory and a test flag that bypasses the installer lock. It starts from an empty database every time, so the screenshots below are a true first run.</p>
+<pre>npm run build
+npx playwright test tests/e2e/phases-flow.spec.ts
+
+Running 7 tests using 1 worker
+  ok  P0: first run, company setup and shell
+  ok  P1: parties, items, chart of accounts and company
+  ok  P2 and P4: purchase bill, payment, posting and trial balance
+  ok  P3: sales invoice, receipt with allocation, receivables and ageing
+  ok  P5 and P6: stock, registers, profit and loss, balance sheet
+  ok  P2 and P8: journals, contra and backup
+  ok  restart: the books survive
+  7 passed (27.6s)</pre>
+  <div class="note ok">The original shell suite (<code>v1-flow.spec.ts</code>) adds three more tests: first run, an IPC-seeded business flow, and restart. Total 10 passing Playwright tests.</div>
+</section>
+
+<section class="phase" id="p0">
+  <div class="phase-head"><span class="phase-tag">P0</span><h2>First run and the shell</h2></div>
+  <p>A new machine has no company. Setup captures the business name, owner, state, GSTIN and books begin date, then creates the company, five roles, nineteen account groups, the reserved accounts, units, tax rates and payment methods in one transaction.</p>
+  <div class="grid">
+    <figure><img src="../e2e-screens/01-setup-empty.png" alt="First run setup"><figcaption><b>01</b> First run. Ledger Paper split screen, no fake dashboard behind it.</figcaption></figure>
+    <figure><img src="../e2e-screens/02-dashboard-empty.png" alt="Empty dashboard"><figcaption><b>02</b> Dashboard after setup. Four questions, a setup checklist and an empty day book.</figcaption></figure>
+  </div>
+</section>
+
+<section class="phase" id="p1">
+  <div class="phase-head"><span class="phase-tag">P1</span><h2>Parties, items, accounts and company</h2></div>
+  <p>One row per business with customer and supplier flags. Creating a customer or supplier also creates its ledger account under Sundry Debtors or Sundry Creditors. Items carry HSN, unit, GST and opening stock. The company screen holds the financial year, costing method and rounding policy.</p>
+  <div class="grid">
+    <figure><img src="../e2e-screens/03-parties-list.png" alt="Parties list"><figcaption><b>03</b> Parties. Balance, type and credit terms in one dense table.</figcaption></figure>
+    <figure><img src="../e2e-screens/04-items-list.png" alt="Items list"><figcaption><b>04</b> Items. HSN, GST, stock, sale and purchase price.</figcaption></figure>
+    <figure><img src="../e2e-screens/05-chart-of-accounts.png" alt="Chart of accounts"><figcaption><b>05</b> Chart of accounts with reserved system keys and signed balances.</figcaption></figure>
+    <figure><img src="../e2e-screens/06-company-settings.png" alt="Company settings"><figcaption><b>06</b> Company profile, financial year, costing, rounding and terms.</figcaption></figure>
+  </div>
+  <div class="note">Test asserts the created customer and supplier appear in the list and the item appears in the item table before moving on.</div>
+</section>
+
+<section class="phase" id="p2">
+  <div class="phase-head"><span class="phase-tag">P2 · P4</span><h2>Purchase bill, payment and the balance proof</h2></div>
+  <p>The purchase screen is a document, not a form. Ten units at 3,000 with 18 percent GST gives 30,000 taxable, 2,700 CGST, 2,700 SGST and 35,400 payable. Posting writes the voucher, item lines, ledger lines and ten stock movements in one transaction. A 10,000 payment is then applied against the bill.</p>
+  <div class="grid">
+    <figure><img src="../e2e-screens/07-purchase-entry.png" alt="Purchase entry"><figcaption><b>07</b> Purchase entry. Live totals, round off and the keyboard hints.</figcaption></figure>
+    <figure><img src="../e2e-screens/08-purchase-detail.png" alt="Purchase detail"><figcaption><b>08</b> Posted PUR/0001 with the full line and tax detail.</figcaption></figure>
+    <figure><img src="../e2e-screens/09-payment-entry.png" alt="Payment entry"><figcaption><b>09</b> Payment. Outstanding bills, allocation and on-account remainder.</figcaption></figure>
+    <figure><img src="../e2e-screens/10-payment-detail.png" alt="Payment detail"><figcaption><b>10</b> PAY/0001, linked to the bill it settles.</figcaption></figure>
+    <figure><img src="../e2e-screens/11-payables.png" alt="Payables"><figcaption><b>11</b> Payables after the part payment: 25,400 still open.</figcaption></figure>
+    <figure><img src="../e2e-screens/12-trial-balance.png" alt="Trial balance"><figcaption><b>12</b> Trial balance, and the line that matters: debits equal credits.</figcaption></figure>
+  </div>
+  <div class="note ok">This is the strongest proof in the suite: a document enters once, and both the payable and the trial balance agree without a reconciliation step.</div>
+</section>
+
+<section class="phase" id="p3">
+  <div class="phase-head"><span class="phase-tag">P3</span><h2>Sales invoice, receipt with allocation, receivables and ageing</h2></div>
+  <p>The same engine runs the sale. One SSD at 3,855.93 plus 18 percent gives 4,550.00, with one paisa of round off. A 2,000 receipt is split 1,500 against the invoice and 500 left unapplied. Receivables then show 3,050.00 and the ageing report buckets the open bill.</p>
+  <div class="grid">
+    <figure><img src="../e2e-screens/13-sales-entry.png" alt="Sales entry"><figcaption><b>13</b> Sales entry. Tax inclusive or exclusive rates, per line discount.</figcaption></figure>
+    <figure><img src="../e2e-screens/14-sales-detail.png" alt="Sales detail"><figcaption><b>14</b> INV/0001 for 4,550.00, with the round off line visible.</figcaption></figure>
+    <figure><img src="../e2e-screens/15-receipt-entry.png" alt="Receipt entry"><figcaption><b>15</b> Receipt. Allocation against the open invoice.</figcaption></figure>
+    <figure><img src="../e2e-screens/16-receipt-detail.png" alt="Receipt detail"><figcaption><b>16</b> RCT/0001, showing what it settled.</figcaption></figure>
+    <figure><img src="../e2e-screens/17-receivables.png" alt="Receivables"><figcaption><b>17</b> Receivables: 3,050.00, the bill minus the allocation.</figcaption></figure>
+    <figure><img src="../e2e-screens/18-ageing.png" alt="Ageing"><figcaption><b>18</b> Ageing by due date, with the bucket totals agreeing to the open bill.</figcaption></figure>
+  </div>
+</section>
+
+<section class="phase" id="p5">
+  <div class="phase-head"><span class="phase-tag">P5 · P6</span><h2>Stock and the financial statements</h2></div>
+  <p>Stock on hand is the sum of movements, never a stored number. The purchase added ten units and the sale removed one. The registers carry the GST split. Profit and loss nets sales against cost of goods sold, and the balance sheet proves assets equal liabilities plus equity.</p>
+  <div class="grid">
+    <figure><img src="../e2e-screens/19-stock-summary.png" alt="Stock summary"><figcaption><b>19</b> Nine units on hand, valued at weighted average cost.</figcaption></figure>
+    <figure><img src="../e2e-screens/20-sales-register.png" alt="Sales register"><figcaption><b>20</b> Sales register with taxable, GST and round off.</figcaption></figure>
+    <figure><img src="../e2e-screens/21-purchase-register.png" alt="Purchase register"><figcaption><b>21</b> Purchase register, the input tax counterpart.</figcaption></figure>
+    <figure><img src="../e2e-screens/22-profit-and-loss.png" alt="Profit and loss"><figcaption><b>22</b> Profit and loss, with the net profit line.</figcaption></figure>
+    <figure><img src="../e2e-screens/23-balance-sheet.png" alt="Balance sheet"><figcaption><b>23</b> Balance sheet with the equality check at the bottom.</figcaption></figure>
+  </div>
+  <div class="note ok">The balance sheet check is computed from the same ledger rows as the trial balance, so the two cannot disagree.</div>
+</section>
+
+<section class="phase" id="p8">
+  <div class="phase-head"><span class="phase-tag">P2 · P8</span><h2>Contra and local backup</h2></div>
+  <p>A contra moves cash into the bank through the same posting engine. Backup checkpoints the WAL and copies the database file, so the copy is consistent without stopping the app.</p>
+  <div class="grid">
+    <figure><img src="../e2e-screens/24-journals-contra.png" alt="Journals and contra"><figcaption><b>24</b> Journals list after posting CTR/0001.</figcaption></figure>
+    <figure><img src="../e2e-screens/25-backup.png" alt="Backup"><figcaption><b>25</b> A named backup file, with restore documented as a manual step.</figcaption></figure>
+  </div>
+</section>
+
+<section class="phase" id="restart">
+  <div class="phase-head"><span class="phase-tag">PERSISTENCE</span><h2>Close the app, reopen it, the books are still there</h2></div>
+  <p>The test closes Electron, relaunches it against the same database file, and checks the dashboard and receivables again. The remembered session restores, and the 3,050.00 is computed from rows, not from a cache.</p>
+  <div class="grid">
+    <figure><img src="../e2e-screens/26-restart-dashboard.png" alt="Restarted dashboard"><figcaption><b>26</b> After restart. Receivables populated, no re-login.</figcaption></figure>
+    <figure><img src="../e2e-screens/27-restart-receivables.png" alt="Restarted receivables"><figcaption><b>27</b> The same 3,050.00 after a full process restart.</figcaption></figure>
+  </div>
+</section>
+
+<section class="phase" id="coverage">
+  <div class="phase-head"><span class="phase-tag">COVERAGE</span><h2>What the E2E suite proves, and what it does not</h2></div>
+  <table>
+    <tr><th>Phase</th><th>Feature</th><th>Evidence</th><th>Status</th></tr>
+    <tr><td class="mono">P0</td><td>First run, company, shell</td><td>Screens 01, 02</td><td><span class="status done">Covered</span></td></tr>
+    <tr><td class="mono">P1</td><td>Parties, items, accounts, company</td><td>Screens 03 to 06</td><td><span class="status done">Covered</span></td></tr>
+    <tr><td class="mono">P2</td><td>Purchase posting, trial balance</td><td>Screens 07, 08, 12</td><td><span class="status done">Covered</span></td></tr>
+    <tr><td class="mono">P2</td><td>Journal and contra</td><td>Screen 24, contra only</td><td><span class="status partial">Contra covered</span></td></tr>
+    <tr><td class="mono">P3</td><td>Sales, receipt allocation, receivables, ageing</td><td>Screens 13 to 18</td><td><span class="status done">Covered</span></td></tr>
+    <tr><td class="mono">P3</td><td>Credit note</td><td>Unit tests only</td><td><span class="status partial">Unit</span></td></tr>
+    <tr><td class="mono">P4</td><td>Payment allocation, payables, register</td><td>Screens 09 to 11, 21</td><td><span class="status done">Covered</span></td></tr>
+    <tr><td class="mono">P4</td><td>Debit note</td><td>Unit tests only</td><td><span class="status partial">Unit</span></td></tr>
+    <tr><td class="mono">P5</td><td>Stock summary, COGS</td><td>Screen 19, P&amp;L screen 22</td><td><span class="status done">Covered</span></td></tr>
+    <tr><td class="mono">P6</td><td>Registers, P&amp;L, balance sheet</td><td>Screens 20 to 23</td><td><span class="status done">Covered</span></td></tr>
+    <tr><td class="mono">P7</td><td>Bank reconciliation, CSV import, cheques</td><td>Not built</td><td><span class="status none">Gap</span></td></tr>
+    <tr><td class="mono">P8</td><td>Backup, audit, roles</td><td>Screen 25</td><td><span class="status partial">Backup only</span></td></tr>
+    <tr><td class="mono">P9</td><td>Orders, payroll, e-invoice, TDS, budgets</td><td>Not built</td><td><span class="status none">Gap</span></td></tr>
+  </table>
+  <div class="note warn">P9 is not implemented, so no flow exists to test. P7 has only contra, and P8 has only backup. The report above is deliberately explicit about the difference between tested behaviour and planned scope.</div>
+</section>
+
+<footer>
+  <span>Crown Books · end-to-end evidence · generated from the Playwright run on 21 October 2026</span>
+  <span>Source: tests/e2e/phases-flow.spec.ts · screenshots in docs/e2e-screens</span>
+</footer>
+
+</div>
+</body>
+</html>

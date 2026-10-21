@@ -7,6 +7,8 @@ Two HTML slide decks that accompany the written plan. Open either file in a brow
 | `01-technical-plan.html` | What changes in the codebase, why, in what order, at what risk | 21 |
 | `02-data-flow-and-schema.html` | How a party, a bill, a receipt and a stock movement become a report | 21 |
 
+`03-e2e-flow.html` is a scrollable evidence report rather than a slide deck: 27 screenshots captured by Playwright, grouped by phase, with the commands and the coverage matrix.
+
 ## Controls
 
 | Input | Action |
