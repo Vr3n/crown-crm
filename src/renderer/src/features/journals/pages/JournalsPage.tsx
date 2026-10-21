@@ -100,13 +100,13 @@ export function JournalsPage(): React.JSX.Element {
           <div className="flex gap-2">
             <button
               onClick={() => setMode('CONTRA')}
-              className="h-8 border border-border bg-card px-3 text-[12px] font-medium"
+              className="h-8 border border-border bg-card px-3 text-[0.875rem] font-medium"
             >
               New contra
             </button>
             <button
               onClick={() => setMode('JOURNAL')}
-              className="h-8 bg-primary px-3 text-[12px] font-medium text-primary-foreground"
+              className="h-8 bg-primary px-3 text-[0.875rem] font-medium text-primary-foreground"
             >
               New journal
             </button>
@@ -122,7 +122,7 @@ export function JournalsPage(): React.JSX.Element {
         />
       ) : (
         <div className="border border-border bg-card">
-          <table className="w-full border-collapse text-[12px]">
+          <table className="w-full border-collapse text-[0.875rem]">
             <thead>
               <tr>
                 {['Date', 'Type', 'Number', 'Narration', 'Amount'].map((head, index) => (
@@ -130,8 +130,8 @@ export function JournalsPage(): React.JSX.Element {
                     key={head}
                     className={
                       index === 4
-                        ? 'border-b border-border px-3 py-2 text-right text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
-                        : 'border-b border-border px-3 py-2 text-left text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+                        ? 'border-b border-border px-3 py-2 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+                        : 'border-b border-border px-3 py-2 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
                     }
                   >
                     {head}
@@ -149,7 +149,7 @@ export function JournalsPage(): React.JSX.Element {
                   >
                     <td className="px-3 py-2">{row.date}</td>
                     <td className="px-3 py-2 text-muted-foreground">{row.type}</td>
-                    <td className="px-3 py-2 font-mono text-[11px]">{row.number}</td>
+                    <td className="px-3 py-2 font-mono text-[0.75rem]">{row.number}</td>
                     <td className="px-3 py-2">{row.partyName ?? '-'}</td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums">
                       {formatMinor(row.totalMinor, 'INR')}
@@ -165,12 +165,12 @@ export function JournalsPage(): React.JSX.Element {
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-6 pt-[8vh]">
           <div className="w-full max-w-[760px] border border-ink bg-card">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h2 className="text-[13px] font-semibold">
+              <h2 className="text-[0.9375rem] font-semibold">
                 {mode === 'JOURNAL' ? 'New journal' : 'New contra'}
               </h2>
               <button
                 onClick={() => setMode(null)}
-                className="text-[12px] text-muted-foreground hover:text-foreground"
+                className="text-[0.875rem] text-muted-foreground hover:text-foreground"
               >
                 Close
               </button>
@@ -178,14 +178,14 @@ export function JournalsPage(): React.JSX.Element {
             <div className="space-y-3 p-4">
               <div className="grid grid-cols-3 gap-3">
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  <span className="text-[0.6875rem] uppercase tracking-[0.12em] text-muted-foreground">
                     Date
                   </span>
                   <input
                     type="date"
                     value={date}
                     onChange={(event) => setDate(event.target.value)}
-                    className="h-8 border border-input bg-card px-2 text-[12px]"
+                    className="h-8 border border-input bg-card px-2 text-[0.875rem]"
                   />
                 </label>
                 {mode === 'CONTRA' ? (
@@ -234,7 +234,7 @@ export function JournalsPage(): React.JSX.Element {
                             )
                           )
                         }
-                        className="h-8 border border-input bg-card px-2 text-right font-mono text-[12px]"
+                        className="h-8 border border-input bg-card px-2 text-right font-mono text-[0.875rem]"
                       />
                       <input
                         placeholder="Credit"
@@ -248,11 +248,11 @@ export function JournalsPage(): React.JSX.Element {
                             )
                           )
                         }
-                        className="h-8 border border-input bg-card px-2 text-right font-mono text-[12px]"
+                        className="h-8 border border-input bg-card px-2 text-right font-mono text-[0.875rem]"
                       />
                       <button
                         onClick={() => setRows((current) => current.filter((_, i) => i !== index))}
-                        className="text-[16px] text-muted-foreground"
+                        className="text-[1rem] text-muted-foreground"
                         aria-label="Remove line"
                       >
                         x
@@ -261,37 +261,37 @@ export function JournalsPage(): React.JSX.Element {
                   ))}
                   <button
                     onClick={() => setRows((current) => [...current, emptyRow()])}
-                    className="h-7 border border-border px-2 text-[11px]"
+                    className="h-7 border border-border px-2 text-[0.75rem]"
                   >
                     Add line
                   </button>
                 </div>
               ) : (
                 <label className="block max-w-[220px]">
-                  <span className="mb-1 block text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  <span className="mb-1 block text-[0.6875rem] uppercase tracking-[0.12em] text-muted-foreground">
                     Amount
                   </span>
                   <input
                     value={amount}
                     onChange={(event) => setAmount(event.target.value)}
-                    className="h-8 w-full border border-input bg-card px-2 text-right font-mono text-[12px]"
+                    className="h-8 w-full border border-input bg-card px-2 text-right font-mono text-[0.875rem]"
                   />
                 </label>
               )}
 
               <label className="block">
-                <span className="mb-1 block text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                <span className="mb-1 block text-[0.6875rem] uppercase tracking-[0.12em] text-muted-foreground">
                   Narration
                 </span>
                 <input
                   value={narration}
                   onChange={(event) => setNarration(event.target.value)}
-                  className="h-8 w-full border border-input bg-card px-2 text-[12px]"
+                  className="h-8 w-full border border-input bg-card px-2 text-[0.875rem]"
                 />
               </label>
 
               {mode === 'JOURNAL' ? (
-                <div className="flex justify-end gap-6 border-t border-border pt-2 text-[11.5px]">
+                <div className="flex justify-end gap-6 border-t border-border pt-2 text-[0.875rem]">
                   <span>Debit {formatMinor(debit, 'INR')}</span>
                   <span>Credit {formatMinor(credit, 'INR')}</span>
                   <span className={balanced ? 'text-success' : 'text-destructive'}>
@@ -303,7 +303,7 @@ export function JournalsPage(): React.JSX.Element {
             <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
               <button
                 onClick={() => setMode(null)}
-                className="h-8 border border-border px-3 text-[12px]"
+                className="h-8 border border-border px-3 text-[0.875rem]"
               >
                 Cancel
               </button>
@@ -313,7 +313,7 @@ export function JournalsPage(): React.JSX.Element {
                   post.isPending ||
                   (mode === 'JOURNAL' ? !balanced : !amount || !fromAccount || !toAccount)
                 }
-                className="h-8 bg-primary px-3 text-[12px] font-medium text-primary-foreground disabled:opacity-50"
+                className="h-8 bg-primary px-3 text-[0.875rem] font-medium text-primary-foreground disabled:opacity-50"
               >
                 {post.isPending ? 'Posting...' : 'Post'}
               </button>
@@ -339,14 +339,14 @@ function AccountSelect({
   return (
     <label className="flex min-w-0 flex-col gap-1">
       {label ? (
-        <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+        <span className="text-[0.6875rem] uppercase tracking-[0.12em] text-muted-foreground">
           {label}
         </span>
       ) : null}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-8 w-full border border-input bg-card px-2 text-[12px]"
+        className="h-8 w-full border border-input bg-card px-2 text-[0.875rem]"
       >
         <option value="">Select account</option>
         {accounts.map((account) => (

@@ -59,7 +59,7 @@ function badgeVariant(
 
 function TotalRow({ label, value }: { label: string; value: number }): React.JSX.Element {
   return (
-    <div className="flex items-baseline justify-between py-0.5 text-[11.5px]">
+    <div className="flex items-baseline justify-between py-0.5 text-[0.875rem]">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-mono tabular-nums">{formatMinor(value, 'INR')}</span>
     </div>
@@ -92,13 +92,13 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
   })
 
   if (isLoading) {
-    return <p className="p-6 text-[12.5px] text-muted-foreground">Loading voucher…</p>
+    return <p className="p-6 text-[0.9375rem] text-muted-foreground">Loading voucher…</p>
   }
   if (isError || !data) {
     return (
       <div className="flex flex-col items-start gap-3 p-6">
-        <p className="text-[13px] font-medium">Voucher not found.</p>
-        <Link to="/" className="text-[12px] text-primary hover:underline">
+        <p className="text-[0.9375rem] font-medium">Voucher not found.</p>
+        <Link to="/" className="text-[0.875rem] text-primary hover:underline">
           Back to the dashboard
         </Link>
       </div>
@@ -118,7 +118,7 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
       <div className="flex items-center justify-between gap-3 print:hidden">
         <Link
           to={back}
-          className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1.5 text-[0.875rem] text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" strokeWidth={1.75} />
           Back
@@ -144,11 +144,13 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
       </div>
 
       <div className="hidden print:block">
-        <p className="font-heading text-[20px] font-semibold">{company?.name ?? 'Crown Books'}</p>
-        <p className="mt-0.5 text-[11px] text-muted-foreground">
+        <p className="font-heading text-[1.25rem] font-semibold">
+          {company?.name ?? 'Crown Books'}
+        </p>
+        <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
           {[company?.address, company?.city, company?.pincode].filter(Boolean).join(', ')}
         </p>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[0.75rem] text-muted-foreground">
           {company?.gstin ? `GSTIN ${company.gstin}` : ''}
           {company?.phone ? ` · ${company.phone}` : ''}
         </p>
@@ -157,13 +159,13 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
       <div className="border border-border bg-card">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {title}
             </p>
-            <h1 className="mt-1 font-mono text-[22px] font-semibold leading-none tracking-tight">
+            <h1 className="mt-1 font-mono text-[1.375rem] font-semibold leading-none tracking-tight">
               {data.number}
             </h1>
-            <p className="mt-2 text-[11.5px] text-muted-foreground">
+            <p className="mt-2 text-[0.875rem] text-muted-foreground">
               {displayDate(data.date)}
               {data.dueDate ? ` · due ${displayDate(data.dueDate)}` : ''}
               {data.referenceNo ? ` · ref ${data.referenceNo}` : ''}
@@ -171,9 +173,9 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
           </div>
           <div className="text-right">
             <Badge variant={badgeVariant(data.status)}>{data.status}</Badge>
-            <p className="mt-2 text-[13px] font-medium">{data.partyName ?? 'No party'}</p>
+            <p className="mt-2 text-[0.9375rem] font-medium">{data.partyName ?? 'No party'}</p>
             {data.partyGstin ? (
-              <p className="font-mono text-[10.5px] text-muted-foreground">
+              <p className="font-mono text-[0.75rem] text-muted-foreground">
                 GSTIN {data.partyGstin}
               </p>
             ) : null}
@@ -181,14 +183,14 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
         </div>
 
         {data.lines.length > 0 ? (
-          <table className="w-full border-collapse text-[12px]">
+          <table className="w-full border-collapse text-[0.875rem]">
             <thead>
               <tr className="border-b border-rule-strong bg-muted/40">
                 {['#', 'Description', 'Qty', 'Rate', 'Disc', 'GST', 'Taxable', 'Tax', 'Amount'].map(
                   (heading) => (
                     <th
                       key={heading}
-                      className={`h-8 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground ${heading === '#' || heading === 'Description' ? 'text-left' : 'text-right'}`}
+                      className={`h-8 px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground ${heading === '#' || heading === 'Description' ? 'text-left' : 'text-right'}`}
                     >
                       {heading}
                     </th>
@@ -199,13 +201,13 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
             <tbody>
               {data.lines.map((line, index) => (
                 <tr key={line.id} className="h-9 border-b border-border last:border-b-0">
-                  <td className="px-3 font-mono text-[10.5px] text-muted-foreground">
+                  <td className="px-3 font-mono text-[0.75rem] text-muted-foreground">
                     {index + 1}
                   </td>
                   <td className="px-3">
                     {line.description}
                     {line.hsn ? (
-                      <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+                      <span className="ml-2 font-mono text-[0.6875rem] text-muted-foreground">
                         HSN {line.hsn}
                       </span>
                     ) : null}
@@ -239,10 +241,10 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
 
         <div className="grid gap-4 border-t border-border px-5 py-4 sm:grid-cols-[1fr_280px]">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Narration
             </p>
-            <p className="mt-1 text-[11.5px] leading-relaxed">
+            <p className="mt-1 text-[0.875rem] leading-relaxed">
               {data.narration ?? 'No narration recorded.'}
             </p>
           </div>
@@ -253,8 +255,10 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
             {data.igstMinor !== 0 ? <TotalRow label="IGST" value={data.igstMinor} /> : null}
             <TotalRow label="Round off" value={data.roundOffMinor} />
             <div className="mt-2 flex items-baseline justify-between border-t border-rule-strong pt-2">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">Total</span>
-              <span className="font-mono text-[16px] tabular-nums">
+              <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]">
+                Total
+              </span>
+              <span className="font-mono text-[1rem] tabular-nums">
                 {formatMinor(data.totalMinor, 'INR')}
               </span>
             </div>
@@ -263,14 +267,14 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
 
         {data.allocations.length > 0 ? (
           <div className="border-t border-border px-5 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Settled against
             </p>
             <ul className="mt-1 divide-y divide-border">
               {data.allocations.map((allocation) => (
                 <li
                   key={`${allocation.toVoucherId}-${allocation.amountMinor}`}
-                  className="flex items-center justify-between py-1.5 text-[11.5px]"
+                  className="flex items-center justify-between py-1.5 text-[0.875rem]"
                 >
                   <Link
                     to={`/vouchers/${allocation.toVoucherId}`}
@@ -289,7 +293,7 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
       </div>
 
       {cancelled ? (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[0.75rem] text-muted-foreground">
           This voucher is cancelled. Its number is not reused.
         </p>
       ) : null}
@@ -309,7 +313,7 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor="cancel-reason" className="text-[11px]">
+            <Label htmlFor="cancel-reason" className="text-[0.75rem]">
               Reason <span className="font-normal text-muted-foreground">(required)</span>
             </Label>
             <Textarea
@@ -320,7 +324,7 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
               placeholder="Why is this voucher being cancelled?"
             />
             {cancel.isError ? (
-              <p role="alert" className="text-[11px] text-destructive">
+              <p role="alert" className="text-[0.75rem] text-destructive">
                 {cancelError}
               </p>
             ) : null}

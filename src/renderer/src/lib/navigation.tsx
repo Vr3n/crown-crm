@@ -134,6 +134,30 @@ export function titleForPath(pathname: string): string {
       if (item.to === pathname) return item.label
     }
   }
-  if (pathname.startsWith('/reports/')) return 'Report'
+
+  const segments = pathname.split('/').filter(Boolean)
+  const first = segments[0]
+  if (first === 'vouchers') return 'Voucher'
+  if (first === 'reports') {
+    const names: Record<string, string> = {
+      receivables: 'Receivables',
+      payables: 'Payables',
+      ageing: 'Ageing',
+      'trial-balance': 'Trial Balance',
+      'profit-loss': 'Profit and Loss',
+      'balance-sheet': 'Balance Sheet',
+      'sales-register': 'Sales Register',
+      'purchase-register': 'Purchase Register'
+    }
+    return names[segments[1] ?? ''] ?? 'Report'
+  }
+  if (first === 'settings') return segments[1] === 'company' ? 'Company' : 'Settings'
+
+  const root = `/${first ?? ''}`
+  for (const group of NAV_GROUPS) {
+    for (const item of group.items) {
+      if (item.to === root) return item.label
+    }
+  }
   return 'Crown Books'
 }

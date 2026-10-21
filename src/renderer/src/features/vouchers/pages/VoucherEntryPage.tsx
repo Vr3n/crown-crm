@@ -49,7 +49,7 @@ const HEADERS = [
   ''
 ]
 const CELL =
-  'h-9 w-full border-0 bg-transparent px-2 text-[12px] text-foreground outline-none placeholder:text-muted-foreground/60'
+  'h-9 w-full border-0 bg-transparent px-2 text-[0.875rem] text-foreground outline-none placeholder:text-muted-foreground/60'
 const FIELD_KEYS = [
   { key: 'description', label: 'Description', placeholder: 'Item or service' },
   { key: 'hsn', label: 'HSN', mono: true },
@@ -287,17 +287,17 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 p-6">
       <div className="flex flex-wrap items-end justify-between gap-3 border border-border bg-card px-5 py-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             {meta.title}
           </p>
-          <h1 className="mt-1 font-heading text-[24px] font-semibold leading-none tracking-tight">
+          <h1 className="mt-1 font-heading text-[1.5rem] font-semibold leading-none tracking-tight">
             New {meta.title.toLowerCase()}
           </h1>
-          <p className="mt-1.5 font-mono text-[10.5px] text-muted-foreground">
+          <p className="mt-1.5 font-mono text-[0.75rem] text-muted-foreground">
             Series {meta.series} · number assigned on posting
           </p>
         </div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted-foreground">
           Original for recipient
         </p>
       </div>
@@ -309,7 +309,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
               ref={partyRef}
               value={partyId ?? ''}
               onChange={(event) => chooseParty(event.target.value)}
-              className="h-7 min-w-[240px] flex-1 cursor-pointer border-0 bg-transparent text-[12.5px] font-medium outline-none"
+              className="h-7 min-w-[240px] flex-1 cursor-pointer border-0 bg-transparent text-[0.9375rem] font-medium outline-none"
               aria-label="Party"
             >
               <option value="">Select {role === 'CUSTOMER' ? 'customer' : 'supplier'}…</option>
@@ -319,7 +319,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                 </option>
               ))}
             </select>
-            <span className="text-[10.5px] text-muted-foreground">
+            <span className="text-[0.75rem] text-muted-foreground">
               {party
                 ? `Balance ${formatMinor(party.balanceMinor, 'INR')} · Credit ${party.creditDays} days${party.gstin ? ` · ${party.gstin}` : ''}`
                 : 'Search by name in the list'}
@@ -332,7 +332,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
             value={date}
             onChange={(e) => changeDate(e.target.value)}
             aria-label="Voucher date"
-            className="h-7 w-full border-0 bg-transparent font-mono text-[12px] outline-none"
+            className="h-7 w-full border-0 bg-transparent font-mono text-[0.875rem] outline-none"
           />
         </Field>
         <Field label="Due date" className="border-b border-border">
@@ -341,7 +341,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
             aria-label="Due date"
-            className="h-7 w-full border-0 bg-transparent font-mono text-[12px] outline-none"
+            className="h-7 w-full border-0 bg-transparent font-mono text-[0.875rem] outline-none"
           />
         </Field>
         <Field label="Reference" className="border-b border-border sm:border-b-0 sm:border-r">
@@ -350,7 +350,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
             onChange={(e) => setReference(e.target.value)}
             placeholder="Order or bill reference"
             aria-label="Reference"
-            className="h-7 w-full border-0 bg-transparent text-[12px] outline-none placeholder:text-muted-foreground/60"
+            className="h-7 w-full border-0 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
           />
         </Field>
         <Field label="Place of supply">
@@ -362,9 +362,9 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
               inputMode="numeric"
               maxLength={2}
               aria-label="Place of supply state code"
-              className="h-7 w-14 border border-border bg-transparent px-2 font-mono text-[12px] outline-none"
+              className="h-7 w-14 border border-border bg-transparent px-2 font-mono text-[0.875rem] outline-none"
             />
-            <span className="text-[10.5px] text-muted-foreground">
+            <span className="text-[0.75rem] text-muted-foreground">
               {intraState ? 'Intra-state · CGST + SGST' : 'Inter-state · IGST'}
             </span>
           </div>
@@ -374,10 +374,10 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
       <div className="border border-border bg-card">
         <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
           <div className="flex items-baseline gap-2">
-            <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <h2 className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Lines
             </h2>
-            <span className="text-[10.5px] text-muted-foreground">
+            <span className="text-[0.75rem] text-muted-foreground">
               {lines.length} row{lines.length === 1 ? '' : 's'}
             </span>
           </div>
@@ -387,7 +387,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           </Button>
         </div>
 
-        <table className="w-full table-fixed border-collapse text-[12px]">
+        <table className="w-full table-fixed border-collapse text-[0.875rem]">
           <colgroup>
             <col className="w-[3%]" />
             <col className="w-[16%]" />
@@ -409,7 +409,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                 return (
                   <th
                     key={`${label}-${index}`}
-                    className={`h-8 px-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground ${right ? 'text-right' : 'text-left'}`}
+                    className={`h-8 px-2 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground ${right ? 'text-right' : 'text-left'}`}
                   >
                     {label}
                   </th>
@@ -420,7 +420,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           <tbody>
             {lines.length === 0 ? (
               <tr className="h-9 border-b border-border">
-                <td colSpan={11} className="px-3 text-[11.5px] text-muted-foreground">
+                <td colSpan={11} className="px-3 text-[0.875rem] text-muted-foreground">
                   No lines yet. Add a line or press Alt+A.
                 </td>
               </tr>
@@ -430,7 +430,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                 key={line.key}
                 className="h-9 border-b border-border last:border-b-0 focus-within:bg-accent-soft/30"
               >
-                <td className="px-2 font-mono text-[10.5px] text-muted-foreground">{index + 1}</td>
+                <td className="px-2 font-mono text-[0.75rem] text-muted-foreground">{index + 1}</td>
                 <td className="p-0">
                   <select
                     value={line.itemId ?? ''}
@@ -458,7 +458,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                     />
                   </td>
                 ))}
-                <td className="px-2 text-right font-mono text-[11.5px] tabular-nums">
+                <td className="px-2 text-right font-mono text-[0.875rem] tabular-nums">
                   {formatMinor(previews[index].total, 'INR')}
                 </td>
                 <td className="p-0">
@@ -481,7 +481,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
         <div className="border border-border bg-card px-3 py-2">
           <label
             htmlFor="narration"
-            className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+            className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
           >
             Narration
           </label>
@@ -491,7 +491,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
             value={narration}
             onChange={(e) => setNarration(e.target.value)}
             placeholder="Notes printed on the voucher"
-            className="mt-1 w-full resize-none border-0 bg-transparent text-[12px] outline-none placeholder:text-muted-foreground/60"
+            className="mt-1 w-full resize-none border-0 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
           />
         </div>
         <div className="border border-border bg-card px-4 py-3">
@@ -501,12 +501,14 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           <TotalRow label="IGST" value={totals.igst} />
           <TotalRow label="Round off" value={totals.roundOff} />
           <div className="mt-2 flex items-baseline justify-between border-t border-rule-strong pt-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em]">Total</span>
-            <span className="font-mono text-[16px] tabular-nums">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]">
+              Total
+            </span>
+            <span className="font-mono text-[1rem] tabular-nums">
               {formatMinor(totals.total, 'INR')}
             </span>
           </div>
-          <p className="mt-2 text-[10px] text-muted-foreground">
+          <p className="mt-2 text-[0.6875rem] text-muted-foreground">
             Local preview. The posted voucher is computed by the server.
           </p>
         </div>
@@ -515,7 +517,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
       {post.isError ? (
         <p
           role="alert"
-          className="border border-destructive/40 bg-destructive/5 px-3 py-2 text-[11.5px] text-destructive"
+          className="border border-destructive/40 bg-destructive/5 px-3 py-2 text-[0.875rem] text-destructive"
         >
           {postError}
         </p>
@@ -526,12 +528,12 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           <Button type="button" variant="ghost" size="sm" onClick={() => navigate(meta.back)}>
             Cancel
           </Button>
-          <p className="font-mono text-[10px] text-muted-foreground">
+          <p className="font-mono text-[0.6875rem] text-muted-foreground">
             Alt+A add line · Ctrl+Enter post · Esc back
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {reason ? <span className="text-[11px] text-muted-foreground">{reason}</span> : null}
+          {reason ? <span className="text-[0.75rem] text-muted-foreground">{reason}</span> : null}
           <Button
             type="button"
             size="sm"
@@ -557,7 +559,7 @@ function Field({
 }): React.JSX.Element {
   return (
     <div className={`flex items-center gap-3 px-3 py-2 ${className ?? ''}`}>
-      <span className="w-[76px] shrink-0 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <span className="w-[76px] shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </span>
       <div className="min-w-0 flex-1">{children}</div>
@@ -594,7 +596,7 @@ function CellInput({
 
 function TotalRow({ label, value }: { label: string; value: number }): React.JSX.Element {
   return (
-    <div className="flex items-baseline justify-between py-0.5 text-[11.5px]">
+    <div className="flex items-baseline justify-between py-0.5 text-[0.875rem]">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-mono tabular-nums">{formatMinor(value, 'INR')}</span>
     </div>

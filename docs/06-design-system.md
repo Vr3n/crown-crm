@@ -1,7 +1,9 @@
 # Design system: Ledger Paper
 
-Status: approved direction
+Status: approved direction, second edition
 Applies to: the desktop app shell, every screen, printed documents
+
+Section 13 supersedes the type, colour and motion values in sections 2 to 5. The earlier sections remain for the layout, navigation and print rules.
 
 ## 1. Idea
 
@@ -15,35 +17,35 @@ The reference points are a Tally voucher screen for speed and a QuickBooks list 
 
 Light, default:
 
-| Token | Value | Use |
-|---|---|---|
-| `--paper` | `#F6F4EF` | Page background |
-| `--sheet` | `#FCFBF8` | Panels, tables, entry forms |
-| `--ink` | `#16191D` | Primary text |
-| `--ink-2` | `#4A5058` | Secondary text |
-| `--ink-3` | `#7A828C` | Labels, captions |
-| `--rule` | `#DED8CC` | Hairlines, table borders |
-| `--rule-strong` | `#C4BCAA` | Section dividers |
-| `--accent` | `#1B4D6B` | Primary action, active nav, focus ring |
-| `--accent-soft` | `#E4EBF0` | Selected row, active tab |
-| `--credit` | `#2F6B4F` | Money in, paid, healthy |
-| `--debit` | `#A03A2B` | Money out, overdue, error |
-| `--warn` | `#9A6B18` | Due soon, attention |
-| `--muted-fill` | `#EFEBE2` | Disabled, empty |
+| Token           | Value     | Use                                    |
+| --------------- | --------- | -------------------------------------- |
+| `--paper`       | `#F6F4EF` | Page background                        |
+| `--sheet`       | `#FCFBF8` | Panels, tables, entry forms            |
+| `--ink`         | `#16191D` | Primary text                           |
+| `--ink-2`       | `#4A5058` | Secondary text                         |
+| `--ink-3`       | `#7A828C` | Labels, captions                       |
+| `--rule`        | `#DED8CC` | Hairlines, table borders               |
+| `--rule-strong` | `#C4BCAA` | Section dividers                       |
+| `--accent`      | `#1B4D6B` | Primary action, active nav, focus ring |
+| `--accent-soft` | `#E4EBF0` | Selected row, active tab               |
+| `--credit`      | `#2F6B4F` | Money in, paid, healthy                |
+| `--debit`       | `#A03A2B` | Money out, overdue, error              |
+| `--warn`        | `#9A6B18` | Due soon, attention                    |
+| `--muted-fill`  | `#EFEBE2` | Disabled, empty                        |
 
 Dark, "Midnight Ledger":
 
-| Token | Value |
-|---|---|
-| `--paper` | `#14171B` |
-| `--sheet` | `#1A1E23` |
-| `--ink` | `#E8E5DE` |
-| `--ink-2` | `#A8AEB5` |
-| `--rule` | `#2B3138` |
+| Token      | Value     |
+| ---------- | --------- |
+| `--paper`  | `#14171B` |
+| `--sheet`  | `#1A1E23` |
+| `--ink`    | `#E8E5DE` |
+| `--ink-2`  | `#A8AEB5` |
+| `--rule`   | `#2B3138` |
 | `--accent` | `#7FA6BE` |
 | `--credit` | `#6FAF8B` |
-| `--debit` | `#D08A7C` |
-| `--warn` | `#D2AC63` |
+| `--debit`  | `#D08A7C` |
+| `--warn`   | `#D2AC63` |
 
 Rules:
 
@@ -55,16 +57,16 @@ Rules:
 
 ## 3. Type
 
-| Role | Family | Size | Weight | Notes |
-|---|---|---|---|---|
-| App title | IBM Plex Sans | 15 | 600 | Top bar only |
-| Page title | IBM Plex Sans | 22 | 600 | One per screen |
-| Section | IBM Plex Sans | 13 | 600 | Uppercase, 0.06em tracking, used sparingly |
-| Body | IBM Plex Sans | 13.5 | 400 | Line height 1.45 |
-| Table | IBM Plex Sans | 13 | 400 | Row height 34 |
-| Money | IBM Plex Mono | 13 | 500 | Tabular, right aligned |
-| Dates and numbers | IBM Plex Mono | 12.5 | 400 | Tabular |
-| Document print | IBM Plex Sans | 10.5 | 400 | A4, 12mm margins |
+| Role              | Family        | Size | Weight | Notes                                      |
+| ----------------- | ------------- | ---- | ------ | ------------------------------------------ |
+| App title         | IBM Plex Sans | 15   | 600    | Top bar only                               |
+| Page title        | IBM Plex Sans | 22   | 600    | One per screen                             |
+| Section           | IBM Plex Sans | 13   | 600    | Uppercase, 0.06em tracking, used sparingly |
+| Body              | IBM Plex Sans | 13.5 | 400    | Line height 1.45                           |
+| Table             | IBM Plex Sans | 13   | 400    | Row height 34                              |
+| Money             | IBM Plex Mono | 13   | 500    | Tabular, right aligned                     |
+| Dates and numbers | IBM Plex Mono | 12.5 | 400    | Tabular                                    |
+| Document print    | IBM Plex Sans | 10.5 | 400    | A4, 12mm margins                           |
 
 No display serif in the app. A serif is reserved for printed statements and the brand mark, because those are documents, not screens.
 
@@ -137,22 +139,22 @@ Behaviour:
 
 Keyboard:
 
-| Key | Action |
-|---|---|
-| `Alt+S` | New sales invoice |
-| `Alt+P` | New purchase bill |
-| `Alt+R` | New receipt |
-| `Alt+Y` | New payment |
-| `Alt+N` | New voucher menu |
-| `F2` | Change voucher date |
-| `F4` | Party selector |
-| `Tab` / `Enter` | Next field, next line |
-| `Shift+Enter` | Previous field |
-| `Ctrl+Enter` | Post |
-| `Ctrl+S` | Save draft |
-| `Esc` | Back, with confirmation if dirty |
-| `Ctrl+K` | Command palette |
-| `?` | Shortcut help |
+| Key             | Action                           |
+| --------------- | -------------------------------- |
+| `Alt+S`         | New sales invoice                |
+| `Alt+P`         | New purchase bill                |
+| `Alt+R`         | New receipt                      |
+| `Alt+Y`         | New payment                      |
+| `Alt+N`         | New voucher menu                 |
+| `F2`            | Change voucher date              |
+| `F4`            | Party selector                   |
+| `Tab` / `Enter` | Next field, next line            |
+| `Shift+Enter`   | Previous field                   |
+| `Ctrl+Enter`    | Post                             |
+| `Ctrl+S`        | Save draft                       |
+| `Esc`           | Back, with confirmation if dirty |
+| `Ctrl+K`        | Command palette                  |
+| `?`             | Shortcut help                    |
 
 ## 7. Lists and tables
 
@@ -188,13 +190,13 @@ Statements and ageing reports use the same header and footer, with a different b
 
 Motion is functional only.
 
-| Where | Motion | Duration |
-|---|---|---|
-| Page enter | 8px rise plus fade | 180ms |
-| Row insert | background flash, no height animation | 320ms |
-| Total change | number crossfade | 140ms |
-| Panel open | 4px rise plus fade | 160ms |
-| Error | 2px horizontal shake, once | 180ms |
+| Where        | Motion                                | Duration |
+| ------------ | ------------------------------------- | -------- |
+| Page enter   | 8px rise plus fade                    | 180ms    |
+| Row insert   | background flash, no height animation | 320ms    |
+| Total change | number crossfade                      | 140ms    |
+| Panel open   | 4px rise plus fade                    | 160ms    |
+| Error        | 2px horizontal shake, once            | 180ms    |
 
 No spring physics in a data entry tool. No infinite animation. `prefers-reduced-motion` removes everything except the error indication.
 
@@ -241,15 +243,101 @@ The voucher screen and the registers were reviewed against real TallyPrime scree
 
 ### What Crown Books does with this
 
-| Decision | Source |
-|---|---|
-| Voucher entry is a full page with a title band, label and value header, six column grid, bottom narration and totals | Tally structure, our tokens |
-| Party balance and credit position shown inline under the party field | Tally current balance, QuickBooks customer context |
-| Registers and day book use a flat table with a blue header band, amber selection and a totals row | Tally |
-| Every list gets a toolbar with search, filter chips, export and a primary action | QuickBooks |
-| Detail pages use a right hand summary rail for balance and open bills | QuickBooks |
-| Status is always a word with a small mark, never colour alone | Both |
-| Keyboard first: Alt shortcuts for voucher types, F2 date, F4 party, Ctrl+Enter post | Tally |
-| No pale tinted background, no card grid for data | Our Ledger Paper system |
+| Decision                                                                                                             | Source                                             |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Voucher entry is a full page with a title band, label and value header, six column grid, bottom narration and totals | Tally structure, our tokens                        |
+| Party balance and credit position shown inline under the party field                                                 | Tally current balance, QuickBooks customer context |
+| Registers and day book use a flat table with a blue header band, amber selection and a totals row                    | Tally                                              |
+| Every list gets a toolbar with search, filter chips, export and a primary action                                     | QuickBooks                                         |
+| Detail pages use a right hand summary rail for balance and open bills                                                | QuickBooks                                         |
+| Status is always a word with a small mark, never colour alone                                                        | Both                                               |
+| Keyboard first: Alt shortcuts for voucher types, F2 date, F4 party, Ctrl+Enter post                                  | Tally                                              |
+| No pale tinted background, no card grid for data                                                                     | Our Ledger Paper system                            |
 
 The result is Tally's speed with QuickBooks' legibility: dense documents, calm navigation, and numbers that line up.
+
+## 13. Type, display scaling and motion (second edition)
+
+The first build looked small on high DPI Windows machines. The cause was not Electron's DPI handling. It was a UI set in fixed 10 to 13 CSS pixel sizes. The fix is a 16px base with a rem scale, plus a small colour and motion layer.
+
+### 13.1 Base and scale
+
+The root is `font-size: 100%`, so the browser default of 16px applies and a user who raises their default font size gets a larger interface. Every text size in the renderer is in `rem`; no `text-[Npx]` remains.
+
+| Role            | Size             | Line height | Use                            |
+| --------------- | ---------------- | ----------- | ------------------------------ |
+| Body            | 1rem (16px)      | 1.55        | Paragraphs, panel copy, inputs |
+| Table           | 0.875rem (14px)  | 1.45        | Data rows                      |
+| Small body      | 0.875rem (14px)  | 1.5         | Secondary copy                 |
+| Label           | 0.75rem (12px)   | 1.4         | Field labels, captions         |
+| Micro label     | 0.6875rem (11px) | 1.3         | Table headers, section kickers |
+| Page title      | 1.5rem (24px)    | 1.2         | Page header                    |
+| Dashboard title | 1.625rem (26px)  | 1.15        | Greeting                       |
+| KPI number      | 1.875rem (30px)  | 1           | Dashboard figures              |
+| Invoice total   | 1rem to 1.25rem  | 1.2         | Money emphasis                 |
+
+Rules:
+
+1. Body is never below 16px. Dense tables may use 14px, labels 12px.
+2. Line height is 1.5 to 1.55 for body, 1.2 for headings, 1.35 to 1.4 for labels.
+3. Paragraph measure stays between 60 and 75 characters (`max-w-[65ch]` and friends).
+4. Money and quantities use tabular figures. Columns align on one edge.
+5. Uppercase labels carry 0.12 to 0.16em tracking. Body text carries none.
+6. No fixed pixel font sizes, and no `zoom` hacks. Chromium already maps CSS pixels to the Windows display scale.
+
+### 13.2 Display scaling
+
+Research notes:
+
+- MDN defines `devicePixelRatio` as physical pixels per CSS pixel. A 150 percent Windows display makes one CSS pixel 1.5 device pixels, so CSS sizes should not be multiplied again.
+- The Electron issue tracker documents a common mistake: forcing `--force-device-scale-factor=1` or `--high-dpi-support` makes content smaller, and a persisted `zoomFactor` can leave the app stuck at an old scale.
+- The correct approach is relative units, a 16px base, and a normal zoom factor.
+
+Applied:
+
+- `html { font-size: 100% }`, all text in rem.
+- `BrowserWindow` starts at `zoomFactor: 1`, so a stale persisted zoom cannot shrink the window. Users can still zoom with the app shortcuts.
+- Minimum window reduced to 1024 by 680 so the larger type fits a 1366 wide laptop at 125 percent scaling.
+- Layouts use flex and grid, not fixed pixel widths, for the content column.
+
+### 13.3 Colour personality
+
+The palette keeps the paper and ink base and adds one bookmark colour and three tint families.
+
+| Token                                              | Light               | Meaning                                    |
+| -------------------------------------------------- | ------------------- | ------------------------------------------ |
+| `--primary`                                        | `#16465f`           | Action, active state, links                |
+| `--stamp`                                          | vermilion `#a8432c` | Overdue, payables, the active nav bookmark |
+| `--success`                                        | ledger green        | Money in, paid, health                     |
+| `--warning`                                        | ochre               | Due soon, attention                        |
+| `--accent-soft`                                    | pale blue           | Selected rows, soft surfaces               |
+| `--success-soft`, `--stamp-soft`, `--warning-soft` | tints               | Status chips and callouts                  |
+| `--sidebar`                                        | `#131c23`           | The book cover: a dark ink rail            |
+
+The rail is now dark ink with warm paper text, a vermilion bookmark on the active item, and a red brand mark. The content area stays warm paper. This gives the app a spine and a strong figure ground without turning data screens into dark mode.
+
+A fixed, non-interactive grain at 3.5 percent opacity sits over the page. It is painted once and never scrolls.
+
+### 13.4 Micro-interactions
+
+Motion is feedback, not decoration. Durations come from common guidance: 100 to 200ms for state feedback, 180 to 250ms for entrances.
+
+| Interaction    | Behaviour                                                         |
+| -------------- | ----------------------------------------------------------------- |
+| Button press   | 1px downward shift, 120ms, background and border transition 160ms |
+| Row hover      | 110ms background tint, shared by every data table                 |
+| Card hover     | 1px lift and stronger border, 180ms                               |
+| Nav item       | background and text colour transition, 2px bookmark on active     |
+| Page change    | 4px rise and fade, 180ms                                          |
+| Link arrows    | 2px slide on hover                                                |
+| Focus          | 3px ring at 50 percent, visible for keyboard users                |
+| Reduced motion | all animation collapses to near zero, lift is removed             |
+
+The animation system is in `src/renderer/src/assets/main.css` under utilities: `ui-press`, `ui-lift`, `page-in`, `no-scrollbar`.
+
+### 13.5 What was deliberately not done
+
+- No gradient text, glass panels, neon glow or floating cards.
+- No global zoom multiplier.
+- No animation on data changes that would imply a value moved when only the layout changed.
+- No colour used without a word or shape to carry the same meaning.

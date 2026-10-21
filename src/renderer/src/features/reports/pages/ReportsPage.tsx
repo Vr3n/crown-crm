@@ -96,13 +96,13 @@ export function ReportsPage({ kind }: { kind: ReportKind }): React.JSX.Element {
               <>
                 <DateField label="As of" value={to} onChange={setTo} />
                 <label className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                  <span className="text-[0.6875rem] uppercase tracking-[0.12em] text-muted-foreground">
                     Basis
                   </span>
                   <select
                     value={basis}
                     onChange={(e) => setBasis(e.target.value as 'BILL_DATE' | 'DUE_DATE')}
-                    className="h-8 border border-input bg-card px-2 text-[12px]"
+                    className="h-8 border border-input bg-card px-2 text-[0.875rem]"
                   >
                     <option value="DUE_DATE">Due date</option>
                     <option value="BILL_DATE">Bill date</option>
@@ -115,13 +115,13 @@ export function ReportsPage({ kind }: { kind: ReportKind }): React.JSX.Element {
       />
 
       {query.isLoading ? (
-        <div className="border border-border bg-card p-8 text-[12px] text-muted-foreground">
+        <div className="border border-border bg-card p-8 text-[0.875rem] text-muted-foreground">
           Loading report...
         </div>
       ) : null}
 
       {query.error ? (
-        <div className="border border-destructive/30 bg-destructive/5 p-4 text-[12px] text-destructive">
+        <div className="border border-destructive/30 bg-destructive/5 p-4 text-[0.875rem] text-destructive">
           {query.error instanceof Error ? query.error.message : 'Could not load the report'}
         </div>
       ) : null}
@@ -244,10 +244,12 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
           footer={['Total expense', money(report.totalExpenseMinor)]}
         />
         <div className="flex items-center justify-between border border-ink bg-card px-4 py-3">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.1em]">Net profit</span>
+          <span className="text-[0.875rem] font-semibold uppercase tracking-[0.1em]">
+            Net profit
+          </span>
           <span
             className={cn(
-              'font-mono text-[18px] font-semibold',
+              'font-mono text-[1.125rem] font-semibold',
               report.netProfitMinor >= 0 ? 'text-success' : 'text-destructive'
             )}
           >
@@ -301,7 +303,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
         </div>
         <div
           className={cn(
-            'lg:col-span-2 border px-4 py-2 text-[11.5px]',
+            'lg:col-span-2 border px-4 py-2 text-[0.875rem]',
             report.differenceMinor === 0
               ? 'border-success/40 bg-success/5 text-success'
               : 'border-destructive/40 bg-destructive/5 text-destructive'
@@ -383,14 +385,14 @@ function Table({
   }
   return (
     <div className="border border-border bg-card">
-      <table className="w-full border-collapse text-[12px]">
+      <table className="w-full border-collapse text-[0.875rem]">
         <thead>
           <tr>
             {head.map((cell, index) => (
               <th
                 key={cell}
                 className={cn(
-                  'border-b border-border px-3 py-2 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground',
+                  'border-b border-border px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground',
                   numeric.includes(index) ? 'text-right' : 'text-left'
                 )}
               >
@@ -435,7 +437,7 @@ function Table({
       {note ? (
         <div
           className={cn(
-            'border-t border-border px-3 py-2 text-[11px]',
+            'border-t border-border px-3 py-2 text-[0.75rem]',
             noteTone === 'ok' ? 'text-success' : 'text-destructive'
           )}
         >
@@ -457,12 +459,14 @@ function DateField({
 }): React.JSX.Element {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
+      <span className="text-[0.6875rem] uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </span>
       <input
         type="date"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-8 border border-input bg-card px-2 text-[12px]"
+        className="h-8 border border-input bg-card px-2 text-[0.875rem]"
       />
     </label>
   )

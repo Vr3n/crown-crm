@@ -20,8 +20,10 @@ export function PageHeader({
   return (
     <div className={cn('flex flex-wrap items-start justify-between gap-3', className)}>
       <div className="min-w-0">
-        <h1 className="font-heading text-xl font-semibold tracking-tight">{title}</h1>
-        {description ? <p className="mt-0.5 text-sm text-muted-foreground">{description}</p> : null}
+        <h1 className="font-heading text-[1.5rem] font-semibold tracking-tight">{title}</h1>
+        {description ? (
+          <p className="mt-1 text-[0.9375rem] text-muted-foreground">{description}</p>
+        ) : null}
       </div>
       {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
     </div>

@@ -123,33 +123,33 @@ export function AuthGate({
             <BookOpen className="size-4" strokeWidth={1.6} />
           </div>
           <div>
-            <div className="text-[13px] font-semibold tracking-tight">Crown Books</div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-paper/50">
+            <div className="text-[0.9375rem] font-semibold tracking-tight">Crown Books</div>
+            <div className="text-[0.6875rem] uppercase tracking-[0.18em] text-paper/50">
               Books for small business
             </div>
           </div>
         </div>
 
-        <div className="max-w-[34ch]">
-          <h1 className="text-[42px] font-semibold leading-[1.08] tracking-[-0.03em]">
+        <div className="max-w-[34ch] border-l-2 border-stamp pl-5">
+          <h1 className="text-[2.625rem] font-semibold leading-[1.08] tracking-[-0.03em]">
             Every bill has two sides. Keep both.
           </h1>
-          <p className="mt-4 font-serif text-[17px] italic leading-relaxed text-paper/65">
+          <p className="mt-4 font-serif text-[1.0625rem] italic leading-relaxed text-paper/65">
             Creditors, debtors, GST and stock, in one ledger that always proves itself.
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-6 border-t border-paper/15 pt-5 text-[10.5px] text-paper/55">
+        <div className="grid grid-cols-3 gap-6 border-t border-paper/15 pt-5 text-[0.75rem] text-paper/55">
           <div>
-            <div className="font-mono text-[18px] text-paper">2</div>
+            <div className="font-mono text-[1.125rem] text-paper">2</div>
             sides of every entry
           </div>
           <div>
-            <div className="font-mono text-[18px] text-paper">1</div>
+            <div className="font-mono text-[1.125rem] text-paper">1</div>
             write path
           </div>
           <div>
-            <div className="font-mono text-[18px] text-paper">0</div>
+            <div className="font-mono text-[1.125rem] text-paper">0</div>
             stored balances
           </div>
         </div>
@@ -161,16 +161,16 @@ export function AuthGate({
             <div className="flex size-8 items-center justify-center bg-ink text-paper">
               <BookOpen className="size-4" strokeWidth={1.6} />
             </div>
-            <span className="text-[13px] font-semibold">Crown Books</span>
+            <span className="text-[0.9375rem] font-semibold">Crown Books</span>
           </div>
 
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {isSetup ? 'First run setup' : 'Sign in'}
           </p>
-          <h2 className="mt-2 text-[26px] font-semibold leading-tight tracking-tight">
+          <h2 className="mt-2 text-[1.625rem] font-semibold leading-tight tracking-tight">
             {isSetup ? 'Set up the books' : 'Welcome back'}
           </h2>
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-muted-foreground">
             {isSetup
               ? 'The company profile and the owner account. You can change every field later.'
               : 'Use the owner or staff account for this machine.'}
@@ -217,13 +217,13 @@ export function AuthGate({
                 />
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block">
-                    <span className="mb-1.5 block text-[11px] font-medium text-foreground">
+                    <span className="mb-1.5 block text-[0.75rem] font-medium text-foreground">
                       State
                     </span>
                     <select
                       value={stateCode}
                       onChange={(e) => setStateCode(e.target.value)}
-                      className="h-9 w-full border border-input bg-card px-2.5 text-[12.5px] outline-none focus:border-primary"
+                      className="h-9 w-full border border-input bg-card px-2.5 text-[0.9375rem] outline-none focus:border-primary"
                     >
                       {STATES.map((s) => (
                         <option key={s.code} value={s.code}>
@@ -271,7 +271,7 @@ export function AuthGate({
             {error ? (
               <div
                 role="alert"
-                className="border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11.5px] leading-relaxed text-destructive"
+                className="border border-destructive/30 bg-destructive/5 px-3 py-2 text-[0.875rem] leading-relaxed text-destructive"
               >
                 {error}
               </div>
@@ -281,7 +281,7 @@ export function AuthGate({
               type="submit"
               disabled={busy}
               className={cn(
-                'flex h-9 w-full items-center justify-center gap-2 bg-primary text-[12.5px] font-medium text-primary-foreground transition-opacity',
+                'flex h-9 w-full items-center justify-center gap-2 bg-primary text-[0.9375rem] font-medium text-primary-foreground transition-opacity',
                 busy ? 'opacity-70' : 'hover:opacity-90'
               )}
             >
@@ -290,7 +290,7 @@ export function AuthGate({
             </button>
           </form>
 
-          <p className="mt-6 border-t border-border pt-4 text-[10.5px] leading-relaxed text-muted-foreground">
+          <p className="mt-6 border-t border-border pt-4 text-[0.75rem] leading-relaxed text-muted-foreground">
             Runs entirely on this machine. No account, no cloud, no telemetry.
           </p>
         </div>
@@ -320,7 +320,7 @@ function Field({
 }): React.JSX.Element {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] font-medium text-foreground">{label}</span>
+      <span className="mb-1.5 block text-[0.75rem] font-medium text-foreground">{label}</span>
       <input
         type={type}
         value={value}
@@ -328,10 +328,10 @@ function Field({
         placeholder={placeholder}
         maxLength={maxLength}
         autoFocus={autoFocus}
-        className="h-9 w-full border border-input bg-card px-2.5 text-[12.5px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary"
+        className="h-9 w-full border border-input bg-card px-2.5 text-[0.9375rem] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary"
       />
       {hint ? (
-        <span className="mt-1 block text-[10.5px] leading-relaxed text-muted-foreground">
+        <span className="mt-1 block text-[0.75rem] leading-relaxed text-muted-foreground">
           {hint}
         </span>
       ) : null}

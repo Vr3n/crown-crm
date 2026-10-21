@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type { CompanyProfile, UpdateCompanyInput } from '../../../../../shared/contracts/identity'
 
-const LABEL = 'text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+const LABEL = 'text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const MONTHS = [
   'January',
   'February',
@@ -137,8 +137,8 @@ function Section({
   return (
     <section className="border border-border bg-card">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border bg-muted/40 px-4 py-2.5">
-        <h2 className="text-[12px] font-semibold">{title}</h2>
-        {hint ? <span className="text-[11px] text-muted-foreground">{hint}</span> : null}
+        <h2 className="text-[0.875rem] font-semibold">{title}</h2>
+        {hint ? <span className="text-[0.75rem] text-muted-foreground">{hint}</span> : null}
       </div>
       <div className="p-4">{children}</div>
     </section>
@@ -196,11 +196,11 @@ function TextField({
         className={filter === 'upper' || inputMode === 'numeric' ? 'font-mono' : undefined}
       />
       {error ? (
-        <p id={`${id}-error`} role="alert" className="text-[11px] text-destructive">
+        <p id={`${id}-error`} role="alert" className="text-[0.75rem] text-destructive">
           {error}
         </p>
       ) : hint ? (
-        <p id={`${id}-hint`} className="text-[10.5px] text-muted-foreground">
+        <p id={`${id}-hint`} className="text-[0.75rem] text-muted-foreground">
           {hint}
         </p>
       ) : null}
@@ -345,7 +345,7 @@ function CompanyEditor({ profile }: { profile: CompanyProfile }): React.JSX.Elem
           </div>
           <label
             htmlFor="company-negative-stock"
-            className="flex items-center gap-1.5 text-[12px] sm:col-span-2"
+            className="flex items-center gap-1.5 text-[0.875rem] sm:col-span-2"
           >
             <Checkbox
               id="company-negative-stock"
@@ -376,7 +376,7 @@ function CompanyEditor({ profile }: { profile: CompanyProfile }): React.JSX.Elem
 
       <div className="flex items-center justify-end gap-2">
         {save.isError ? (
-          <p role="alert" className="mr-auto text-[11.5px] text-destructive">
+          <p role="alert" className="mr-auto text-[0.875rem] text-destructive">
             {errorMessage(save.error, 'Could not save the company details.')}
           </p>
         ) : null}
@@ -419,7 +419,7 @@ function OpeningBalances({ defaultDate }: { defaultDate: string }): React.JSX.El
   return (
     <Section title="Opening balances" hint="Runs once, before the first voucher">
       <div className="flex flex-col gap-3">
-        <p className="max-w-[70ch] text-[12px] leading-relaxed text-muted-foreground">
+        <p className="max-w-[70ch] text-[0.875rem] leading-relaxed text-muted-foreground">
           Party, account and stock opening balances are posted together as one balanced opening
           voucher. If the totals differ, the difference goes to Opening Balance Difference and the
           trial balance stays in balance.
@@ -448,9 +448,9 @@ function OpeningBalances({ defaultDate }: { defaultDate: string }): React.JSX.El
           </Button>
         </div>
         {posted ? (
-          <p className="text-[11.5px] text-success">Posted as {posted}</p>
+          <p className="text-[0.875rem] text-success">Posted as {posted}</p>
         ) : post.isError ? (
-          <p role="alert" className="text-[11.5px] text-destructive">
+          <p role="alert" className="text-[0.875rem] text-destructive">
             {errorMessage(post.error, 'Could not post opening balances.')}
           </p>
         ) : null}
@@ -474,13 +474,13 @@ export function CompanyPage(): React.JSX.Element {
       />
 
       {profile.isPending ? (
-        <div className="border border-border bg-card px-4 py-8 text-center text-[12px] text-muted-foreground">
+        <div className="border border-border bg-card px-4 py-8 text-center text-[0.875rem] text-muted-foreground">
           Loading company details...
         </div>
       ) : profile.isError ? (
         <div className="border border-border bg-card px-4 py-8 text-center">
-          <p className="text-[12.5px] font-medium">Could not load the company</p>
-          <p className="mt-1 text-[11.5px] text-muted-foreground">
+          <p className="text-[0.9375rem] font-medium">Could not load the company</p>
+          <p className="mt-1 text-[0.875rem] text-muted-foreground">
             {errorMessage(profile.error, 'Try again in a moment.')}
           </p>
           <Button

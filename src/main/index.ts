@@ -28,8 +28,8 @@ function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
-    minWidth: 1180,
-    minHeight: 720,
+    minWidth: 1024,
+    minHeight: 680,
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#F6F4EF',
@@ -37,7 +37,10 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      // Start at 1 so a persisted zoom cannot shrink the UI. Chromium still
+      // applies the Windows display scale to CSS pixels.
+      zoomFactor: 1
     }
   })
 

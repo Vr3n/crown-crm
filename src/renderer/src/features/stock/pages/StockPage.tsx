@@ -21,7 +21,7 @@ export function StockPage(): React.JSX.Element {
       />
 
       {isLoading ? (
-        <div className="border border-border bg-card p-8 text-[12px] text-muted-foreground">
+        <div className="border border-border bg-card p-8 text-[0.875rem] text-muted-foreground">
           Loading stock...
         </div>
       ) : data.length === 0 ? (
@@ -32,7 +32,7 @@ export function StockPage(): React.JSX.Element {
         />
       ) : (
         <div className="border border-border bg-card">
-          <table className="w-full border-collapse text-[12px]">
+          <table className="w-full border-collapse text-[0.875rem]">
             <thead>
               <tr>
                 {['Item', 'Unit', 'Quantity', 'Value'].map((head, index) => (
@@ -40,8 +40,8 @@ export function StockPage(): React.JSX.Element {
                     key={head}
                     className={
                       index > 1
-                        ? 'border-b border-border px-3 py-2 text-right text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
-                        : 'border-b border-border px-3 py-2 text-left text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+                        ? 'border-b border-border px-3 py-2 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+                        : 'border-b border-border px-3 py-2 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
                     }
                   >
                     {head}

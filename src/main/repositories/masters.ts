@@ -45,7 +45,7 @@ function mapParty(row: Record<string, unknown>): PartyRow {
 export const partyRepo = {
   list(companyId: number, input: PartyListInput): PartyRow[] {
     let where = 'p.company_id = ?'
-    const params: unknown[] = [companyId]
+    const params: (string | number | null)[] = [companyId]
     if (!input.includeInactive) where += ' AND p.is_active = 1'
     if (input.role === 'CUSTOMER') where += ' AND p.is_customer = 1'
     if (input.role === 'SUPPLIER') where += ' AND p.is_supplier = 1'

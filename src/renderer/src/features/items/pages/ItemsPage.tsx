@@ -31,11 +31,11 @@ import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type { CreateItemInput, ItemRow } from '../../../../../shared/contracts/masters'
 
-const LABEL = 'text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+const LABEL = 'text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TH =
-  'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+  'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TD = 'h-9 border-b border-border px-3 align-middle'
-const TAG = 'rounded-none px-1.5 py-0 text-[9px] uppercase tracking-[0.08em]'
+const TAG = 'rounded-none px-1.5 py-0 text-[0.6875rem] uppercase tracking-[0.08em]'
 const GST_RATES = [0, 5, 12, 18, 28]
 
 interface ItemPayload extends Omit<CreateItemInput, 'reorderLevelE4'> {
@@ -166,11 +166,11 @@ function TextField({
         className="font-mono tabular-nums"
       />
       {error ? (
-        <p id={`${id}-error`} role="alert" className="text-[11px] text-destructive">
+        <p id={`${id}-error`} role="alert" className="text-[0.75rem] text-destructive">
           {error}
         </p>
       ) : hint ? (
-        <p id={`${id}-hint`} className="text-[10.5px] text-muted-foreground">
+        <p id={`${id}-hint`} className="text-[0.75rem] text-muted-foreground">
           {hint}
         </p>
       ) : null}
@@ -283,12 +283,12 @@ export function ItemsPage(): React.JSX.Element {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search name, SKU or HSN"
-            className="h-8 border-0 bg-transparent pl-8 text-[12.5px] focus-visible:ring-0 dark:bg-transparent"
+            className="h-8 border-0 bg-transparent pl-8 text-[0.9375rem] focus-visible:ring-0 dark:bg-transparent"
           />
         </div>
         <label
           htmlFor="item-inactive"
-          className="flex cursor-pointer items-center gap-1.5 text-[11.5px] text-muted-foreground"
+          className="flex cursor-pointer items-center gap-1.5 text-[0.875rem] text-muted-foreground"
         >
           <Checkbox
             id="item-inactive"
@@ -301,8 +301,8 @@ export function ItemsPage(): React.JSX.Element {
 
       {list.isError ? (
         <div className="border border-border bg-card px-4 py-8 text-center">
-          <p className="text-[12.5px] font-medium">Could not load items</p>
-          <p className="mt-1 text-[11.5px] text-muted-foreground">
+          <p className="text-[0.9375rem] font-medium">Could not load items</p>
+          <p className="mt-1 text-[0.875rem] text-muted-foreground">
             {errorMessage(list.error, 'Try again in a moment.')}
           </p>
           <Button variant="outline" size="sm" className="mt-3" onClick={() => void list.refetch()}>
@@ -371,7 +371,7 @@ export function ItemsPage(): React.JSX.Element {
                 <tr>
                   <td
                     colSpan={9}
-                    className="px-3 py-8 text-center text-[12px] text-muted-foreground"
+                    className="px-3 py-8 text-center text-[0.875rem] text-muted-foreground"
                   >
                     Loading items...
                   </td>
@@ -381,7 +381,7 @@ export function ItemsPage(): React.JSX.Element {
                   <tr key={item.id} className="hover:bg-muted/40">
                     <td className={TD}>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[12.5px] font-medium">{item.name}</span>
+                        <span className="text-[0.9375rem] font-medium">{item.name}</span>
                         {item.isService ? (
                           <Badge variant="outline" className={TAG}>
                             Service
@@ -389,27 +389,27 @@ export function ItemsPage(): React.JSX.Element {
                         ) : null}
                       </div>
                       {item.sku ? (
-                        <div className="font-mono text-[10px] text-muted-foreground">
+                        <div className="font-mono text-[0.6875rem] text-muted-foreground">
                           {item.sku}
                         </div>
                       ) : null}
                     </td>
-                    <td className={`${TD} font-mono text-[11.5px] text-muted-foreground`}>
+                    <td className={`${TD} font-mono text-[0.875rem] text-muted-foreground`}>
                       {item.hsnSac ?? '--'}
                     </td>
-                    <td className={`${TD} text-[11.5px] text-muted-foreground`}>
+                    <td className={`${TD} text-[0.875rem] text-muted-foreground`}>
                       {item.uom ?? '--'}
                     </td>
-                    <td className={`${TD} text-right font-mono text-[12px] tabular-nums`}>
+                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
                       {formatRate(item.gstRateBps)}
                     </td>
-                    <td className={`${TD} text-right font-mono text-[12px] tabular-nums`}>
+                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
                       {quantity(item.stockQtyE4)}
                     </td>
-                    <td className={`${TD} text-right font-mono text-[12px] tabular-nums`}>
+                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
                       {formatMinor(item.salePriceMinor, 'INR')}
                     </td>
-                    <td className={`${TD} text-right font-mono text-[12px] tabular-nums`}>
+                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
                       {formatMinor(item.purchasePriceMinor, 'INR')}
                     </td>
                     <td className={TD}>
@@ -465,7 +465,7 @@ export function ItemsPage(): React.JSX.Element {
                   aria-describedby={errors.name ? 'item-name-error' : undefined}
                 />
                 {errors.name ? (
-                  <p id="item-name-error" role="alert" className="text-[11px] text-destructive">
+                  <p id="item-name-error" role="alert" className="text-[0.75rem] text-destructive">
                     {errors.name}
                   </p>
                 ) : null}
@@ -529,7 +529,7 @@ export function ItemsPage(): React.JSX.Element {
               </div>
               <label
                 htmlFor="item-service"
-                className="flex items-center gap-1.5 self-end pb-2 text-[12px]"
+                className="flex items-center gap-1.5 self-end pb-2 text-[0.875rem]"
               >
                 <Checkbox
                   id="item-service"
@@ -590,7 +590,7 @@ export function ItemsPage(): React.JSX.Element {
             {save.isError ? (
               <p
                 role="alert"
-                className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[11.5px] text-destructive"
+                className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[0.875rem] text-destructive"
               >
                 {errorMessage(save.error, 'Could not save the item.')}
               </p>

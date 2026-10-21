@@ -37,7 +37,7 @@ export function BackupPage(): React.JSX.Element {
           <button
             onClick={() => create.mutate()}
             disabled={create.isPending}
-            className="flex h-8 items-center gap-1.5 bg-primary px-3 text-[12px] font-medium text-primary-foreground disabled:opacity-60"
+            className="flex h-8 items-center gap-1.5 bg-primary px-3 text-[0.875rem] font-medium text-primary-foreground disabled:opacity-60"
           >
             <DatabaseBackup className="size-3.5" strokeWidth={1.75} />
             {create.isPending ? 'Creating...' : 'Create backup'}
@@ -45,14 +45,14 @@ export function BackupPage(): React.JSX.Element {
         }
       />
 
-      <div className="border border-border bg-accent-soft/50 px-4 py-3 text-[11.5px] leading-relaxed text-muted-foreground">
+      <div className="border border-border bg-accent-soft/50 px-4 py-3 text-[0.875rem] leading-relaxed text-muted-foreground">
         Restoring is manual by design. Close Crown Books, keep a copy of the current
         <span className="font-mono text-foreground"> crown-books.db</span>, then replace it with the
         backup file and reopen the app.
       </div>
 
       {isLoading ? (
-        <div className="border border-border bg-card p-6 text-[12px] text-muted-foreground">
+        <div className="border border-border bg-card p-6 text-[0.875rem] text-muted-foreground">
           Reading the backup folder...
         </div>
       ) : data.length === 0 ? (
@@ -63,7 +63,7 @@ export function BackupPage(): React.JSX.Element {
         />
       ) : (
         <div className="border border-border bg-card">
-          <table className="w-full border-collapse text-[12px]">
+          <table className="w-full border-collapse text-[0.875rem]">
             <thead>
               <tr>
                 {['File', 'Created', 'Size'].map((head, index) => (
@@ -71,8 +71,8 @@ export function BackupPage(): React.JSX.Element {
                     key={head}
                     className={
                       index === 2
-                        ? 'border-b border-border px-3 py-2 text-right text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
-                        : 'border-b border-border px-3 py-2 text-left text-[9.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+                        ? 'border-b border-border px-3 py-2 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+                        : 'border-b border-border px-3 py-2 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
                     }
                   >
                     {head}
@@ -83,7 +83,7 @@ export function BackupPage(): React.JSX.Element {
             <tbody>
               {data.map((file) => (
                 <tr key={file.name} className="border-b border-border last:border-0">
-                  <td className="px-3 py-2 font-mono text-[11px]">{file.name}</td>
+                  <td className="px-3 py-2 font-mono text-[0.75rem]">{file.name}</td>
                   <td className="px-3 py-2">{formatDateTime(file.createdAt)}</td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums">
                     {(file.sizeBytes / 1024).toFixed(1)} KB

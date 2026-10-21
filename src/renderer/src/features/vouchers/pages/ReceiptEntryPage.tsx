@@ -111,17 +111,17 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 p-6">
       <div className="flex flex-wrap items-end justify-between gap-3 border border-border bg-card px-5 py-4">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             {receipt ? 'Money received' : 'Money paid'}
           </p>
-          <h1 className="mt-1 font-heading text-[24px] font-semibold leading-none tracking-tight">
+          <h1 className="mt-1 font-heading text-[1.5rem] font-semibold leading-none tracking-tight">
             New {label}
           </h1>
-          <p className="mt-1.5 font-mono text-[10.5px] text-muted-foreground">
+          <p className="mt-1.5 font-mono text-[0.75rem] text-muted-foreground">
             Series {receipt ? 'RCT' : 'PAY'} · number assigned on posting
           </p>
         </div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted-foreground">
           {receipt ? 'Receipt voucher' : 'Payment voucher'}
         </p>
       </div>
@@ -133,7 +133,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
               value={partyId ?? ''}
               onChange={(event) => chooseParty(event.target.value)}
               aria-label="Party"
-              className="h-7 min-w-[240px] flex-1 cursor-pointer border-0 bg-transparent text-[12.5px] font-medium outline-none"
+              className="h-7 min-w-[240px] flex-1 cursor-pointer border-0 bg-transparent text-[0.9375rem] font-medium outline-none"
             >
               <option value="">Select {receipt ? 'customer' : 'supplier'}…</option>
               {parties.map((row) => (
@@ -142,7 +142,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
                 </option>
               ))}
             </select>
-            <span className="text-[10.5px] text-muted-foreground">
+            <span className="text-[0.75rem] text-muted-foreground">
               {party
                 ? `Balance ${formatMinor(party.balanceMinor, 'INR')}`
                 : 'Search by name in the list'}
@@ -155,7 +155,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             value={date}
             onChange={(event) => setDate(event.target.value)}
             aria-label="Voucher date"
-            className="h-7 w-full border-0 bg-transparent font-mono text-[12px] outline-none"
+            className="h-7 w-full border-0 bg-transparent font-mono text-[0.875rem] outline-none"
           />
         </Field>
         <Field label="Amount" className="border-b border-border">
@@ -165,7 +165,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             inputMode="decimal"
             placeholder="0.00"
             aria-label="Amount"
-            className="h-7 w-full border-0 bg-transparent text-right font-mono text-[13px] tabular-nums outline-none placeholder:text-muted-foreground/60"
+            className="h-7 w-full border-0 bg-transparent text-right font-mono text-[0.9375rem] tabular-nums outline-none placeholder:text-muted-foreground/60"
           />
         </Field>
         <Field label="Method" className="border-b border-border sm:border-r">
@@ -173,7 +173,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             value={method}
             onChange={(event) => setMethod(event.target.value)}
             aria-label="Payment method"
-            className="h-7 w-full cursor-pointer border-0 bg-transparent text-[12px] outline-none"
+            className="h-7 w-full cursor-pointer border-0 bg-transparent text-[0.875rem] outline-none"
           >
             {METHODS.map((option) => (
               <option key={option} value={option}>
@@ -188,7 +188,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             onChange={(event) => setReference(event.target.value)}
             placeholder="Cheque or UTR number"
             aria-label="Reference"
-            className="h-7 w-full border-0 bg-transparent text-[12px] outline-none placeholder:text-muted-foreground/60"
+            className="h-7 w-full border-0 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
           />
         </Field>
         <Field label="Notes" className="sm:col-span-2">
@@ -198,25 +198,27 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             rows={2}
             placeholder="Narration for the voucher"
             aria-label="Notes"
-            className="w-full resize-none border-0 bg-transparent text-[12px] outline-none placeholder:text-muted-foreground/60"
+            className="w-full resize-none border-0 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
           />
         </Field>
       </div>
 
       <div className="border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <h2 className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             {receipt ? 'Open invoices' : 'Open bills'}
           </h2>
-          <span className="text-[10.5px] text-muted-foreground">As on {date} · due date basis</span>
+          <span className="text-[0.75rem] text-muted-foreground">
+            As on {date} · due date basis
+          </span>
         </div>
-        <table className="w-full border-collapse text-[12px]">
+        <table className="w-full border-collapse text-[0.875rem]">
           <thead>
             <tr className="border-b border-rule-strong bg-muted/40">
               {['Bill', 'Date', 'Due', 'Outstanding', 'Allocate'].map((heading) => (
                 <th
                   key={heading}
-                  className={`h-8 px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground ${heading === 'Outstanding' || heading === 'Allocate' ? 'text-right' : 'text-left'}`}
+                  className={`h-8 px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground ${heading === 'Outstanding' || heading === 'Allocate' ? 'text-right' : 'text-left'}`}
                 >
                   {heading}
                 </th>
@@ -226,33 +228,33 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
           <tbody>
             {partyId === null ? (
               <tr className="h-9">
-                <td colSpan={5} className="px-3 text-[11.5px] text-muted-foreground">
+                <td colSpan={5} className="px-3 text-[0.875rem] text-muted-foreground">
                   Select a party to see {receipt ? 'invoices' : 'bills'} open for settlement.
                 </td>
               </tr>
             ) : null}
             {partyId !== null && isLoading ? (
               <tr className="h-9">
-                <td colSpan={5} className="px-3 text-[11.5px] text-muted-foreground">
+                <td colSpan={5} className="px-3 text-[0.875rem] text-muted-foreground">
                   Loading open {receipt ? 'invoices' : 'bills'}…
                 </td>
               </tr>
             ) : null}
             {partyId !== null && !isLoading && bills.length === 0 ? (
               <tr className="h-9">
-                <td colSpan={5} className="px-3 text-[11.5px] text-muted-foreground">
+                <td colSpan={5} className="px-3 text-[0.875rem] text-muted-foreground">
                   Nothing open. The amount will remain on account.
                 </td>
               </tr>
             ) : null}
             {bills.map((bill) => (
               <tr key={bill.id} className="h-9 border-b border-border last:border-b-0">
-                <td className="px-3 font-mono text-[11.5px]">{bill.number}</td>
-                <td className="px-3 font-mono text-[11.5px]">{bill.date}</td>
-                <td className="px-3 font-mono text-[11.5px]">
+                <td className="px-3 font-mono text-[0.875rem]">{bill.number}</td>
+                <td className="px-3 font-mono text-[0.875rem]">{bill.date}</td>
+                <td className="px-3 font-mono text-[0.875rem]">
                   {bill.dueDate ?? '—'}
                   {bill.daysOverdue > 0 ? (
-                    <span className="ml-2 text-[10px] text-destructive">
+                    <span className="ml-2 text-[0.6875rem] text-destructive">
                       {bill.daysOverdue}d over
                     </span>
                   ) : null}
@@ -269,28 +271,28 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
                     inputMode="decimal"
                     placeholder="0.00"
                     aria-label={`Allocate to ${bill.number}`}
-                    className="h-9 w-full border-0 bg-transparent px-3 text-right font-mono text-[11.5px] tabular-nums outline-none placeholder:text-muted-foreground/60"
+                    className="h-9 w-full border-0 bg-transparent px-3 text-right font-mono text-[0.875rem] tabular-nums outline-none placeholder:text-muted-foreground/60"
                   />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div className="flex flex-wrap items-center justify-end gap-6 border-t border-rule-strong px-4 py-2.5 text-[11.5px]">
+        <div className="flex flex-wrap items-center justify-end gap-6 border-t border-rule-strong px-4 py-2.5 text-[0.875rem]">
           <span className="flex items-baseline gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               {receipt ? 'Received' : 'Paid'}
             </span>
             <span className="font-mono tabular-nums">{formatMinor(amountMinor, 'INR')}</span>
           </span>
           <span className="flex items-baseline gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               Allocated
             </span>
             <span className="font-mono tabular-nums">{formatMinor(allocatedMinor, 'INR')}</span>
           </span>
           <span className="flex items-baseline gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               On account
             </span>
             <span className={`font-mono tabular-nums ${unallocated < 0 ? 'text-destructive' : ''}`}>
@@ -303,7 +305,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
       {post.isError ? (
         <p
           role="alert"
-          className="border border-destructive/40 bg-destructive/5 px-3 py-2 text-[11.5px] text-destructive"
+          className="border border-destructive/40 bg-destructive/5 px-3 py-2 text-[0.875rem] text-destructive"
         >
           {postError}
         </p>
@@ -314,7 +316,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
           Cancel
         </Button>
         <div className="flex items-center gap-3">
-          {reason ? <span className="text-[11px] text-muted-foreground">{reason}</span> : null}
+          {reason ? <span className="text-[0.75rem] text-muted-foreground">{reason}</span> : null}
           <Button
             type="button"
             size="sm"
@@ -340,7 +342,7 @@ function Field({
 }): React.JSX.Element {
   return (
     <div className={`flex items-center gap-3 px-3 py-2 ${className ?? ''}`}>
-      <span className="w-[76px] shrink-0 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <span className="w-[76px] shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </span>
       <div className="min-w-0 flex-1">{children}</div>

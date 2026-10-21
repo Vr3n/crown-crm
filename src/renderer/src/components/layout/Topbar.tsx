@@ -41,11 +41,11 @@ export function Topbar(): React.JSX.Element {
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card px-5">
-      <h1 className="shrink-0 text-[13.5px] font-semibold tracking-tight">
+      <h1 className="shrink-0 text-[1rem] font-semibold tracking-tight">
         {titleForPath(location.pathname)}
       </h1>
 
-      <span className="hidden shrink-0 border-l border-border pl-3 text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground sm:inline">
+      <span className="hidden shrink-0 border-l border-border pl-3 text-[0.75rem] uppercase tracking-[0.12em] text-muted-foreground sm:inline">
         {financialYearLabel()}
       </span>
 
@@ -56,11 +56,11 @@ export function Topbar(): React.JSX.Element {
             description: 'Party, item and voucher search lands in Phase 2.'
           })
         }
-        className="ml-4 flex h-8 min-w-0 flex-1 items-center gap-2 border border-border bg-background px-2.5 text-[12px] text-muted-foreground transition-colors hover:border-rule-strong hover:text-foreground"
+        className="ml-4 flex h-8 min-w-0 flex-1 items-center gap-2 border border-border bg-background px-2.5 text-[0.875rem] text-muted-foreground transition-colors hover:border-rule-strong hover:text-foreground"
       >
         <Search className="size-3.5" strokeWidth={1.75} />
         <span className="flex-1 truncate text-left">Search parties, items, vouchers</span>
-        <kbd className="hidden items-center gap-0.5 border border-border bg-muted px-1 py-0.5 font-mono text-[9px] sm:flex">
+        <kbd className="hidden items-center gap-0.5 border border-border bg-muted px-1 py-0.5 font-mono text-[0.6875rem] sm:flex">
           <Command className="size-2.5" />K
         </kbd>
       </button>
@@ -88,14 +88,14 @@ export function Topbar(): React.JSX.Element {
               className="flex items-center gap-2 px-1 py-1 transition-colors hover:bg-accent"
               aria-label="Account menu"
             >
-              <span className="flex size-7 items-center justify-center bg-accent-soft text-[10.5px] font-semibold text-primary">
+              <span className="flex size-7 items-center justify-center bg-accent-soft text-[0.75rem] font-semibold text-primary">
                 {initials(session.userFullName)}
               </span>
               <span className="hidden text-left md:block">
-                <span className="block text-[11.5px] font-medium leading-tight">
+                <span className="block text-[0.875rem] font-medium leading-tight">
                   {session.userFullName}
                 </span>
-                <span className="block text-[10px] leading-tight text-muted-foreground">
+                <span className="block text-[0.6875rem] leading-tight text-muted-foreground">
                   {session.roleName}
                 </span>
               </span>

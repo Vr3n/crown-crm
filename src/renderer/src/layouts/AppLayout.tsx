@@ -1,13 +1,14 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 /**
- * The authenticated shell: a quiet navigation rail, a thin top bar, and a
- * scrollable content column. Pages own their own padding and headers.
+ * The authenticated shell: an ink navigation rail, a thin top bar, and a
+ * scrollable content column. Pages animate in gently on route change.
  */
 export function AppLayout(): React.JSX.Element {
+  const location = useLocation()
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex h-screen overflow-hidden bg-background text-foreground">
@@ -15,7 +16,9 @@ export function AppLayout(): React.JSX.Element {
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar />
           <main className="min-h-0 flex-1 overflow-y-auto">
-            <Outlet />
+            <div key={location.pathname} className="page-in">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>

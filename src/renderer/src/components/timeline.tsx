@@ -102,7 +102,7 @@ export function Timeline({
                     {entry.badge && (
                       <Badge
                         variant={entry.badge.variant ?? 'secondary'}
-                        className="rounded-full px-2 py-0 text-[11px]"
+                        className="rounded-full px-2 py-0 text-[0.75rem]"
                       >
                         {entry.badge.label}
                       </Badge>

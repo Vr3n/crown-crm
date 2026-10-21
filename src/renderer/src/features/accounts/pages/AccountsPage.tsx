@@ -30,11 +30,11 @@ import { formatMinor } from '@/lib/money'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type { AccountRow, CreateAccountInput } from '../../../../../shared/contracts/masters'
 
-const LABEL = 'text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+const LABEL = 'text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TH =
-  'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+  'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TD = 'h-9 border-b border-border px-3 align-middle'
-const TAG = 'rounded-none px-1.5 py-0 text-[9px] uppercase tracking-[0.08em]'
+const TAG = 'rounded-none px-1.5 py-0 text-[0.6875rem] uppercase tracking-[0.08em]'
 
 type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE'
 const TYPES: { value: AccountType; label: string }[] = [
@@ -72,16 +72,16 @@ function toMinor(value: string): number {
 function Balance({ minor }: { minor: number }): React.JSX.Element {
   if (minor === 0)
     return (
-      <span className="font-mono text-[12px] tabular-nums text-muted-foreground">
+      <span className="font-mono text-[0.875rem] tabular-nums text-muted-foreground">
         {formatMinor(0, 'INR')}
       </span>
     )
   return (
     <span
-      className={`font-mono text-[12px] tabular-nums ${minor > 0 ? 'text-success' : 'text-destructive'}`}
+      className={`font-mono text-[0.875rem] tabular-nums ${minor > 0 ? 'text-success' : 'text-destructive'}`}
     >
       {formatMinor(Math.abs(minor), 'INR')}{' '}
-      <span className="text-[10px]">{minor > 0 ? 'Dr' : 'Cr'}</span>
+      <span className="text-[0.6875rem]">{minor > 0 ? 'Dr' : 'Cr'}</span>
     </span>
   )
 }
@@ -196,7 +196,7 @@ export function AccountsPage(): React.JSX.Element {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search account, group or system key"
-            className="h-8 border-0 bg-transparent pl-8 text-[12.5px] focus-visible:ring-0 dark:bg-transparent"
+            className="h-8 border-0 bg-transparent pl-8 text-[0.9375rem] focus-visible:ring-0 dark:bg-transparent"
           />
         </div>
         <div className="w-52">
@@ -204,7 +204,7 @@ export function AccountsPage(): React.JSX.Element {
             <SelectTrigger
               id="account-group-filter"
               aria-label="Filter by account group"
-              className="h-8 text-[11.5px]"
+              className="h-8 text-[0.875rem]"
             >
               <SelectValue />
             </SelectTrigger>
@@ -220,7 +220,7 @@ export function AccountsPage(): React.JSX.Element {
         </div>
         <label
           htmlFor="account-inactive"
-          className="flex cursor-pointer items-center gap-1.5 text-[11.5px] text-muted-foreground"
+          className="flex cursor-pointer items-center gap-1.5 text-[0.875rem] text-muted-foreground"
         >
           <Checkbox
             id="account-inactive"
@@ -233,8 +233,8 @@ export function AccountsPage(): React.JSX.Element {
 
       {list.isError ? (
         <div className="border border-border bg-card px-4 py-8 text-center">
-          <p className="text-[12.5px] font-medium">Could not load accounts</p>
-          <p className="mt-1 text-[11.5px] text-muted-foreground">
+          <p className="text-[0.9375rem] font-medium">Could not load accounts</p>
+          <p className="mt-1 text-[0.875rem] text-muted-foreground">
             {errorMessage(list.error, 'Try again in a moment.')}
           </p>
           <Button variant="outline" size="sm" className="mt-3" onClick={() => void list.refetch()}>
@@ -297,7 +297,7 @@ export function AccountsPage(): React.JSX.Element {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-3 py-8 text-center text-[12px] text-muted-foreground"
+                    className="px-3 py-8 text-center text-[0.875rem] text-muted-foreground"
                   >
                     Loading accounts...
                   </td>
@@ -312,10 +312,10 @@ export function AccountsPage(): React.JSX.Element {
                       scope="colgroup"
                       className="h-8 border-y border-border bg-muted/50 px-3 text-left"
                     >
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                      <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-foreground">
                         {section.name}
                       </span>
-                      <span className="ml-2 text-[10px] text-muted-foreground">
+                      <span className="ml-2 text-[0.6875rem] text-muted-foreground">
                         {section.rows.length}
                       </span>
                     </th>
@@ -324,7 +324,7 @@ export function AccountsPage(): React.JSX.Element {
                     <tr key={account.id} className="hover:bg-muted/40">
                       <td className={TD}>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[12.5px]">{account.name}</span>
+                          <span className="text-[0.9375rem]">{account.name}</span>
                           {!account.isActive ? (
                             <Badge variant="outline" className={TAG}>
                               Inactive
@@ -333,7 +333,7 @@ export function AccountsPage(): React.JSX.Element {
                         </div>
                       </td>
                       <td
-                        className={`${TD} text-[11px] uppercase tracking-[0.08em] text-muted-foreground`}
+                        className={`${TD} text-[0.75rem] uppercase tracking-[0.08em] text-muted-foreground`}
                       >
                         {account.type}
                       </td>
@@ -349,7 +349,7 @@ export function AccountsPage(): React.JSX.Element {
                       </td>
                       <td className={`${TD} text-right`}>
                         {account.isSystem ? (
-                          <span className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                          <span className="text-[0.6875rem] uppercase tracking-[0.08em] text-muted-foreground">
                             Reserved
                           </span>
                         ) : account.isActive ? (
@@ -397,7 +397,7 @@ export function AccountsPage(): React.JSX.Element {
                 aria-describedby={errors.name ? 'account-name-error' : undefined}
               />
               {errors.name ? (
-                <p id="account-name-error" role="alert" className="text-[11px] text-destructive">
+                <p id="account-name-error" role="alert" className="text-[0.75rem] text-destructive">
                   {errors.name}
                 </p>
               ) : null}
@@ -425,7 +425,11 @@ export function AccountsPage(): React.JSX.Element {
                   </SelectContent>
                 </Select>
                 {errors.groupId ? (
-                  <p id="account-group-error" role="alert" className="text-[11px] text-destructive">
+                  <p
+                    id="account-group-error"
+                    role="alert"
+                    className="text-[0.75rem] text-destructive"
+                  >
                     {errors.groupId}
                   </p>
                 ) : null}
@@ -466,7 +470,7 @@ export function AccountsPage(): React.JSX.Element {
                   className="text-right font-mono tabular-nums"
                 />
                 {errors.amount ? (
-                  <p role="alert" className="text-[11px] text-destructive">
+                  <p role="alert" className="text-[0.75rem] text-destructive">
                     {errors.amount}
                   </p>
                 ) : null}
@@ -495,7 +499,7 @@ export function AccountsPage(): React.JSX.Element {
             {save.isError ? (
               <p
                 role="alert"
-                className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[11.5px] text-destructive"
+                className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[0.875rem] text-destructive"
               >
                 {errorMessage(save.error, 'Could not add the account.')}
               </p>

@@ -86,39 +86,39 @@ export function VoucherListPage({
       />
 
       <div className="flex flex-wrap items-end gap-3 border border-border bg-card px-3 py-2.5">
-        <label className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <label className="flex items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           From
           <Input
             type="date"
             value={range.from}
             onChange={(event) => setRange((current) => ({ ...current, from: event.target.value }))}
-            className="h-8 w-[150px] rounded-none font-mono text-[11.5px] shadow-none"
+            className="h-8 w-[150px] rounded-none font-mono text-[0.875rem] shadow-none"
           />
         </label>
-        <label className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <label className="flex items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           To
           <Input
             type="date"
             value={range.to}
             onChange={(event) => setRange((current) => ({ ...current, to: event.target.value }))}
-            className="h-8 w-[150px] rounded-none font-mono text-[11.5px] shadow-none"
+            className="h-8 w-[150px] rounded-none font-mono text-[0.875rem] shadow-none"
           />
         </label>
-        <label className="flex min-w-[220px] flex-1 items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <label className="flex min-w-[220px] flex-1 items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Search
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Number or party"
-            className="h-8 flex-1 rounded-none text-[11.5px] shadow-none"
+            className="h-8 flex-1 rounded-none text-[0.875rem] shadow-none"
           />
         </label>
-        <label className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <label className="flex items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Status
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value as typeof status)}
-            className="h-8 cursor-pointer border border-input bg-transparent px-2 text-[11.5px] normal-case tracking-normal outline-none"
+            className="h-8 cursor-pointer border border-input bg-transparent px-2 text-[0.875rem] normal-case tracking-normal outline-none"
           >
             <option value="ALL">All</option>
             <option value="POSTED">Posted</option>
@@ -128,22 +128,22 @@ export function VoucherListPage({
       </div>
 
       <div className="border border-border bg-card">
-        <table className="w-full border-collapse text-[12px]">
+        <table className="w-full border-collapse text-[0.875rem]">
           <thead>
             <tr className="border-b border-rule-strong bg-muted/40">
-              <th className="h-8 w-[110px] px-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              <th className="h-8 w-[110px] px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Date
               </th>
-              <th className="h-8 px-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              <th className="h-8 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Number
               </th>
-              <th className="h-8 px-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              <th className="h-8 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Party
               </th>
-              <th className="h-8 px-3 text-right text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              <th className="h-8 px-3 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Total
               </th>
-              <th className="h-8 w-[120px] px-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              <th className="h-8 w-[120px] px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 Status
               </th>
             </tr>
@@ -151,21 +151,21 @@ export function VoucherListPage({
           <tbody>
             {isLoading ? (
               <tr className="h-9">
-                <td colSpan={5} className="px-3 text-[11.5px] text-muted-foreground">
+                <td colSpan={5} className="px-3 text-[0.875rem] text-muted-foreground">
                   Loading vouchers…
                 </td>
               </tr>
             ) : null}
             {isError ? (
               <tr className="h-9">
-                <td colSpan={5} className="px-3 text-[11.5px] text-destructive">
+                <td colSpan={5} className="px-3 text-[0.875rem] text-destructive">
                   Could not load vouchers. Check the filters and try again.
                 </td>
               </tr>
             ) : null}
             {!isLoading && !isError && rows.length === 0 ? (
               <tr className="h-9">
-                <td colSpan={5} className="px-3 text-[11.5px] text-muted-foreground">
+                <td colSpan={5} className="px-3 text-[0.875rem] text-muted-foreground">
                   No vouchers in this period.
                 </td>
               </tr>
@@ -175,11 +175,11 @@ export function VoucherListPage({
                 key={row.id}
                 className="h-9 border-b border-border last:border-b-0 hover:bg-muted/30"
               >
-                <td className="px-3 font-mono text-[11.5px] tabular-nums">{row.date}</td>
+                <td className="px-3 font-mono text-[0.875rem] tabular-nums">{row.date}</td>
                 <td className="px-3">
                   <Link
                     to={`/vouchers/${row.id}`}
-                    className="font-mono text-[11.5px] font-medium hover:text-primary hover:underline"
+                    className="font-mono text-[0.875rem] font-medium hover:text-primary hover:underline"
                   >
                     {row.number}
                   </Link>
@@ -189,7 +189,7 @@ export function VoucherListPage({
                   {formatMinor(row.totalMinor, 'INR')}
                 </td>
                 <td
-                  className={`px-3 text-[10px] font-semibold uppercase tracking-[0.1em] ${statusClass(row.status)}`}
+                  className={`px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.1em] ${statusClass(row.status)}`}
                 >
                   {row.status}
                 </td>
@@ -197,15 +197,17 @@ export function VoucherListPage({
             ))}
           </tbody>
         </table>
-        <div className="flex items-center justify-between border-t border-rule-strong px-3 py-2.5 text-[11.5px]">
+        <div className="flex items-center justify-between border-t border-rule-strong px-3 py-2.5 text-[0.875rem]">
           <span className="text-muted-foreground">
             {rows.length} voucher{rows.length === 1 ? '' : 's'}
           </span>
           <span className="flex items-baseline gap-3">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               Total
             </span>
-            <span className="font-mono text-[13px] tabular-nums">{formatMinor(total, 'INR')}</span>
+            <span className="font-mono text-[0.9375rem] tabular-nums">
+              {formatMinor(total, 'INR')}
+            </span>
           </span>
         </div>
       </div>

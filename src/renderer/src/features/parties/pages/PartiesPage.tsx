@@ -24,11 +24,11 @@ import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type { CreatePartyInput, PartyRole, PartyRow } from '../../../../../shared/contracts/masters'
 
-const LABEL = 'text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+const LABEL = 'text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TH =
-  'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
+  'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TD = 'h-9 border-b border-border px-3 align-middle'
-const TAG = 'rounded-none px-1.5 py-0 text-[9px] uppercase tracking-[0.08em]'
+const TAG = 'rounded-none px-1.5 py-0 text-[0.6875rem] uppercase tracking-[0.08em]'
 const ROLES: { value: PartyRole; label: string }[] = [
   { value: 'BOTH', label: 'All' },
   { value: 'CUSTOMER', label: 'Customers' },
@@ -221,11 +221,11 @@ function TextField({
         className={`${mono ? 'font-mono tabular-nums' : ''} ${inputMode === 'decimal' ? 'text-right' : ''}`}
       />
       {error ? (
-        <p id={`${id}-error`} role="alert" className="text-[11px] text-destructive">
+        <p id={`${id}-error`} role="alert" className="text-[0.75rem] text-destructive">
           {error}
         </p>
       ) : hint ? (
-        <p id={`${id}-hint`} className="text-[10.5px] text-muted-foreground">
+        <p id={`${id}-hint`} className="text-[0.75rem] text-muted-foreground">
           {hint}
         </p>
       ) : null}
@@ -236,16 +236,16 @@ function TextField({
 function Balance({ minor }: { minor: number }): React.JSX.Element {
   if (minor === 0)
     return (
-      <span className="font-mono text-[12px] tabular-nums text-muted-foreground">
+      <span className="font-mono text-[0.875rem] tabular-nums text-muted-foreground">
         {formatMinor(0, 'INR')}
       </span>
     )
   return (
     <span
-      className={`font-mono text-[12px] tabular-nums ${minor > 0 ? 'text-success' : 'text-destructive'}`}
+      className={`font-mono text-[0.875rem] tabular-nums ${minor > 0 ? 'text-success' : 'text-destructive'}`}
     >
       {formatMinor(Math.abs(minor), 'INR')}{' '}
-      <span className="text-[10px]">{minor > 0 ? 'Dr' : 'Cr'}</span>
+      <span className="text-[0.6875rem]">{minor > 0 ? 'Dr' : 'Cr'}</span>
     </span>
   )
 }
@@ -354,7 +354,7 @@ export function PartiesPage(): React.JSX.Element {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search name, phone or GSTIN"
-            className="h-8 border-0 bg-transparent pl-8 text-[12.5px] focus-visible:ring-0 dark:bg-transparent"
+            className="h-8 border-0 bg-transparent pl-8 text-[0.9375rem] focus-visible:ring-0 dark:bg-transparent"
           />
         </div>
         <div className="flex items-center" role="group" aria-label="Filter by role">
@@ -364,7 +364,7 @@ export function PartiesPage(): React.JSX.Element {
               type="button"
               aria-pressed={role === option.value}
               onClick={() => setRole(option.value)}
-              className={`h-8 border border-border px-2.5 text-[11.5px] transition-colors ${index > 0 ? '-ml-px' : ''} ${
+              className={`h-8 border border-border px-2.5 text-[0.875rem] transition-colors ${index > 0 ? '-ml-px' : ''} ${
                 role === option.value
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -376,7 +376,7 @@ export function PartiesPage(): React.JSX.Element {
         </div>
         <label
           htmlFor="party-inactive"
-          className="flex cursor-pointer items-center gap-1.5 pl-1 text-[11.5px] text-muted-foreground"
+          className="flex cursor-pointer items-center gap-1.5 pl-1 text-[0.875rem] text-muted-foreground"
         >
           <Checkbox
             id="party-inactive"
@@ -389,8 +389,8 @@ export function PartiesPage(): React.JSX.Element {
 
       {list.isError ? (
         <div className="border border-border bg-card px-4 py-8 text-center">
-          <p className="text-[12.5px] font-medium">Could not load parties</p>
-          <p className="mt-1 text-[11.5px] text-muted-foreground">
+          <p className="text-[0.9375rem] font-medium">Could not load parties</p>
+          <p className="mt-1 text-[0.875rem] text-muted-foreground">
             {errorMessage(list.error, 'Try again in a moment.')}
           </p>
           <Button variant="outline" size="sm" className="mt-3" onClick={() => void list.refetch()}>
@@ -451,7 +451,7 @@ export function PartiesPage(): React.JSX.Element {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-3 py-8 text-center text-[12px] text-muted-foreground"
+                    className="px-3 py-8 text-center text-[0.875rem] text-muted-foreground"
                   >
                     Loading parties...
                   </td>
@@ -460,14 +460,14 @@ export function PartiesPage(): React.JSX.Element {
                 rows.map((party) => (
                   <tr key={party.id} className="hover:bg-muted/40">
                     <td className={TD}>
-                      <div className="text-[12.5px] font-medium">{party.name}</div>
+                      <div className="text-[0.9375rem] font-medium">{party.name}</div>
                       {party.gstin ? (
-                        <div className="font-mono text-[10px] text-muted-foreground">
+                        <div className="font-mono text-[0.6875rem] text-muted-foreground">
                           {party.gstin}
                         </div>
                       ) : null}
                     </td>
-                    <td className={`${TD} font-mono text-[11.5px] text-muted-foreground`}>
+                    <td className={`${TD} font-mono text-[0.875rem] text-muted-foreground`}>
                       {party.phone ?? '--'}
                     </td>
                     <td className={TD}>
@@ -484,7 +484,7 @@ export function PartiesPage(): React.JSX.Element {
                         ) : null}
                       </div>
                     </td>
-                    <td className={`${TD} text-right font-mono text-[12px] tabular-nums`}>
+                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
                       {party.creditDays}
                     </td>
                     <td className={`${TD} text-right`}>
@@ -556,7 +556,10 @@ export function PartiesPage(): React.JSX.Element {
             <fieldset className="flex flex-col gap-1.5">
               <legend className={LABEL}>Role</legend>
               <div className="flex items-center gap-5">
-                <label htmlFor="party-customer" className="flex items-center gap-1.5 text-[12.5px]">
+                <label
+                  htmlFor="party-customer"
+                  className="flex items-center gap-1.5 text-[0.9375rem]"
+                >
                   <Checkbox
                     id="party-customer"
                     checked={form.isCustomer}
@@ -567,7 +570,10 @@ export function PartiesPage(): React.JSX.Element {
                   />
                   Customer
                 </label>
-                <label htmlFor="party-supplier" className="flex items-center gap-1.5 text-[12.5px]">
+                <label
+                  htmlFor="party-supplier"
+                  className="flex items-center gap-1.5 text-[0.9375rem]"
+                >
                   <Checkbox
                     id="party-supplier"
                     checked={form.isSupplier}
@@ -580,12 +586,12 @@ export function PartiesPage(): React.JSX.Element {
                 </label>
               </div>
               {editing ? (
-                <p className="text-[10.5px] text-muted-foreground">
+                <p className="text-[0.75rem] text-muted-foreground">
                   Roles and ledger accounts are set when the party is created.
                 </p>
               ) : null}
               {errors.role ? (
-                <p role="alert" className="text-[11px] text-destructive">
+                <p role="alert" className="text-[0.75rem] text-destructive">
                   {errors.role}
                 </p>
               ) : null}
@@ -594,7 +600,7 @@ export function PartiesPage(): React.JSX.Element {
             {save.isError ? (
               <p
                 role="alert"
-                className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[11.5px] text-destructive"
+                className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[0.875rem] text-destructive"
               >
                 {errorMessage(save.error, 'Could not save the party.')}
               </p>

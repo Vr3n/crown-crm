@@ -39,26 +39,26 @@ export function Sidebar(): React.JSX.Element {
           collapsed ? 'justify-center px-2' : 'gap-2.5 px-4'
         )}
       >
-        <div className="flex size-8 shrink-0 items-center justify-center bg-ink text-paper">
+        <div className="flex size-8 shrink-0 items-center justify-center bg-stamp text-paper">
           <BookOpen className="size-4" strokeWidth={1.75} />
         </div>
         {!collapsed && (
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-semibold leading-tight tracking-tight">
+            <div className="truncate text-[0.9375rem] font-semibold leading-tight tracking-tight">
               Crown Books
             </div>
-            <div className="truncate text-[10.5px] leading-tight text-muted-foreground">
+            <div className="truncate text-[0.75rem] leading-tight text-sidebar-foreground/55">
               {session.companyName}
             </div>
           </div>
         )}
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto py-3">
+      <nav className="no-scrollbar min-h-0 flex-1 overflow-y-auto py-3">
         {groups.map((group, index) => (
           <div key={group.id} className={cn(index > 0 && 'mt-4')}>
             {!collapsed && group.label ? (
-              <p className="px-4 pb-1.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
+              <p className="px-4 pb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/50">
                 {group.label}
               </p>
             ) : null}
@@ -75,15 +75,15 @@ export function Sidebar(): React.JSX.Element {
         <div
           className={cn('flex items-center gap-2.5 px-2 py-2', collapsed && 'justify-center px-0')}
         >
-          <div className="flex size-8 shrink-0 items-center justify-center bg-accent-soft text-[11px] font-semibold text-primary">
+          <div className="flex size-8 shrink-0 items-center justify-center bg-accent-soft text-[0.75rem] font-semibold text-primary">
             {initials(session.userFullName)}
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[12.5px] font-medium leading-tight">
+              <p className="truncate text-[0.9375rem] font-medium leading-tight">
                 {session.userFullName}
               </p>
-              <p className="truncate text-[10.5px] leading-tight text-muted-foreground">
+              <p className="truncate text-[0.75rem] leading-tight text-sidebar-foreground/55">
                 {session.roleName}
               </p>
             </div>
@@ -94,7 +94,7 @@ export function Sidebar(): React.JSX.Element {
               onClick={session.onSignOut}
               title="Sign out"
               aria-label="Sign out"
-              className="text-muted-foreground transition-colors hover:text-destructive"
+              className="text-sidebar-foreground/55 transition-colors hover:text-destructive"
             >
               <LogOut className="size-4" strokeWidth={1.75} />
             </button>
@@ -104,7 +104,7 @@ export function Sidebar(): React.JSX.Element {
           onClick={() => setCollapsed((v) => !v)}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className={cn(
-            'mt-1 flex w-full items-center gap-2 px-2 py-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground',
+            'mt-1 flex w-full items-center gap-2 px-2 py-1.5 text-[0.75rem] text-sidebar-foreground/55 transition-colors hover:text-sidebar-foreground',
             collapsed && 'justify-center px-0'
           )}
         >
@@ -136,16 +136,16 @@ function SidebarItem({
       end={item.to === '/'}
       className={({ isActive }) =>
         cn(
-          'relative flex h-[34px] items-center gap-2.5 px-4 text-[12.5px] transition-colors',
+          'relative flex h-9 items-center gap-2.5 px-4 text-[0.9375rem] transition-colors',
           'text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-          isActive && 'bg-accent-soft font-medium text-primary',
+          isActive && 'bg-sidebar-accent font-medium text-sidebar-primary',
           collapsed && 'justify-center px-0'
         )
       }
     >
       {({ isActive }) => (
         <>
-          {isActive ? <span className="absolute inset-y-0 left-0 w-[2px] bg-primary" /> : null}
+          {isActive ? <span className="absolute inset-y-0 left-0 w-[2px] bg-stamp" /> : null}
           <Icon className="size-[16px] shrink-0" strokeWidth={1.75} />
           {!collapsed && <span className="truncate">{item.label}</span>}
         </>
