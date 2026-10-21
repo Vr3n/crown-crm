@@ -61,7 +61,11 @@ export const IPC_CHANNELS = {
   REPORTS_STOCK: 'reports:stock',
 
   // Licensing
-  LICENSE_STATUS: 'license:status'
+  LICENSE_STATUS: 'license:status',
+
+  // Backup
+  BACKUP_CREATE: 'backup:create',
+  BACKUP_LIST: 'backup:list'
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

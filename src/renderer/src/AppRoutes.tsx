@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import {
   BookOpen,
@@ -26,6 +26,18 @@ import {
 } from 'lucide-react'
 import { AppLayout } from '@/layouts/AppLayout'
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
+import { ReportsPage } from '@/features/reports/pages/ReportsPage'
+import { StockPage } from '@/features/stock/pages/StockPage'
+import { BackupPage } from '@/features/backup/pages/BackupPage'
+import { JournalsPage } from '@/features/journals/pages/JournalsPage'
+import { PartiesPage } from '@/features/parties/pages/PartiesPage'
+import { ItemsPage } from '@/features/items/pages/ItemsPage'
+import { AccountsPage } from '@/features/accounts/pages/AccountsPage'
+import { CompanyPage } from '@/features/company/pages/CompanyPage'
+import { VoucherListPage } from '@/features/vouchers/pages/VoucherListPage'
+import { VoucherEntryPage } from '@/features/vouchers/pages/VoucherEntryPage'
+import { ReceiptEntryPage } from '@/features/vouchers/pages/ReceiptEntryPage'
+import { VoucherDetailPage } from '@/features/vouchers/pages/VoucherDetailPage'
 import { ModulePlaceholder } from '@/pages/module-placeholder'
 import { can, useSession } from '@/context/session-context'
 
@@ -214,12 +226,81 @@ const PLANNED: PlannedRoute[] = [
   }
 ]
 
+function VoucherDetailRoute(): React.JSX.Element {
+  const { id } = useParams()
+  const numeric = Number(id)
+  if (!numeric) return <Navigate to="/" replace />
+  return <VoucherDetailPage id={numeric} />
+}
+
 export function AppRoutes(): React.JSX.Element {
   return (
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<DashboardPage />} />
-        {PLANNED.map((route) => {
+        <Route path="stock" element={<StockPage />} />
+        <Route path="journals" element={<JournalsPage />} />
+        <Route path="parties" element={<PartiesPage />} />
+        <Route path="customers" element={<PartiesPage />} />
+        <Route path="suppliers" element={<PartiesPage />} />
+        <Route path="items" element={<ItemsPage />} />
+        <Route path="masters/accounts" element={<AccountsPage />} />
+        <Route path="day-book" element={<VoucherListPage title="Day Book" />} />
+        <Route path="sales" element={<VoucherListPage type="SALES" title="Sales" />} />
+        <Route path="purchases" element={<VoucherListPage type="PURCHASE" title="Purchases" />} />
+        <Route path="receipts" element={<VoucherListPage type="RECEIPT" title="Receipts" />} />
+        <Route path="payments" element={<VoucherListPage type="PAYMENT" title="Payments" />} />
+        <Route path="sales/new" element={<VoucherEntryPage type="SALES" />} />
+        <Route path="purchases/new" element={<VoucherEntryPage type="PURCHASE" />} />
+        <Route path="sales/:id/credit-note" element={<VoucherEntryPage type="CREDIT_NOTE" />} />
+        <Route path="purchases/:id/debit-note" element={<VoucherEntryPage type="DEBIT_NOTE" />} />
+        <Route path="receipts/new" element={<ReceiptEntryPage mode="RECEIPT" />} />
+        <Route path="payments/new" element={<ReceiptEntryPage mode="PAYMENT" />} />
+        <Route path="vouchers/:id" element={<VoucherDetailRoute />} />
+        <Route
+          path="settings/company"
+          element={
+            <Protected code="company.view">
+              <CompanyPage />
+            </Protected>
+          }
+        />
+        <Route path="reports/receivables" element={<ReportsPage kind="receivables" />} />
+        <Route path="reports/payables" element={<ReportsPage kind="payables" />} />
+        <Route path="reports/ageing" element={<ReportsPage kind="ageing" />} />
+        <Route path="reports/trial-balance" element={<ReportsPage kind="trial-balance" />} />
+        <Route path="reports/profit-loss" element={<ReportsPage kind="profit-loss" />} />
+        <Route path="reports/balance-sheet" element={<ReportsPage kind="balance-sheet" />} />
+        <Route path="reports/sales-register" element={<ReportsPage kind="sales-register" />} />
+        <Route
+          path="reports/purchase-register"
+          element={<ReportsPage kind="purchase-register" />}
+        />
+        <Route
+          path="settings/backup"
+          element={
+            <Protected code="backup.manage">
+              <BackupPage />
+            </Protected>
+          }
+        />
+        {PLANNED.filter(
+          (route) =>
+            route.path !== 'stock' &&
+            route.path !== 'journals' &&
+            route.path !== 'parties' &&
+            route.path !== 'customers' &&
+            route.path !== 'suppliers' &&
+            route.path !== 'items' &&
+            route.path !== 'masters/accounts' &&
+            route.path !== 'settings/company' &&
+            route.path !== 'day-book' &&
+            route.path !== 'sales' &&
+            route.path !== 'purchases' &&
+            route.path !== 'receipts' &&
+            route.path !== 'payments' &&
+            !route.path.startsWith('reports/')
+        ).map((route) => {
           const element = (
             <ModulePlaceholder
               title={route.title}

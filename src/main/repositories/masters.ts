@@ -30,6 +30,8 @@ function mapParty(row: Record<string, unknown>): PartyRow {
     email: (row.email as string) ?? null,
     gstin: (row.gstin as string) ?? null,
     stateCode: (row.state_code as string) ?? null,
+    billingAddress: (row.billing_address as string) ?? null,
+    notes: (row.notes as string) ?? null,
     isCustomer: Boolean(row.is_customer),
     isSupplier: Boolean(row.is_supplier),
     creditDays: (row.credit_days as number) ?? 0,
@@ -213,24 +215,57 @@ export const partyRepo = {
     if (input.creditDays !== undefined) set.credit_days = input.creditDays
     if (input.creditLimitMinor !== undefined) set.credit_limit_minor = input.creditLimitMinor
     if (input.notes !== undefined) set.notes = input.notes?.trim() || null
+    if (input.isCustomer !== undefined) set.is_customer = input.isCustomer
+    if (input.isSupplier !== undefined) set.is_supplier = input.isSupplier
+    if (input.openingBalanceMinor !== undefined) {
+      const posted = getDb()
+        .prepare(
+          `SELECT 1 AS x FROM vouchers WHERE company_id = ? AND voucher_type = 'OPENING' LIMIT 1`
+        )
+        .get(companyId)
+      if (posted) {
+        throw new Error('Opening balances are already posted and cannot be changed')
+      }
+      set.opening_balance_minor = input.openingBalanceMinor
+      if (input.openingBalanceDate !== undefined) {
+        set.opening_balance_date = input.openingBalanceDate || null
+      }
+    }
 
     db.update(parties)
       .set(set)
       .where(and(eq(parties.company_id, companyId), eq(parties.id, input.id)))
       .run()
 
+    const updated = this.findById(companyId, input.id)
+    if (updated && (input.isCustomer !== undefined || input.isSupplier !== undefined)) {
+      this.ensureAccounts(
+        companyId,
+        updated.id,
+        updated.name,
+        updated.isCustomer,
+        updated.isSupplier
+      )
+    }
+
     if (input.name !== undefined) {
       const party = this.findById(companyId, input.id)
       if (party) {
-        db.update(accounts)
-          .set({ name: party.isCustomer ? party.name : `${party.name} (Creditor)` })
-          .where(
-            and(
-              eq(accounts.company_id, companyId),
-              eq(accounts.id, this.accountsFor(companyId, input.id).creditor ?? -1)
+        const partyAccountIds = this.accountsFor(companyId, input.id)
+        if (partyAccountIds.debtor) {
+          db.update(accounts)
+            .set({ name: party.name })
+            .where(and(eq(accounts.company_id, companyId), eq(accounts.id, partyAccountIds.debtor)))
+            .run()
+        }
+        if (partyAccountIds.creditor) {
+          db.update(accounts)
+            .set({ name: party.isCustomer ? `${party.name} (Creditor)` : party.name })
+            .where(
+              and(eq(accounts.company_id, companyId), eq(accounts.id, partyAccountIds.creditor))
             )
-          )
-          .run()
+            .run()
+        }
       }
     }
     return this.findById(companyId, input.id) as PartyRow
@@ -317,6 +352,16 @@ export const itemRepo = {
     if (input.salePriceMinor !== undefined) set.sale_price_minor = input.salePriceMinor
     if (input.purchasePriceMinor !== undefined) set.purchase_price_minor = input.purchasePriceMinor
     if (input.reorderLevelE4 !== undefined) set.reorder_level_e4 = input.reorderLevelE4
+    if (input.openingQtyE4 !== undefined || input.openingRateMinor !== undefined) {
+      const hasStock = getDb()
+        .prepare(`SELECT 1 AS x FROM stock_movements WHERE company_id = ? AND item_id = ? LIMIT 1`)
+        .get(companyId, input.id)
+      if (hasStock) {
+        throw new Error('Opening stock cannot change after the item has movements')
+      }
+      if (input.openingQtyE4 !== undefined) set.opening_qty_e4 = input.openingQtyE4
+      if (input.openingRateMinor !== undefined) set.opening_rate_minor = input.openingRateMinor
+    }
 
     getDrizzle()
       .update(items)

@@ -1,4 +1,4 @@
-import { ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS } from '../shared/contracts/ipc.channels'
 import type {
   AuthStatus,
@@ -155,9 +155,22 @@ const api = {
 
   license: {
     status: (): Promise<LicenseStatus> => call(IPC_CHANNELS.LICENSE_STATUS)
+  },
+
+  backup: {
+    create: (): Promise<{ name: string; sizeBytes: number; createdAt: string }> =>
+      call(IPC_CHANNELS.BACKUP_CREATE),
+    list: (): Promise<{ name: string; sizeBytes: number; createdAt: string }[]> =>
+      call(IPC_CHANNELS.BACKUP_LIST)
   }
 }
 
 export type Api = typeof api
 
 export { api }
+
+try {
+  contextBridge.exposeInMainWorld('api', api)
+} catch (error) {
+  console.error('Failed to expose the preload API', error)
+}

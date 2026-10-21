@@ -228,6 +228,8 @@ export function postVoucher(input: PostVoucherInput): PostedVoucher {
       },
       partyId: party?.id ?? null,
       cashAccountId: input.cashAccountId ?? null,
+      contraFromAccountId: input.contraFromAccountId ?? null,
+      contraToAccountId: input.contraToAccountId ?? null,
       goodsTaxableMinor: goodsTaxable,
       serviceTaxableMinor: serviceTaxable,
       journalLines: journalLines,

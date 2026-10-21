@@ -12,6 +12,8 @@ export interface PartyRow {
   email: string | null
   gstin: string | null
   stateCode: string | null
+  billingAddress: string | null
+  notes: string | null
   isCustomer: boolean
   isSupplier: boolean
   creditDays: number

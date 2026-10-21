@@ -79,6 +79,8 @@ export const postVoucherInputSchema = z.object({
   allocations: z.array(allocationInputSchema).default([]),
   amountMinor: z.number().int().min(0).optional(),
   cashAccountId: z.number().int().positive().optional().nullable(),
+  contraFromAccountId: z.number().int().positive().optional().nullable(),
+  contraToAccountId: z.number().int().positive().optional().nullable(),
   paymentMethodId: z.number().int().positive().optional().nullable(),
   instrumentNo: z.string().max(80).optional().nullable(),
   reversalOfVoucherId: z.number().int().positive().optional().nullable()

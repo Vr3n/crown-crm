@@ -113,6 +113,10 @@ declare global {
       license: {
         status: () => Promise<LicenseStatus>
       }
+      backup: {
+        create: () => Promise<{ name: string; sizeBytes: number; createdAt: string }>
+        list: () => Promise<{ name: string; sizeBytes: number; createdAt: string }[]>
+      }
     }
   }
 }
