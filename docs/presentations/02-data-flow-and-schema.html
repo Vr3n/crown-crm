@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crown Books: From Creditor to Report</title>
+<style>
+  :root{
+    --paper:#F5F2EA;
+    --sheet:#FBF9F4;
+    --ink:#12171C;
+    --ink-2:#3E474F;
+    --ink-3:#6E7780;
+    --rule:#DAD3C4;
+    --rule-2:#C3BAA8;
+    --accent:#1B4C68;
+    --accent-soft:#E3EBEF;
+    --brick:#8C3B2A;
+    --brick-soft:#F2E5E0;
+    --ok:#2E6B4E;
+    --ok-soft:#E2EDE7;
+    --warn:#9A6B18;
+    --warn-soft:#F3EBD9;
+    --night:#101820;
+    --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+    --serif:Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#0A0C0F;overflow:hidden;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+  #stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:center center;background:var(--paper);box-shadow:0 30px 90px rgba(0,0,0,.5);overflow:hidden}
+
+  .progress{position:absolute;left:0;top:0;height:3px;width:0;background:var(--accent);z-index:40;transition:width .4s cubic-bezier(.2,.8,.2,1)}
+  .brandbar{position:absolute;left:72px;right:72px;top:24px;display:flex;justify-content:space-between;align-items:center;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);z-index:35;pointer-events:none}
+  .brandbar b{font-weight:600;color:var(--ink-2);letter-spacing:.14em}
+  .foot{position:absolute;left:72px;right:72px;bottom:22px;display:flex;justify-content:space-between;align-items:flex-end;font-size:10.5px;color:var(--ink-3);z-index:35;pointer-events:none;gap:40px}
+  .foot .src{max-width:1150px;line-height:1.4}
+  .foot .pg{font-family:var(--mono);letter-spacing:.06em;white-space:nowrap}
+
+  .slide{position:absolute;inset:0;padding:82px 72px 58px;display:none;flex-direction:column;background:var(--paper)}
+  .slide.on{display:flex}
+  .slide.dark{background:var(--night);color:#EDE9DF}
+  .slide.dark .kicker{color:#8E9AA3}
+  .slide.dark .foot{color:#7C8890}
+
+  .kicker{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker .num{font-family:var(--mono);letter-spacing:0;color:var(--accent)}
+  .slide.dark .kicker .num{color:#8FB4C8}
+
+  h1.action{font-size:37px;line-height:1.16;letter-spacing:-.022em;font-weight:700;margin:0;max-width:1280px}
+  h1.action em{font-style:italic;font-family:var(--serif);font-weight:400;letter-spacing:-.01em}
+  .rule{height:1px;background:var(--rule-2);margin:18px 0 22px;flex:none}
+  .slide.dark .rule{background:#2B353D}
+
+  .body{flex:1;min-height:0;display:flex;flex-direction:column;gap:16px}
+  .cols{display:grid;gap:26px;min-height:0;align-items:start;align-content:center}
+  .c2{grid-template-columns:1fr 1fr}
+  .c3{grid-template-columns:repeat(3,1fr)}
+  .c2a{grid-template-columns:1.3fr .9fr}
+  .c2b{grid-template-columns:.9fr 1.3fr}
+
+  p.lead{font-size:16px;line-height:1.5;color:var(--ink-2);margin:0;max-width:92ch}
+  .small{font-size:12.5px;line-height:1.45;color:var(--ink-3)}
+  .tiny{font-size:10.5px;line-height:1.4;color:var(--ink-3)}
+  .strong{font-weight:600}
+
+  .panel{border:1px solid var(--rule);background:var(--sheet);padding:18px 20px;min-height:0}
+  .panel.tint{background:var(--accent-soft);border-color:#C6D6DF}
+  .panel.brick{background:var(--brick-soft);border-color:#E1CBC4}
+  .panel.ok{background:var(--ok-soft);border-color:#C8DBCF}
+  .panel.warn{background:var(--warn-soft);border-color:#E4D6B8}
+  .panel.flat{background:transparent}
+  .panel h3{margin:0 0 8px;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .panel h2{margin:0 0 10px;font-size:17px;line-height:1.3;letter-spacing:-.01em;font-weight:600}
+  .panel p{margin:0 0 9px;font-size:14px;line-height:1.5;color:var(--ink-2)}
+  .panel p:last-child{margin-bottom:0}
+
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .kpi .v{font-family:var(--mono);font-size:32px;line-height:1;letter-spacing:-.03em;font-weight:600}
+  .kpi .l{font-size:11.5px;letter-spacing:.06em;color:var(--ink-3);margin-top:8px;line-height:1.35}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:600;padding:0 10px 7px 0;border-bottom:1px solid var(--rule-2);vertical-align:bottom}
+  td{padding:9px 10px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.4}
+  th + th,td + td{padding-left:10px}
+  tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;padding-right:0}
+  tr.total td{font-weight:600;border-top:1px solid var(--ink);border-bottom:none;padding-top:9px}
+  th:last-child,td:last-child{padding-right:0}
+
+  .tag{display:inline-block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border:1px solid var(--rule-2);color:var(--ink-3);font-weight:600}
+  .tag.b{border-color:#C9D7DE;color:var(--accent);background:#EDF2F5}
+  .tag.r{border-color:#DEC7BF;color:var(--brick);background:#F7EEEA}
+  .tag.g{border-color:#C6D8CD;color:var(--ok);background:#EDF4F0}
+  .tag.y{border-color:#E0D0AE;color:var(--warn);background:#F7F1E2}
+
+  .row{display:flex;align-items:center;gap:12px}
+  .between{display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .stack{display:flex;flex-direction:column;gap:10px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .huge{font-family:var(--mono);font-size:42px;line-height:1;letter-spacing:-.03em;font-weight:600}
+  .quote{font-family:var(--serif);font-style:italic;font-size:20px;line-height:1.4;color:var(--ink-2);max-width:70ch}
+  .divider-line{height:1px;background:var(--rule);margin:2px 0}
+
+  .flow{display:flex;align-items:stretch}
+  .flow .step{flex:1;border:1px solid var(--rule);background:var(--sheet);padding:13px 15px;position:relative}
+  .flow .step + .step{border-left:none}
+  .flow .step .n{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.08em}
+  .flow .step .t{font-size:13px;font-weight:600;margin-top:4px;line-height:1.3}
+  .flow .step .d{font-size:11px;color:var(--ink-3);margin-top:5px;line-height:1.35}
+  .flow .step.darkstep{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .flow .step.darkstep .d{color:#B9B2A4}
+  .flow .step.darkstep .n{color:#8FB4C8}
+
+  .chip{border:1px solid var(--rule);background:var(--sheet);padding:9px 11px;font-size:11.5px;line-height:1.35}
+  .chip.core{border-color:#C6D6DF;background:var(--accent-soft)}
+
+  .wire{border:1px solid var(--rule-2);background:var(--sheet)}
+  .wire .w-head{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--rule);font-size:12px;color:var(--ink-2);background:#F8F5EE}
+  .wire .w-row{display:grid;grid-template-columns:26px 2.1fr .8fr .7fr 1fr .8fr .8fr;gap:8px;padding:8px 14px;border-bottom:1px solid var(--rule);font-size:11.5px;align-items:center}
+  .wire .w-row:last-of-type{border-bottom:none}
+  .wire .cell{background:#FAF8F2;border:1px solid #E8E2D5;padding:3px 6px;font-family:var(--mono);font-size:10.5px;white-space:nowrap;overflow:hidden}
+  .wire .cell.hl{background:#FFF3D6;border-color:#E3CF9E}
+  .wire .w-tot{display:grid;grid-template-columns:1fr 170px;padding:12px 14px;border-top:1px solid var(--rule-2);font-size:12px}
+  .wire .w-tot div{padding:2px 0;display:flex;justify-content:space-between}
+
+  .lane{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:stretch}
+  .lane .lab{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);padding-top:12px;font-weight:600}
+  .lane .items{display:flex;gap:8px}
+  .lane .items > div{flex:1;border:1px solid var(--rule);background:var(--sheet);padding:10px 12px;font-size:11.5px;line-height:1.35}
+  .lane .items > div b{display:block;font-size:12px;margin-bottom:3px}
+
+  .timeline{position:relative;height:150px;border-bottom:1px solid var(--rule-2);margin:0 0 10px}
+  .timeline .tick{position:absolute;top:0;bottom:0;border-left:1px solid var(--rule);font-family:var(--mono);font-size:9px;color:var(--ink-3);padding-left:4px}
+  .timeline .mark{position:absolute;transform:translateX(-50%);text-align:center}
+  .timeline .mark .dot2{width:9px;height:9px;background:var(--accent);margin:0 auto 4px}
+  .timeline .mark .lbl{font-size:9.5px;line-height:1.3;white-space:nowrap;color:var(--ink-2)}
+
+  .bars{display:flex;flex-direction:column;gap:6px}
+  .bars .brow{display:grid;grid-template-columns:170px 1fr 90px;gap:12px;align-items:center;font-size:11.5px}
+  .bars .track{height:16px;background:#EDE8DC;position:relative}
+  .bars .fill{height:100%;width:var(--w,100%);background:var(--accent);transform-origin:left center}
+
+  .nav{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:60}
+  .nav button{width:36px;height:36px;background:rgba(18,23,28,.55);border:1px solid rgba(255,255,255,.18);color:#EDE9DF;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s,border-color .2s}
+  .nav button:hover{background:rgba(18,23,28,.85);color:#fff;border-color:rgba(255,255,255,.45)}
+  .agenda{position:fixed;inset:0;background:rgba(10,12,15,.96);z-index:80;display:none;padding:56px 72px;color:#EDE9DF;overflow:auto}
+  .agenda.on{display:block}
+  .agenda h2{margin:0 0 24px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#8E9AA3;font-weight:600}
+  .agenda .g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 34px}
+  .agenda button{background:none;border:none;border-bottom:1px solid rgba(255,255,255,.12);color:#DCD6C8;text-align:left;padding:9px 0;font-size:13px;cursor:pointer;display:flex;gap:12px;font-family:var(--sans)}
+  .agenda button:hover{color:#fff;border-color:#fff}
+  .agenda button i{font-style:normal;font-family:var(--mono);font-size:10px;color:#7C8890;min-width:22px;padding-top:2px}
+  .agenda .hint{margin-top:28px;font-size:11px;color:#6F7A82;letter-spacing:.08em}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="progress" id="progress"></div>
+  <div class="brandbar"><b>Crown Books</b><span id="sectionLabel">Data flow</span></div>
+
+  <!-- 1 COVER -->
+  <section class="slide dark on" data-title="Cover" data-section="Opening" data-source="Crown Books, October 2026">
+    <div style="flex:1;display:grid;grid-template-columns:1.2fr .8fr;gap:56px;align-items:center">
+      <div>
+        <div class="kicker" data-an="up"><span class="num">02</span> Data flow and schema · Version 1</div>
+        <h1 data-an="up" style="font-size:70px;line-height:1.04;letter-spacing:-.045em;font-weight:700;margin:6px 0 18px">One document.<br>Two ledgers.<br>One truth.</h1>
+        <p data-an="up" style="font-family:var(--serif);font-style:italic;font-size:22px;line-height:1.45;color:#C9C2B4;max-width:34ch;margin:0 0 34px">How a new creditor, a purchase bill and a quantity become a report an accountant can sign.</p>
+        <div data-an="up" style="display:flex;gap:44px;border-top:1px solid #2B353D;padding-top:18px;max-width:620px">
+          <div><div class="mono" style="font-size:23px;color:#EDE9DF">1</div><div class="tiny" style="color:#8E9AA3;margin-top:4px">write path</div></div>
+          <div><div class="mono" style="font-size:23px;color:#EDE9DF">9</div><div class="tiny" style="color:#8E9AA3;margin-top:4px">core entities</div></div>
+          <div><div class="mono" style="font-size:23px;color:#EDE9DF">0</div><div class="tiny" style="color:#8E9AA3;margin-top:4px">stored balances</div></div>
+        </div>
+      </div>
+      <div data-an="fade" style="border-left:1px solid #2B353D;padding-left:30px">
+        <div class="mono" style="font-size:10.5px;color:#8E9AA3;line-height:2.4">
+          PARTY<br>ACCOUNT<br>ITEM<br>VOUCHER<br>ITEM LINE<br>LEDGER LINE<br>STOCK MOVEMENT<br>ALLOCATION<br>REPORT
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Prepared for stakeholders · October 2026 · Companion to the technical plan</span><span class="pg">01</span></div>
+  </section>
+
+  <!-- 2 GOVERNING THOUGHT -->
+  <section class="slide" data-title="Governing thought" data-section="The principle" data-source="Source: docs/01-domain-model.md">
+    <div class="kicker" data-an="up"><span class="num">02</span> The principle</div>
+    <h1 class="action" data-an="up">Every report is arithmetic over rows written once, when the voucher was <em>posted.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c3" style="align-items:stretch;flex:1">
+        <div class="panel" data-an="up">
+          <div class="mono" style="font-size:10px;color:var(--accent);letter-spacing:.1em">01 / WRITE</div>
+          <h2 style="margin-top:8px">One write path</h2>
+          <p>No screen writes a balance. A screen posts a document. The engine turns that document into ledger lines and stock movements.</p>
+          <p class="small">If a second path existed, the two would drift.</p>
+        </div>
+        <div class="panel" data-an="up">
+          <div class="mono" style="font-size:10px;color:var(--accent);letter-spacing:.1em">02 / FREEZE</div>
+          <h2 style="margin-top:8px">Facts are frozen</h2>
+          <p>Every bill line copies the name, HSN, rate, discount and tax rate it used. Changing a master tomorrow cannot rewrite yesterday.</p>
+          <p class="small">The item is a price list. The line is evidence.</p>
+        </div>
+        <div class="panel" data-an="up">
+          <div class="mono" style="font-size:10px;color:var(--accent);letter-spacing:.1em">03 / READ</div>
+          <h2 style="margin-top:8px">Balances are queries</h2>
+          <p>Outstanding, stock on hand, account balance and profit are computed from rows every time they are asked for.</p>
+          <p class="small">Nothing to recalculate, nothing to disagree.</p>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:12px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:14px">This single decision removes most accounting bugs before they can happen.</div>
+        <div class="mono" style="font-size:10.5px;color:var(--ink-3)">DESIGN PRINCIPLE 01</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/01-domain-model.md, invariants; docs/03-voucher-posting-rules.md</span><span class="pg">02</span></div>
+  </section>
+
+  <!-- 3 CAST -->
+  <section class="slide" data-title="Cast of entities" data-section="The principle" data-source="Source: docs/01-domain-model.md, entity list">
+    <div class="kicker" data-an="up"><span class="num">03</span> Cast</div>
+    <h1 class="action" data-an="up">Nine entities carry every transaction. Nothing else is allowed to hold <em>money.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" data-an="up">
+        <div class="chip"><b style="display:block;font-size:12.5px;margin-bottom:2px">Company</b>Whose books. Holds GSTIN, state code, financial year.</div>
+        <div class="chip"><b style="display:block;font-size:12.5px;margin-bottom:2px">Party</b>Who we deal with. Customer, supplier, or both.</div>
+        <div class="chip"><b style="display:block;font-size:12.5px;margin-bottom:2px">Account</b>Where money lands. One of five types.</div>
+        <div class="chip"><b style="display:block;font-size:12.5px;margin-bottom:2px">Item</b>What we trade. HSN, unit, GST rate, price.</div>
+        <div class="chip core"><b style="display:block;font-size:12.5px;margin-bottom:2px">Voucher</b>The document. Sale, purchase, receipt, payment, note, journal.</div>
+        <div class="chip"><b style="display:block;font-size:12.5px;margin-bottom:2px">Item line</b>What was traded, at what price, with what tax.</div>
+        <div class="chip core"><b style="display:block;font-size:12.5px;margin-bottom:2px">Ledger line</b>One debit or one credit. Never both.</div>
+        <div class="chip core"><b style="display:block;font-size:12.5px;margin-bottom:2px">Stock movement</b>One quantity in or out. Never a balance.</div>
+        <div class="chip core"><b style="display:block;font-size:12.5px;margin-bottom:2px">Allocation</b>Which money settled which bill.</div>
+      </div>
+      <div class="cols c2" style="margin-top:8px">
+        <div data-an="up" class="panel tint">
+          <h3>Why nine and not thirty</h3>
+          <p>The gym had 38 tables because every concept grew its own lifecycle. Accounting needs six document types but one lifecycle: number, post, cancel, print, audit.</p>
+        </div>
+        <div data-an="up" class="panel">
+          <h3>What is deliberately missing</h3>
+          <p>No balance table, no outstanding table, no stock-on-hand table, no report cache. Each would be a copy of the truth, and copies drift.</p>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/01-domain-model.md, section 2; docs/02-database-schema.md</span><span class="pg">03</span></div>
+  </section>
+
+  <!-- 4 CHAIN -->
+  <section class="slide" data-title="The event chain" data-section="The flow" data-source="Source: docs/03-voucher-posting-rules.md">
+    <div class="kicker" data-an="up"><span class="num">04</span> The chain</div>
+    <h1 class="action" data-an="up">Five writes create everything. Every other screen is a <em>read.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="lane" data-an="up" style="margin-top:4px">
+        <div class="lab">Writes</div>
+        <div class="items">
+          <div><b>Create party</b>Parties row<br>Two ledger accounts</div>
+          <div><b>Create item</b>Item row<br>Opening stock</div>
+          <div><b>Post purchase</b>Ledger lines<br>Stock in</div>
+          <div><b>Post sale</b>Ledger lines<br>Stock out, COGS</div>
+          <div><b>Record receipt</b>Ledger lines<br>Allocations</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:8px;color:var(--ink-3);font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:2px 0">
+        <span>same database</span><span>·</span><span>same transaction rules</span>
+      </div>
+      <div class="lane" data-an="up">
+        <div class="lab">Reads</div>
+        <div class="items">
+          <div><b>Receivables</b>Bills minus<br>allocations</div>
+          <div><b>Ageing</b>Open bills by<br>age bucket</div>
+          <div><b>Statement</b>Ledger lines<br>for one party</div>
+          <div><b>Trial balance</b>Ledger lines<br>by account</div>
+          <div><b>Stock summary</b>Movements<br>by item</div>
+        </div>
+      </div>
+      <div data-an="up" class="panel tint" style="margin-top:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;font-size:13px;line-height:1.5">
+          <div><span class="strong">A read never fixes a write.</span> If a report is wrong, the rows are wrong. The report is not patched.</div>
+          <div><span class="strong">A write never waits for a report.</span> Posting is complete before any query runs.</div>
+          <div><span class="strong">A report can be added later.</span> Phase 6 GST reports need no schema change.</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/01-domain-model.md; docs/05-reports-spec.md</span><span class="pg">04</span></div>
+  </section>
+
+  <!-- 5 PARTY -->
+  <section class="slide" data-title="Step 1: create a party" data-section="The flow" data-source="Source: docs/02-database-schema.md, parties and party_accounts">
+    <div class="kicker" data-an="up"><span class="num">05</span> Step 1 · The party</div>
+    <h1 class="action" data-an="up">One business, one row, two ledger accounts created <em>for you.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2b" style="flex:1">
+        <div class="panel" data-an="up">
+          <h3>What the clerk types</h3>
+          <table style="margin-top:2px">
+            <tr><td style="width:130px;color:var(--ink-3)">Name</td><td>Acme Distributor</td></tr>
+            <tr><td style="color:var(--ink-3)">Type</td><td>Customer and supplier</td></tr>
+            <tr><td style="color:var(--ink-3)">GSTIN</td><td class="mono">27AABFU4477G1ZY</td></tr>
+            <tr><td style="color:var(--ink-3)">State</td><td>27, Maharashtra</td></tr>
+            <tr><td style="color:var(--ink-3)">Credit days</td><td>30</td></tr>
+            <tr><td style="color:var(--ink-3)">Opening balance</td><td class="mono">12,400.00 Dr</td></tr>
+          </table>
+          <p class="small" style="margin-top:12px">One row, not a customer record plus a supplier record plus a contact.</p>
+        </div>
+        <div data-an="up">
+          <div class="panel tint">
+            <h3>What the database writes</h3>
+            <div class="mono" style="font-size:11.5px;line-height:1.8">
+              parties<br>
+              <span style="color:var(--accent)">id 41 · Acme Distributor · is_customer 1 · is_supplier 1 · state 27 · credit_days 30</span>
+            </div>
+            <div style="height:1px;background:#C6D6DF;margin:10px 0"></div>
+            <div class="mono" style="font-size:11.5px;line-height:1.8">
+              party_accounts<br>
+              <span style="color:var(--accent)">41 · DEBTOR · account 118 (Sundry Debtors)</span><br>
+              <span style="color:var(--accent)">41 · CREDITOR · account 203 (Sundry Creditors)</span>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:10px">
+            <h3>Why two accounts, one party</h3>
+            <p>The balance sheet shows debtors and creditors separately. A shop that both buys and sells needs a balance on each side. Two accounts, one relationship, no duplicate GSTIN.</p>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between">
+        <div style="font-size:13px">A party without a ledger account cannot receive money. The account is created in the same transaction as the party.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3)">PARTY · ACCOUNT</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/02-database-schema.md, parties and party_accounts; docs/01-domain-model.md, section 3</span><span class="pg">05</span></div>
+  </section>
+
+  <!-- 6 OPENING -->
+  <section class="slide" data-title="Step 2: opening balances" data-section="The flow" data-source="Source: docs/03-voucher-posting-rules.md, OPENING">
+    <div class="kicker" data-an="up"><span class="num">06</span> Step 2 · The starting line</div>
+    <h1 class="action" data-an="up">Opening balances are a voucher, not a number typed into a <em>master.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div data-an="up">
+          <div class="panel">
+            <h3>Opening bill references</h3>
+            <table>
+              <tr><th>Party</th><th>Reference</th><th class="num">Amount</th><th class="num">Days old</th></tr>
+              <tr><td>Acme Distributor</td><td class="mono">INV/2025/118</td><td class="num">12,400.00</td><td class="num">45</td></tr>
+              <tr><td>TechConnect</td><td class="mono">PUR/2025/991</td><td class="num">8,200.00</td><td class="num">20</td></tr>
+              <tr class="total"><td>Net opening position</td><td></td><td class="num">4,200.00 Dr</td><td></td></tr>
+            </table>
+            <p class="small" style="margin-top:10px">Bill level, so ageing works on day one. A single lump sum would hide which invoice is late.</p>
+          </div>
+          <div class="panel ok" style="margin-top:10px">
+            <h3>If the two sides do not agree</h3>
+            <p>The difference posts to <span class="mono" style="font-size:11px">OPENING_DIFF</span> and a banner stays on the dashboard until it is zero. The books still balance, and the gap stays visible.</p>
+          </div>
+        </div>
+        <div class="panel tint" data-an="up">
+          <h3>The posting</h3>
+          <div class="mono" style="font-size:12px;line-height:2.1">
+            Dr&nbsp;&nbsp;Acme Distributor&nbsp;&nbsp;12,400.00<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Opening balance&nbsp;12,400.00<br><br>
+            Dr&nbsp;&nbsp;Opening balance&nbsp;&nbsp;8,200.00<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;TechConnect&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8,200.00
+          </div>
+          <div style="border-top:1px solid #C6D6DF;margin-top:12px;padding-top:10px" class="small">
+            One OPENING voucher. Cancellable. Auditable. Included in the day book like any other document.
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:10px;font-size:13px">The first real invoice then lands on a clean, bill-wise opening position, not a spreadsheet import.</div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/03-voucher-posting-rules.md, OPENING rule; docs/07-phase-plan.md, P1 exit criteria</span><span class="pg">06</span></div>
+  </section>
+
+  <!-- 7 ITEM -->
+  <section class="slide" data-title="Step 3: create an item" data-section="The flow" data-source="Source: docs/02-database-schema.md, items and stock_movements">
+    <div class="kicker" data-an="up"><span class="num">07</span> Step 3 · The item</div>
+    <h1 class="action" data-an="up">The item is a price list. The opening quantity is the first stock <em>movement.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2" style="flex:1">
+        <div class="panel" data-an="up">
+          <h3>Item master</h3>
+          <table>
+            <tr><td style="width:120px;color:var(--ink-3)">Name</td><td>EVM 256GB SATA SSD</td></tr>
+            <tr><td style="color:var(--ink-3)">HSN</td><td class="mono">8523</td></tr>
+            <tr><td style="color:var(--ink-3)">Unit</td><td>Nos</td></tr>
+            <tr><td style="color:var(--ink-3)">GST rate</td><td>18 percent</td></tr>
+            <tr><td style="color:var(--ink-3)">Sale price</td><td class="mono">3,855.93</td></tr>
+            <tr><td style="color:var(--ink-3)">Purchase price</td><td class="mono">3,200.00</td></tr>
+            <tr><td style="color:var(--ink-3)">Opening quantity</td><td class="mono">10 Nos</td></tr>
+            <tr><td style="color:var(--ink-3)">Opening rate</td><td class="mono">3,200.00</td></tr>
+          </table>
+        </div>
+        <div class="stack">
+          <div class="panel tint" data-an="up">
+            <h3>Rows created</h3>
+            <div class="mono" style="font-size:11.5px;line-height:1.8">
+              items<br><span style="color:var(--accent)">id 77 · EVM 256GB SATA SSD · HSN 8523 · GST 1800 bps</span>
+            </div>
+            <div style="height:1px;background:#C6D6DF;margin:10px 0"></div>
+            <div class="mono" style="font-size:11.5px;line-height:1.8">
+              stock_movements<br><span style="color:var(--accent)">IN 10 · unit_cost 3,200.00 · OPENING</span>
+            </div>
+          </div>
+          <div class="panel" data-an="up">
+            <h3>Three consequences</h3>
+            <p><span class="strong">HSN</span> flows into the invoice line and the GST summary without retyping.</p>
+            <p><span class="strong">Unit</span> allows four decimals of quantity, so kilograms and metres work as well as pieces.</p>
+            <p><span class="strong">Cost</span> is what the sale will consume. Gross profit is not a guess.</p>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:10px;font-size:13px">Stock is never a number on the item. It is the sum of movements, which is why a correction can never silently overwrite history.</div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/02-database-schema.md, items and stock_movements; docs/01-domain-model.md, section 5</span><span class="pg">07</span></div>
+  </section>
+
+  <!-- 8 BILL SCREEN -->
+  <section class="slide" data-title="Step 4: the purchase bill" data-section="The flow" data-source="Source: docs/form-implementation-guideline.md; purchase-bill.pdf">
+    <div class="kicker" data-an="up"><span class="num">08</span> Step 4 · The bill</div>
+    <h1 class="action" data-an="up">The clerk enters four things. The rest is <em>derived.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="wire" data-an="up">
+        <div class="w-head"><div><span class="strong">Party</span> &nbsp; TechConnect Informatique &nbsp; <span class="tiny">balance 8,200 Cr · 30 days</span></div><div><span class="strong">Date</span> 13-07-2026</div><div><span class="strong">Place of supply</span> 27</div></div>
+        <div class="w-row" style="background:#F8F5EE;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">
+          <div>#</div><div>Item</div><div>Qty</div><div>Unit</div><div>Rate</div><div>Disc %</div><div>Amount</div>
+        </div>
+        <div class="w-row"><div class="mono">1</div><div>Epson Ink 003 Black <span class="tiny" style="margin-left:8px">HSN 3215</span></div><div class="cell">1</div><div class="cell">pcs</div><div class="cell">340.00</div><div class="cell hl">15.254</div><div class="mono" style="text-align:right">288.14</div></div>
+        <div class="w-row"><div class="mono">5</div><div>Artis Laptop Adapter <span class="tiny" style="margin-left:8px">HSN 8504</span></div><div class="cell">2</div><div class="cell">pcs</div><div class="cell">450.00</div><div class="cell hl">15.254</div><div class="mono" style="text-align:right">762.71</div></div>
+        <div class="w-row"><div class="mono">6</div><div>18.5 inch LG monitor <span class="tiny" style="margin-left:8px">HSN 8528</span></div><div class="cell">1</div><div class="cell">pcs</div><div class="cell">5,150.00</div><div class="cell hl">15.254</div><div class="mono" style="text-align:right">4,364.42</div></div>
+        <div class="w-row"><div class="mono">7</div><div>Intel Core i5 <span class="tiny" style="margin-left:8px">HSN 84733010</span></div><div class="cell">1</div><div class="cell">pcs</div><div class="cell">1,075.00</div><div class="cell">0.00</div><div class="mono" style="text-align:right">1,075.00</div></div>
+        <div class="w-row"><div class="mono">8</div><div>8GB DDR4 RAM <span class="tiny" style="margin-left:8px">HSN 8473</span></div><div class="cell">1</div><div class="cell">pcs</div><div class="cell">3,150.00</div><div class="cell">0.00</div><div class="mono" style="text-align:right">3,150.00</div></div>
+        <div class="w-row"><div class="mono">9</div><div>TP-Link Router C6 <span class="tiny" style="margin-left:8px">HSN 8517</span></div><div class="cell">1</div><div class="cell">pcs</div><div class="cell">2,300.00</div><div class="cell">0.00</div><div class="mono" style="text-align:right">2,300.00</div></div>
+        <div class="w-row" style="border-top:1px dashed var(--rule-2);color:var(--ink-3)"><div></div><div>+ three more ink lines, same bill</div><div></div><div></div><div></div><div></div><div></div></div>
+        <div class="w-tot">
+          <div style="font-size:11px;color:var(--ink-3);line-height:1.55;align-self:end">Rupees Fifteen Thousand Five Hundred Forty Five Only<br><span class="tiny">Nine items, ten units, tax split CGST and SGST</span></div>
+          <div style="display:block">
+            <div><span class="small">Taxable</span><span class="mono">13,173.33</span></div>
+            <div><span class="small">CGST 9%</span><span class="mono">1,185.60</span></div>
+            <div><span class="small">SGST 9%</span><span class="mono">1,185.60</span></div>
+            <div><span class="small">Round off</span><span class="mono">0.47</span></div>
+            <div style="border-top:1px solid var(--ink);margin-top:4px;padding-top:5px"><span class="strong">Total</span><span class="mono strong">15,545.00</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cols" style="grid-template-columns:repeat(3,1fr);gap:16px;margin-top:4px">
+        <div data-an="up"><span class="mono" style="font-size:10px;color:var(--accent)">01</span> <span class="strong" style="font-size:12.5px">Party shows its position</span><div class="small" style="margin-top:3px">Balance and credit days appear before the first line, so a hold is visible at entry, not at collection.</div></div>
+        <div data-an="up"><span class="mono" style="font-size:10px;color:var(--accent)">02</span> <span class="strong" style="font-size:12.5px">Place of supply decides the split</span><div class="small" style="margin-top:3px">State 27 against company state 27 gives CGST and SGST. A different state gives IGST.</div></div>
+        <div data-an="up"><span class="mono" style="font-size:10px;color:var(--accent)">03</span> <span class="strong" style="font-size:12.5px">Discount before tax</span><div class="small" style="margin-top:3px">15.254 percent is stored in basis points. Tax is computed on the discounted value, never on the list rate.</div></div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:13px">Ten lines, one discount column, one tax summary. The clerk never chooses an account.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3)">ENTRY · NOT ACCOUNTING</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/form-implementation-guideline.md, voucher entry; sample purchase bill lines 1, 5, 6, 7</span><span class="pg">08</span></div>
+  </section>
+
+  <!-- 9 COMPUTATION -->
+  <section class="slide" data-title="Step 5: computation" data-section="The flow" data-source="Source: docs/04-tax-rounding-and-numbering.md">
+    <div class="kicker" data-an="up"><span class="num">09</span> Step 5 · The arithmetic</div>
+    <h1 class="action" data-an="up">Tax is computed per line, in integers, then grouped by <em>rate.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div>
+          <div class="flow" data-an="up" style="flex-direction:column">
+            <div class="step" style="border-left:1px solid var(--rule)"><div class="n">01 · GROSS</div><div class="t">Quantity times entered rate</div><div class="d">2 × 450.00 = 900.00</div></div>
+            <div class="step" style="border-left:1px solid var(--rule)"><div class="n">02 · DISCOUNT</div><div class="t">Basis points, half up</div><div class="d">900.00 × 15.254% = 137.29</div></div>
+            <div class="step" style="border-left:1px solid var(--rule)"><div class="n">03 · TAXABLE</div><div class="t">Net of discount</div><div class="d">900.00 − 137.29 = 762.71</div></div>
+            <div class="step" style="border-left:1px solid var(--rule)"><div class="n">04 · SPLIT</div><div class="t">Intra state or inter state</div><div class="d">9% CGST + 9% SGST, or 18% IGST</div></div>
+            <div class="step" style="border-left:1px solid var(--rule)"><div class="n">05 · TAX</div><div class="t">Per line, then per rate group</div><div class="d">762.71 × 9% = 68.64 each side</div></div>
+            <div class="step" style="border-left:1px solid var(--rule)"><div class="n">06 · INVOICE</div><div class="t">Round to the rupee, difference to round off</div><div class="d">15,544.53 → 15,545.00, round off 0.47</div></div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="panel tint" data-an="up">
+            <h3>Nine lines, one result</h3>
+            <table style="margin-top:2px">
+              <tr><td>Taxable</td><td class="num">13,173.33</td></tr>
+              <tr><td>CGST 9%</td><td class="num">1,185.60</td></tr>
+              <tr><td>SGST 9%</td><td class="num">1,185.60</td></tr>
+              <tr><td>Round off</td><td class="num">0.47</td></tr>
+              <tr class="total"><td>Total</td><td class="num">15,545.00</td></tr>
+            </table>
+          </div>
+          <div class="panel brick" data-an="up">
+            <h3>The printed bill differs by one paisa</h3>
+            <p>Its 3215 group shows 136.90 per side. Nine percent of 1,521.20 is 136.908, which we round to 136.91. The total is identical because round off takes the difference.</p>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:10px;font-size:13px">Money is paise, quantity is scaled by 10,000, rates are basis points. No floating point anywhere in the path.</div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/04-tax-rounding-and-numbering.md, sections 3 and 8</span><span class="pg">09</span></div>
+  </section>
+
+  <!-- 10 POSTING -->
+  <section class="slide" data-title="Step 6: posting" data-section="The flow" data-source="Source: docs/03-voucher-posting-rules.md, PURCHASE rule">
+    <div class="kicker" data-an="up"><span class="num">10</span> Step 6 · The post</div>
+    <h1 class="action" data-an="up">One click writes the money path and the stock path in one <em>transaction.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div data-an="up" style="display:flex;justify-content:center">
+        <div style="border:1px solid var(--ink);background:var(--ink);color:var(--paper);padding:10px 26px;font-size:13px">Voucher PUR/0583 · 13-07-2026 · TechConnect · 15,545.00</div>
+      </div>
+      <div class="cols c2" style="flex:1;margin-top:6px">
+        <div class="panel" data-an="up" style="border-color:#C6D6DF">
+          <h3>Money path · ledger_lines</h3>
+          <div class="mono" style="font-size:12px;line-height:2.1">
+            Dr&nbsp;&nbsp;Purchases&nbsp;&nbsp;&nbsp;&nbsp;13,173.33<br>
+            Dr&nbsp;&nbsp;Input CGST&nbsp;&nbsp;&nbsp;1,185.60<br>
+            Dr&nbsp;&nbsp;Input SGST&nbsp;&nbsp;&nbsp;1,185.60<br>
+            Dr&nbsp;&nbsp;Round off&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.47<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;TechConnect&nbsp;&nbsp;15,545.00
+          </div>
+          <div style="border-top:1px solid var(--rule);margin-top:12px;padding-top:9px;display:flex;justify-content:space-between;font-size:12px">
+            <span class="small">Debits 15,545.00</span><span class="small">Credits 15,545.00</span>
+          </div>
+        </div>
+        <div class="panel" data-an="up" style="border-color:#E1CBC4">
+          <h3>Stock path · stock_movements</h3>
+          <table style="font-size:12px">
+            <tr><th>Item</th><th class="num">In</th><th class="num">Unit cost</th></tr>
+            <tr><td>Epson Black</td><td class="num">1</td><td class="num">288.14</td></tr>
+            <tr><td>Artis Adapter</td><td class="num">2</td><td class="num">381.36</td></tr>
+            <tr><td>LG Monitor</td><td class="num">1</td><td class="num">4,364.42</td></tr>
+            <tr><td>Intel i5</td><td class="num">1</td><td class="num">1,075.00</td></tr>
+            <tr><td>8GB RAM</td><td class="num">1</td><td class="num">3,150.00</td></tr>
+            <tr><td>TP-Link C6</td><td class="num">1</td><td class="num">2,300.00</td></tr>
+            <tr><td>Four ink colours</td><td class="num">4</td><td class="num">288.14 to 411.02</td></tr>
+          </table>
+        </div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:13px">Five ledger rows, ten stock rows, one audit row. Written together, or not at all.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3)">SINGLE TRANSACTION</div>
+      </div>
+      <div class="panel flat" data-an="up" style="border:1px solid var(--rule);padding:0">
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">Begin</div>
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">Voucher row</div>
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">5 ledger rows</div>
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">10 stock rows</div>
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">1 audit row</div>
+          <div style="padding:9px 12px;color:var(--ok)">Commit</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);font-size:11px;color:var(--ink-2);border-top:1px solid var(--rule)">
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">Number checked out</div>
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">Status POSTED</div>
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">Debits equal credits</div>
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">Quantities and costs</div>
+          <div style="padding:9px 12px;border-right:1px solid var(--rule)">Who and when</div>
+          <div style="padding:9px 12px">Number consumed</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/03-voucher-posting-rules.md, PURCHASE and stock rules</span><span class="pg">10</span></div>
+  </section>
+
+  <!-- 11 PROOF -->
+  <section class="slide" data-title="Step 7: the proof" data-section="The flow" data-source="Source: docs/03-voucher-posting-rules.md; docs/01-domain-model.md">
+    <div class="kicker" data-an="up"><span class="num">11</span> Step 7 · The proof</div>
+    <h1 class="action" data-an="up">If one side is missing, the post is refused. If stock is missing, the shelf <em>disagrees.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2" style="flex:1">
+        <div class="panel" data-an="up">
+          <h3>The balance proof</h3>
+          <table>
+            <tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr>
+            <tr><td>Purchases</td><td class="num">13,173.33</td><td class="num"></td></tr>
+            <tr><td>Input CGST</td><td class="num">1,185.60</td><td class="num"></td></tr>
+            <tr><td>Input SGST</td><td class="num">1,185.60</td><td class="num"></td></tr>
+            <tr><td>Round off</td><td class="num">0.47</td><td class="num"></td></tr>
+            <tr><td>TechConnect</td><td class="num"></td><td class="num">15,545.00</td></tr>
+            <tr class="total"><td>Total</td><td class="num">15,545.00</td><td class="num">15,545.00</td></tr>
+          </table>
+        </div>
+        <div class="stack">
+          <div class="panel tint" data-an="up">
+            <h3>The inventory proof</h3>
+            <p class="mono" style="font-size:12px;line-height:1.9">Opening 0.00<br>+ Purchases 13,173.33<br>− Cost of goods sold 0.00<br>= Inventory 13,173.33</p>
+            <p class="small">The same number appears in the stock summary and in the inventory account. If they differ, the integrity report says so.</p>
+          </div>
+          <div class="panel brick" data-an="up">
+            <h3>What failure looks like</h3>
+            <p><span class="strong">Missing credit:</span> debits 13,173.33 against credits 0. Refused before a write.</p>
+            <p><span class="strong">Missing stock rows:</span> the bill balances, the shelf is wrong. Caught by the stock summary, not by the trial balance.</p>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;flex:none">
+        <div style="font-size:13px">The trial balance proves the money. The stock summary proves the shelf. Neither proves the other.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">TWO PROOFS</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/03-voucher-posting-rules.md, sections 4 and 5</span><span class="pg">11</span></div>
+  </section>
+
+  <!-- 12 SALE -->
+  <section class="slide" data-title="Step 8: the sale" data-section="The flow" data-source="Source: docs/03-voucher-posting-rules.md, SALES rule">
+    <div class="kicker" data-an="up"><span class="num">12</span> Step 8 · The sale</div>
+    <h1 class="action" data-an="up">The same engine runs in reverse and creates a <em>receivable.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2" style="flex:1">
+        <div class="panel" data-an="up" style="border-color:#C6D6DF">
+          <h3>Entry A · revenue</h3>
+          <div class="mono" style="font-size:12.5px;line-height:2.2">
+            Dr&nbsp;&nbsp;Acme Distributor&nbsp;&nbsp;4,550.00<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Sales&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3,855.93<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Output CGST&nbsp;&nbsp;&nbsp;&nbsp;347.03<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Output SGST&nbsp;&nbsp;&nbsp;&nbsp;347.03<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Round off&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.01
+          </div>
+          <div style="border-top:1px solid var(--rule);margin-top:12px;padding-top:9px" class="small">Output tax is a liability, not income. Sales is 3,855.93, not 4,550.00.</div>
+        </div>
+        <div class="panel" data-an="up" style="border-color:#E1CBC4">
+          <h3>Entry B · cost</h3>
+          <div class="mono" style="font-size:12.5px;line-height:2.2">
+            Dr&nbsp;&nbsp;Cost of goods sold&nbsp;&nbsp;3,200.00<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Inventory&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3,200.00
+          </div>
+          <div style="border-top:1px solid var(--rule);margin-top:12px;padding-top:9px" class="small">Stock movement: 1 unit out at 3,200.00. Cost came from the shelf, not from the item master.</div>
+          <div style="margin-top:14px;padding:10px 12px;background:var(--paper);border:1px solid var(--rule)">
+            <div class="small">Receivable created</div>
+            <div class="mono" style="font-size:20px;margin-top:3px">4,550.00</div>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:10px;font-size:13px">Gross profit on this bill is 655.93, visible without a separate calculation because the cost was posted with the sale.</div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/03-voucher-posting-rules.md, SALES rule and worked example; sales-bill.pdf</span><span class="pg">12</span></div>
+  </section>
+
+  <!-- 13 RECEIPT -->
+  <section class="slide" data-title="Step 9: receipt and allocation" data-section="The flow" data-source="Source: docs/03-voucher-posting-rules.md, allocation rules">
+    <div class="kicker" data-an="up"><span class="num">13</span> Step 9 · The payment</div>
+    <h1 class="action" data-an="up">Money reaches a bill through an allocation, not by editing the <em>invoice.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div>
+          <div class="panel" data-an="up">
+            <h3>Receipt RCT/0001 · 2,000.00</h3>
+            <div class="mono" style="font-size:12.5px;line-height:2.1">Dr&nbsp;&nbsp;Cash&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2,000.00<br>&nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Acme&nbsp;&nbsp;&nbsp;&nbsp;2,000.00</div>
+          </div>
+          <div class="panel" data-an="up" style="margin-top:10px">
+            <h3>Allocations</h3>
+            <table style="font-size:12.5px">
+              <tr><th>From</th><th>To</th><th class="num">Amount</th><th>Type</th></tr>
+              <tr><td class="mono">RCT/0001</td><td class="mono">INV/0001</td><td class="num">1,500.00</td><td>Against ref</td></tr>
+              <tr><td class="mono">RCT/0001</td><td class="mono">INV/0002</td><td class="num">500.00</td><td>Against ref</td></tr>
+            </table>
+            <p class="small" style="margin-top:8px">If 2,000 had been left unallocated, it would sit as on-account money against the party, visible but not reducing any bill.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="panel tint" data-an="up">
+            <h3>Outstanding, after</h3>
+            <div class="bars" style="margin-top:6px">
+              <div class="brow"><span>INV/0001</span><div class="track"><div class="fill" style="--w:67%"></div></div><span class="mono">3,050.00</span></div>
+              <div class="brow"><span>INV/0002</span><div class="track"><div class="fill" style="--w:83%"></div></div><span class="mono">2,500.00</span></div>
+              <div class="brow"><span class="strong">Total</span><div class="track" style="background:transparent"></div><span class="mono strong">5,550.00</span></div>
+            </div>
+            <p class="small" style="margin-top:10px">Bill 0003 of 4,550 and bill 0004 of 3,000 existed before the receipt. Allocations reduce them, nothing else does.</p>
+          </div>
+          <div class="panel" data-an="up">
+            <h3>Guards</h3>
+            <p>Allocation cannot exceed the bill outstanding. It cannot exceed the money received. A bill cannot allocate to itself.</p>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;flex:none">
+        <div style="font-size:13px">The receipt posts once. Allocations only decide which bills it settles.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">BRIDGE</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/03-voucher-posting-rules.md, section 8; docs/01-domain-model.md, allocation</span><span class="pg">13</span></div>
+  </section>
+
+  <!-- 14 AGEING -->
+  <section class="slide" data-title="Step 10: ageing" data-section="The flow" data-source="Source: docs/05-reports-spec.md, ageing">
+    <div class="kicker" data-an="up"><span class="num">14</span> Step 10 · The age</div>
+    <h1 class="action" data-an="up">Ageing is subtraction. The basis you choose changes the <em>answer.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div data-an="up">
+        <div class="timeline">
+          <div class="tick" style="left:0%">11 Sep<br>INV/0001</div>
+          <div class="tick" style="left:26%">20 Sep<br>INV/0002</div>
+          <div class="tick" style="left:48%">5 Oct<br>RCT/0001</div>
+          <div class="tick" style="left:72%">31 Oct<br>as of</div>
+          <div class="mark" style="left:0%;top:58px"><div class="dot2"></div><div class="lbl">4,550 issued</div></div>
+          <div class="mark" style="left:26%;top:86px"><div class="dot2" style="background:var(--brick)"></div><div class="lbl">3,000 issued</div></div>
+          <div class="mark" style="left:48%;top:58px"><div class="dot2" style="background:var(--ok);width:11px;height:11px"></div><div class="lbl">2,000 received</div></div>
+          <div class="mark" style="left:72%;top:30px"><div class="lbl" style="font-weight:600">31 Oct</div></div>
+        </div>
+      </div>
+      <div class="cols c2" style="flex:1;margin-top:8px">
+        <table data-an="up">
+          <tr><th>Bill</th><th class="num">Open</th><th class="num">By bill date</th><th class="num">By due date</th></tr>
+          <tr><td class="mono">INV/0001 · due 11 Oct</td><td class="num">3,050.00</td><td class="num">50 days</td><td class="num">20 days</td></tr>
+          <tr><td class="mono">INV/0002 · due 20 Oct</td><td class="num">2,500.00</td><td class="num">41 days</td><td class="num">11 days</td></tr>
+          <tr class="total"><td>Total</td><td class="num">5,550.00</td><td class="num">31-60</td><td class="num">0-30</td></tr>
+        </table>
+        <div class="panel tint" data-an="up">
+          <h3>Same money, different bucket</h3>
+          <p>Bill date says both are 31 to 60 days old. Due date says both are still inside credit terms. Neither is wrong, which is why the report has a basis toggle and prints the basis it used.</p>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:10px;font-size:13px">The bucket edges are settings. The bucket totals always equal the sum of open bills, because both come from the same rows.</div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/05-reports-spec.md, ageing; docs/01-domain-model.md, outstanding</span><span class="pg">14</span></div>
+  </section>
+
+  <!-- 15 REPORTS -->
+  <section class="slide" data-title="Step 11: reports are projections" data-section="The flow" data-source="Source: docs/05-reports-spec.md; docs/02-database-schema.md">
+    <div class="kicker" data-an="up"><span class="num">15</span> Step 11 · The reads</div>
+    <h1 class="action" data-an="up">Every report is a query over four tables. None of them has a table of its <em>own.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <table data-an="up" style="font-size:13.5px">
+        <tr><th style="width:230px">Report</th><th>Reads</th><th style="width:280px">Filter</th></tr>
+        <tr><td class="strong">Receivables</td><td>Sales vouchers minus allocations minus credit notes</td><td>Posted, outstanding above zero</td></tr>
+        <tr><td class="strong">Payables</td><td>Purchase vouchers minus payments minus debit notes</td><td>Posted, outstanding above zero</td></tr>
+        <tr><td class="strong">Ageing</td><td>The same open bills, bucketed by date</td><td>As of date, bill or due basis</td></tr>
+        <tr><td class="strong">Party statement</td><td>Ledger lines for one party account</td><td>Date range, running balance</td></tr>
+        <tr><td class="strong">Trial balance</td><td>All ledger lines grouped by account</td><td>Financial year to date</td></tr>
+        <tr><td class="strong">Profit and loss</td><td>Ledger lines where account type is income or expense</td><td>Period, drill to voucher</td></tr>
+        <tr><td class="strong">Stock summary</td><td>Stock movements grouped by item and godown</td><td>As of date, include negative</td></tr>
+      </table>
+      <div class="cols c3" style="margin-top:8px">
+        <div data-an="up" class="panel flat" style="border-left:3px solid var(--accent);padding:6px 0 6px 12px"><div class="strong" style="font-size:12.5px">No report table</div><div class="small" style="margin-top:3px">A report table is a copy of the truth, and copies drift.</div></div>
+        <div data-an="up" class="panel flat" style="border-left:3px solid var(--accent);padding:6px 0 6px 12px"><div class="strong" style="font-size:12.5px">No nightly job</div><div class="small" style="margin-top:3px">A sale posted at 6 pm shows in receivables at 6:01 pm.</div></div>
+        <div data-an="up" class="panel flat" style="border-left:3px solid var(--accent);padding:6px 0 6px 12px"><div class="strong" style="font-size:12.5px">No reconciliation</div><div class="small" style="margin-top:3px">There is nothing to reconcile against, because there is only one copy.</div></div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/05-reports-spec.md, report map; docs/02-database-schema.md</span><span class="pg">15</span></div>
+  </section>
+
+  <!-- 16 CANCEL -->
+  <section class="slide" data-title="Step 12: cancellation" data-section="The flow" data-source="Source: docs/03-voucher-posting-rules.md, section 9">
+    <div class="kicker" data-an="up"><span class="num">16</span> Step 12 · The correction</div>
+    <h1 class="action" data-an="up">A cancellation is a new voucher that mirrors the old one. It is never a <em>delete.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2" style="flex:1">
+        <div class="panel" data-an="up">
+          <h3>Original · INV/0001</h3>
+          <div class="mono" style="font-size:12.5px;line-height:2.1">
+            Dr&nbsp;&nbsp;Acme&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4,550.00<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Sales&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3,855.93<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Output GST&nbsp;&nbsp;&nbsp;694.06<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Round off&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.01
+          </div>
+          <div style="border-top:1px solid var(--rule);margin-top:10px;padding-top:8px" class="small">Stock: 1 unit out at 3,200.00</div>
+        </div>
+        <div class="panel brick" data-an="up">
+          <h3>Reversal · INV/0001-C</h3>
+          <div class="mono" style="font-size:12.5px;line-height:2.1">
+            &nbsp;&nbsp;&nbsp;&nbsp;Dr&nbsp;&nbsp;Sales&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3,855.93<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Dr&nbsp;&nbsp;Output GST&nbsp;&nbsp;&nbsp;694.06<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Dr&nbsp;&nbsp;Round off&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.01<br>
+            Cr&nbsp;&nbsp;Acme&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4,550.00
+          </div>
+          <div style="border-top:1px solid #E1CBC4;margin-top:10px;padding-top:8px" class="small">Stock: 1 unit back in. Cost 3,200.00.</div>
+        </div>
+      </div>
+      <div class="cols c3" style="margin-top:6px">
+        <div data-an="up"><div class="mono" style="font-size:10px;color:var(--accent)">RESULT</div><div style="font-size:12.5px;line-height:1.5;margin-top:3px">Receivable 0. Stock restored. Trial balance unchanged in total.</div></div>
+        <div data-an="up"><div class="mono" style="font-size:10px;color:var(--accent)">HISTORY</div><div style="font-size:12.5px;line-height:1.5;margin-top:3px">Both documents stay in the day book, linked, with the cancellation reason.</div></div>
+        <div data-an="up"><div class="mono" style="font-size:10px;color:var(--accent)">AUDIT</div><div style="font-size:12.5px;line-height:1.5;margin-top:3px">Who cancelled, when, and why. The number is never reused.</div></div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:10px;font-size:13px">An auditor can reconstruct the month exactly, including the mistakes.</div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/03-voucher-posting-rules.md, section 9; docs/01-domain-model.md, state machines</span><span class="pg">16</span></div>
+  </section>
+
+  <!-- 17 SCHEMA MAP -->
+  <section class="slide" data-title="Schema map" data-section="The schema" data-source="Source: docs/02-database-schema.md">
+    <div class="kicker" data-an="up"><span class="num">17</span> The schema</div>
+    <h1 class="action" data-an="up">Six tables carry the books. The other nineteen make them <em>usable.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div class="panel" data-an="up">
+          <h3>Core relationships</h3>
+          <table>
+            <tr><td style="width:160px"><span class="strong">companies</span></td><td class="num">1 : N</td><td>parties, items, accounts, vouchers, sequences</td></tr>
+            <tr><td><span class="strong">parties</span></td><td class="num">1 : N</td><td>vouchers, and through them ledger lines</td></tr>
+            <tr><td><span class="strong">vouchers</span></td><td class="num">1 : N</td><td>item lines, ledger lines, stock movements</td></tr>
+            <tr><td><span class="strong">vouchers</span></td><td class="num">N : N</td><td>vouchers, through bill allocations</td></tr>
+            <tr><td><span class="strong">accounts</span></td><td class="num">1 : N</td><td>ledger lines</td></tr>
+            <tr><td><span class="strong">items</span></td><td class="num">1 : N</td><td>item lines, stock movements</td></tr>
+          </table>
+          <div class="small" style="margin-top:10px">Every table above ends in <span class="mono">company_id</span>. Cross company reads are impossible by construction, not by discipline.</div>
+        </div>
+        <div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="panel flat" style="border:1px solid var(--rule);padding:10px 12px"><div class="tiny" style="letter-spacing:.12em;color:var(--accent)">TENANCY</div><div style="font-size:11px;line-height:1.6;margin-top:4px">companies<br>users, roles<br>permissions<br>company_users</div></div>
+            <div class="panel flat" style="border:1px solid var(--rule);padding:10px 12px"><div class="tiny" style="letter-spacing:.12em;color:var(--accent)">MASTERS</div><div style="font-size:11px;line-height:1.6;margin-top:4px">accounts, groups<br>parties, party_accounts<br>items, units<br>godowns, tax rates</div></div>
+            <div class="panel flat" style="border:1px solid var(--rule);padding:10px 12px"><div class="tiny" style="letter-spacing:.12em;color:var(--accent)">DOCUMENTS</div><div style="font-size:11px;line-height:1.6;margin-top:4px">vouchers<br>voucher_item_lines<br>ledger_lines<br>stock_movements<br>bill_allocations</div></div>
+            <div class="panel flat" style="border:1px solid var(--rule);padding:10px 12px"><div class="tiny" style="letter-spacing:.12em;color:var(--accent)">OPERATIONS</div><div style="font-size:11px;line-height:1.6;margin-top:4px">voucher_sequences<br>audit_events<br>payment_methods<br>idempotency<br>app_meta</div></div>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:13px">Twenty-five tables, down from thirty-eight, with one meaning per table.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3)">6 CORE · 19 SUPPORTING</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/02-database-schema.md, table map and relationships</span><span class="pg">17</span></div>
+  </section>
+
+  <!-- 18 CONTRACTS -->
+  <section class="slide" data-title="Table contracts" data-section="The schema" data-source="Source: docs/02-database-schema.md, integrity checks">
+    <div class="kicker" data-an="up"><span class="num">18</span> Contracts</div>
+    <h1 class="action" data-an="up">Each table promises one thing and refuses the mistakes that break <em>books.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <table data-an="up" style="font-size:13px">
+        <tr><th style="width:210px">Table</th><th>Guarantees</th><th>Refuses</th></tr>
+        <tr><td class="mono">vouchers</td><td>One number per type, series and financial year. A type. A status.</td><td>Editing a posted row. A duplicate number. A post without a type.</td></tr>
+        <tr><td class="mono">ledger_lines</td><td>Exactly one side filled. Debits equal credits per voucher.</td><td>Both sides, neither side, a parent account, another company's account.</td></tr>
+        <tr><td class="mono">voucher_item_lines</td><td>A frozen snapshot of name, HSN, rate, discount and tax.</td><td>Reading today's item price into yesterday's bill.</td></tr>
+        <tr><td class="mono">stock_movements</td><td>One direction per row. A unit cost on every issue.</td><td>A quantity column, an overwrite, a movement without a voucher.</td></tr>
+        <tr><td class="mono">bill_allocations</td><td>Payment to bill links with a type and an amount.</td><td>Over allocation, self allocation, linking two receipts.</td></tr>
+        <tr><td class="mono">parties</td><td>One row per real business, flagged customer and or supplier.</td><td>A duplicate GSTIN. A hard delete once a voucher exists.</td></tr>
+      </table>
+      <div data-an="up" class="panel tint" style="margin-top:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;font-size:13px;line-height:1.5">
+          <div>Row level rules live in constraints: one side, positive amount, foreign keys. They are cheap and they never sleep.</div>
+          <div>Cross row rules live in the posting transaction: balance, allocation limits, numbering. They are tested with golden fixtures.</div>
+        </div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;flex:none">
+        <div style="font-size:13px">Constraints catch a bad row. The transaction catches a bad document. Tests catch the rules.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">THREE NETS</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/02-database-schema.md, sections 5 and 7</span><span class="pg">18</span></div>
+  </section>
+
+  <!-- 19 FAILURE MODES -->
+  <section class="slide" data-title="Failure modes" data-section="The schema" data-source="Source: analysis; docs/03-voucher-posting-rules.md">
+    <div class="kicker" data-an="up"><span class="num">19</span> Failure modes</div>
+    <h1 class="action" data-an="up">Skip a rule and the owner sees it in the shop, not in the <em>code.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <table data-an="up" style="font-size:13px">
+        <tr><th style="width:230px">Rule skipped</th><th>What happens</th><th style="width:300px">What the owner experiences</th></tr>
+        <tr><td class="strong">Balance assertion</td><td>A paisa lands on one side only</td><td>The trial balance is off. The accountant stops trusting every report.</td></tr>
+        <tr><td class="strong">Line snapshot</td><td>A GST rate change rewrites old bills</td><td>Filed returns no longer match the invoices the customer holds.</td></tr>
+        <tr><td class="strong">Allocation guard</td><td>One receipt pays two bills in full</td><td>The shop chases a customer who already paid.</td></tr>
+        <tr><td class="strong">Immutability</td><td>Two versions of the same invoice exist</td><td>Nobody can answer which one was sent, or when it changed.</td></tr>
+        <tr><td class="strong">Idempotency</td><td>A double click posts twice</td><td>The supplier is paid twice and the payable goes negative.</td></tr>
+        <tr><td class="strong">Stock movement</td><td>Inventory value drifts from the shelf</td><td>Month end becomes a spreadsheet and a guess.</td></tr>
+      </table>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:13px">Every row in this table is covered by a test in the plan.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3)">6 FAILURES · 6 TESTS</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/09-testing-strategy.md; docs/03-voucher-posting-rules.md, guards</span><span class="pg">19</span></div>
+  </section>
+
+  <!-- 20 GOLDEN -->
+  <section class="slide" data-title="The golden transaction" data-section="Proof" data-source="Source: sample bills; docs/03-voucher-posting-rules.md">
+    <div class="kicker" data-an="up"><span class="num">20</span> Proof</div>
+    <h1 class="action" data-an="up">Two real bills, every row checked, before any screen is <em>built.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2" style="flex:1">
+        <div class="panel" data-an="up">
+          <div class="between"><h3 style="margin:0">Purchase · TC/2026-27/583</h3><span class="tag b">9 lines</span></div>
+          <div class="mono" style="font-size:12px;line-height:2;margin-top:10px">
+            Dr&nbsp;&nbsp;Purchases&nbsp;&nbsp;&nbsp;&nbsp;13,173.33<br>
+            Dr&nbsp;&nbsp;Input CGST&nbsp;&nbsp;&nbsp;1,185.60<br>
+            Dr&nbsp;&nbsp;Input SGST&nbsp;&nbsp;&nbsp;1,185.60<br>
+            Dr&nbsp;&nbsp;Round off&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.47<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Supplier&nbsp;&nbsp;&nbsp;&nbsp;15,545.00
+          </div>
+          <div style="border-top:1px solid var(--rule);margin-top:10px;padding-top:8px" class="small">Stock in: 10 units across 9 items. Taxable value matches the printed bill exactly.</div>
+        </div>
+        <div class="panel" data-an="up">
+          <div class="between"><h3 style="margin:0">Sale · 84/2026-27</h3><span class="tag b">1 line</span></div>
+          <div class="mono" style="font-size:12px;line-height:2;margin-top:10px">
+            Dr&nbsp;&nbsp;Party&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4,550.00<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Sales&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3,855.93<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Output CGST&nbsp;&nbsp;347.03<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Output SGST&nbsp;&nbsp;347.03<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Round off&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.01
+          </div>
+          <div style="border-top:1px solid var(--rule);margin-top:10px;padding-top:8px" class="small">Second entry: Dr COGS 3,200.00, Cr Inventory 3,200.00. Stock out: 1 unit.</div>
+        </div>
+      </div>
+      <div class="cols c3" style="margin-top:6px">
+        <div data-an="up"><div class="mono" style="font-size:10px;color:var(--accent)">PROVES</div><div style="font-size:12.5px;line-height:1.5;margin-top:3px">Discount before tax, per HSN grouping, round off as an account.</div></div>
+        <div data-an="up"><div class="mono" style="font-size:10px;color:var(--accent)">PROVES</div><div style="font-size:12.5px;line-height:1.5;margin-top:3px">Place of supply split, one paisa round off, cost from stock.</div></div>
+        <div data-an="up"><div class="mono" style="font-size:10px;color:var(--accent)">PROVES</div><div style="font-size:12.5px;line-height:1.5;margin-top:3px">The same engine handles both directions with mirrored rules.</div></div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;flex:none">
+        <div style="font-size:13px">Same engine, mirrored rules, and two documents a shop actually uses.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">ACCEPTANCE</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/sales-bill.pdf, docs/purchase-bill.pdf; expected lines in docs/03-voucher-posting-rules.md</span><span class="pg">20</span></div>
+  </section>
+
+  <!-- 21 APPROVALS -->
+  <section class="slide dark" data-title="What we need approved" data-section="Close" data-source="Crown Books, October 2026">
+    <div class="kicker" data-an="up"><span class="num">21</span> What we need</div>
+    <h1 class="action" data-an="up" style="font-size:44px;max-width:1100px">Four data decisions, and one promise we can <em>demonstrate.</em></h1>
+    <div class="rule" data-an="fade" style="background:#2B353D"></div>
+    <div class="body">
+      <div class="cols c2" style="gap:34px;flex:1">
+        <table data-an="up" style="font-size:13px;color:#EDE9DF">
+          <tr><th style="color:#8E9AA3;border-color:#2B353D">Decision</th><th style="color:#8E9AA3;border-color:#2B353D">Recommendation</th></tr>
+          <tr><td style="border-color:#2B353D">Stock valuation</td><td style="border-color:#2B353D">Weighted average, FIFO optional per company</td></tr>
+          <tr><td style="border-color:#2B353D">Negative stock</td><td style="border-color:#2B353D">Allowed with a warning, visible in reports</td></tr>
+          <tr><td style="border-color:#2B353D">Cancellation</td><td style="border-color:#2B353D">Mirror voucher, never delete, never reuse a number</td></tr>
+          <tr><td style="border-color:#2B353D">Opening balance date</td><td style="border-color:#2B353D">Day before go live, entered bill by bill</td></tr>
+        </table>
+        <div class="stack">
+          <div class="panel" data-an="up" style="background:#18222B;border-color:#2B353D">
+            <h3 style="color:#8E9AA3">The promise</h3>
+            <p style="color:#C9C2B4">At the end of week 4 we will post both sample bills live and show the ledger lines, the stock movements and the trial balance, on a clean install.</p>
+          </div>
+          <div class="panel" data-an="up" style="background:#18222B;border-color:#2B353D">
+            <h3 style="color:#8E9AA3">Why it matters</h3>
+            <p style="color:#C9C2B4">Once the rows are right, every report is a query and every screen is a form. The hard part is finished early, not discovered late.</p>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid #2B353D;padding-top:14px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:13.5px;color:#C9C2B4">Next: approve the technical plan and start P0.</div>
+        <div class="mono" style="font-size:10px;color:#7C8890">DRAFT FOR APPROVAL · OCTOBER 2026</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Crown Books · Data flow and schema · Companion to the technical plan</span><span class="pg">21</span></div>
+  </section>
+</div>
+
+<div class="nav">
+  <button id="agendaBtn" title="Agenda (G)">≡</button>
+  <button id="prevBtn" title="Previous">←</button>
+  <button id="nextBtn" title="Next">→</button>
+</div>
+
+<div class="agenda" id="agenda">
+  <h2>Contents</h2>
+  <div class="g" id="agendaList"></div>
+  <div class="hint">Click a slide to jump. Press G or Escape to close.</div>
+</div>
+
+<script src="vendor/gsap.min.js"></script>
+<script>if(!window.gsap){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"><\/script>')}</script>
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var agenda = document.getElementById('agenda');
+  var agendaList = document.getElementById('agendaList');
+  var progress = document.getElementById('progress');
+  var sectionLabel = document.getElementById('sectionLabel');
+  var current = 0;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var gsapReady = !!window.gsap;
+  var activeTl = null;
+
+  function fit(){
+    var s = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    stage.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  function resetAnim(slide){
+    if (!gsapReady) return;
+    var els = slide.querySelectorAll('[data-an]');
+    for (var i = 0; i < els.length; i++){
+      var el = els[i];
+      var type = el.getAttribute('data-an');
+      gsap.killTweensOf(el);
+      if (type === 'bar') gsap.set(el, {scaleX: 0, transformOrigin: 'left center'});
+      else if (type === 'left') gsap.set(el, {opacity: 0, x: -18});
+      else if (type === 'scale') gsap.set(el, {opacity: 0, scale: 0.96});
+      else gsap.set(el, {opacity: 0, y: 16});
+    }
+  }
+
+  function animate(slide){
+    if (!gsapReady || reduce) return null;
+    var els = slide.querySelectorAll('[data-an]');
+    var tl = gsap.timeline({defaults: {ease: 'power3.out'}});
+    Array.prototype.forEach.call(els, function(el, i){
+      var type = el.getAttribute('data-an');
+      var d = 0.45 + i * 0.055;
+      if (type === 'bar'){
+        tl.to(el, {scaleX: 1, duration: 0.8, ease: 'power2.out'}, d);
+      } else if (type === 'left'){
+        tl.to(el, {opacity: 1, x: 0, duration: 0.6}, d);
+      } else if (type === 'scale'){
+        tl.to(el, {opacity: 1, scale: 1, duration: 0.7}, d);
+      } else {
+        tl.to(el, {opacity: 1, y: 0, duration: 0.6}, d);
+      }
+    });
+    return tl;
+  }
+
+  function go(n){
+    current = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s){ s.classList.remove('on'); });
+    var s = slides[current];
+    resetAnim(s);
+    s.classList.add('on');
+    progress.style.width = ((current + 1) / slides.length * 100) + '%';
+    sectionLabel.textContent = s.getAttribute('data-section') || '';
+    requestAnimationFrame(function(){
+      try { activeTl = animate(s); }
+      catch (err) { gsap.set(s.querySelectorAll('[data-an]'), {clearProps: 'all'}); }
+    });
+    setTimeout(function(){
+      var els = s.querySelectorAll('[data-an]');
+      for (var k = 0; k < els.length; k++){
+        var op = window.getComputedStyle(els[k]).opacity;
+        if (op === '0') { els[k].style.opacity = '1'; els[k].style.transform = 'none'; }
+      }
+    }, 3200);
+    try { history.replaceState(null, '', '#' + (current + 1)); } catch (err) {}
+  }
+
+  function next(){ go(current + 1); }
+  function prev(){ go(current - 1); }
+
+  document.getElementById('nextBtn').addEventListener('click', function(e){ e.stopPropagation(); next(); });
+  document.getElementById('prevBtn').addEventListener('click', function(e){ e.stopPropagation(); prev(); });
+  document.getElementById('agendaBtn').addEventListener('click', function(e){ e.stopPropagation(); agenda.classList.toggle('on'); });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); if (!agenda.classList.contains('on')) next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace'){ e.preventDefault(); prev(); }
+    else if (e.key === 'g' || e.key === 'G'){ agenda.classList.toggle('on'); }
+    else if (e.key === 'Escape'){ agenda.classList.remove('on'); }
+    else if (e.key === 'Home'){ go(0); }
+    else if (e.key === 'End'){ go(slides.length - 1); }
+  });
+
+  document.addEventListener('click', function(e){
+    if (e.target.closest('.nav') || e.target.closest('.agenda')) return;
+    next();
+  });
+
+  var x0 = null;
+  window.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; }, {passive: true});
+  window.addEventListener('touchend', function(e){
+    if (x0 === null) return;
+    var d = e.changedTouches[0].clientX - x0;
+    if (Math.abs(d) > 50){ d < 0 ? next() : prev(); }
+    x0 = null;
+  }, {passive: true});
+
+  slides.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.innerHTML = '<i>' + String(i + 1).padStart(2, '0') + '</i><span>' + (s.getAttribute('data-title') || '') + '</span>';
+    b.addEventListener('click', function(){ agenda.classList.remove('on'); go(i); });
+    agendaList.appendChild(b);
+  });
+
+  var start = parseInt((location.hash || '').replace('#', ''), 10);
+  go(isNaN(start) ? 0 : start - 1);
+})();
+</script>
+</body>
+</html>

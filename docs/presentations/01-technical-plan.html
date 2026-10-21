@@ -1,0 +1,1196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crown Books: Technical Replatform</title>
+<style>
+  :root{
+    --paper:#F5F2EA;
+    --sheet:#FBF9F4;
+    --ink:#12171C;
+    --ink-2:#3E474F;
+    --ink-3:#6E7780;
+    --rule:#DAD3C4;
+    --rule-2:#C3BAA8;
+    --accent:#1B4C68;
+    --accent-soft:#E3EBEF;
+    --brick:#8C3B2A;
+    --brick-soft:#F2E5E0;
+    --ok:#2E6B4E;
+    --ok-soft:#E2EDE7;
+    --warn:#9A6B18;
+    --warn-soft:#F3EBD9;
+    --night:#101820;
+    --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+    --serif:Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#0A0C0F;overflow:hidden;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+  #stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform-origin:center center;background:var(--paper);box-shadow:0 30px 90px rgba(0,0,0,.5);overflow:hidden}
+
+  .progress{position:absolute;left:0;top:0;height:3px;width:0;background:var(--accent);z-index:40;transition:width .4s cubic-bezier(.2,.8,.2,1)}
+  .brandbar{position:absolute;left:72px;right:72px;top:24px;display:flex;justify-content:space-between;align-items:center;font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);z-index:35;pointer-events:none}
+  .brandbar b{font-weight:600;color:var(--ink-2);letter-spacing:.14em}
+  .foot{position:absolute;left:72px;right:72px;bottom:22px;display:flex;justify-content:space-between;align-items:flex-end;font-size:10.5px;color:var(--ink-3);z-index:35;pointer-events:none;gap:40px}
+  .foot .src{max-width:1100px;line-height:1.4}
+  .foot .pg{font-family:var(--mono);letter-spacing:.06em;white-space:nowrap}
+
+  .slide{position:absolute;inset:0;padding:82px 72px 58px;display:none;flex-direction:column;background:var(--paper)}
+  .slide.on{display:flex}
+  .slide.dark{background:var(--night);color:#EDE9DF}
+  .slide.dark .kicker{color:#8E9AA3}
+  .slide.dark .foot{color:#7C8890}
+
+  .kicker{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .kicker .num{font-family:var(--mono);letter-spacing:0;color:var(--accent)}
+  .slide.dark .kicker .num{color:#8FB4C8}
+
+  h1.action{font-size:37px;line-height:1.16;letter-spacing:-.022em;font-weight:700;margin:0;max-width:1280px}
+  h1.action em{font-style:italic;font-family:var(--serif);font-weight:400;letter-spacing:-.01em}
+  .rule{height:1px;background:var(--rule-2);margin:18px 0 22px;flex:none}
+  .slide.dark .rule{background:#2B353D}
+
+  .body{flex:1;min-height:0;display:flex;flex-direction:column;gap:16px}
+  .cols{display:grid;gap:26px;min-height:0;align-items:start;align-content:center}
+  .c2{grid-template-columns:1fr 1fr}
+  .c3{grid-template-columns:repeat(3,1fr)}
+  .c2a{grid-template-columns:1.35fr .85fr}
+  .c2b{grid-template-columns:.85fr 1.35fr}
+
+  p.lead{font-size:16px;line-height:1.5;color:var(--ink-2);margin:0;max-width:92ch}
+  p.note{font-size:12px;line-height:1.45;color:var(--ink-3);margin:0}
+  .small{font-size:12.5px;line-height:1.45;color:var(--ink-3)}
+  .tiny{font-size:10.5px;line-height:1.4;color:var(--ink-3)}
+  .strong{font-weight:600}
+
+  .panel{border:1px solid var(--rule);background:var(--sheet);padding:18px 20px;min-height:0}
+  .panel.tint{background:var(--accent-soft);border-color:#C6D6DF}
+  .panel.brick{background:var(--brick-soft);border-color:#E1CBC4}
+  .panel.ok{background:var(--ok-soft);border-color:#C8DBCF}
+  .panel.warn{background:var(--warn-soft);border-color:#E4D6B8}
+  .panel.flat{background:transparent}
+  .panel h3{margin:0 0 8px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .panel h2{margin:0 0 10px;font-size:17px;line-height:1.3;letter-spacing:-.01em;font-weight:600}
+  .panel p{margin:0 0 9px;font-size:14px;line-height:1.5;color:var(--ink-2)}
+  .panel p:last-child{margin-bottom:0}
+
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .kpi .v{font-family:var(--mono);font-size:34px;line-height:1;letter-spacing:-.03em;font-weight:600}
+  .kpi .l{font-size:11.5px;letter-spacing:.06em;color:var(--ink-3);margin-top:8px;line-height:1.35}
+  .kpi .sub{font-size:12px;color:var(--ink-2);margin-top:6px;line-height:1.4}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:600;padding:0 10px 7px 0;border-bottom:1px solid var(--rule-2);vertical-align:bottom}
+  td{padding:9px 10px 9px 0;border-bottom:1px solid var(--rule);vertical-align:top;line-height:1.4}
+  th + th,td + td{padding-left:10px}
+  tr:last-child td{border-bottom:none}
+  td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;padding-right:0}
+  tr.total td{font-weight:600;border-top:1px solid var(--ink);border-bottom:none;padding-top:8px}
+  th:last-child,td:last-child{padding-right:0}
+
+  .tag{display:inline-block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border:1px solid var(--rule-2);color:var(--ink-3);font-weight:600;background:transparent}
+  .tag.b{border-color:#C9D7DE;color:var(--accent);background:#EDF2F5}
+  .tag.r{border-color:#DEC7BF;color:var(--brick);background:#F7EEEA}
+  .tag.g{border-color:#C6D8CD;color:var(--ok);background:#EDF4F0}
+  .tag.y{border-color:#E0D0AE;color:var(--warn);background:#F7F1E2}
+
+  .row{display:flex;align-items:center;gap:12px}
+  .between{display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .stack{display:flex;flex-direction:column;gap:10px}
+  .bar{height:10px;width:var(--w,100%);background:var(--accent);transform-origin:left center}
+  .bar.brickbg{background:var(--brick)}
+  .bar.okbg{background:var(--ok)}
+  .bar.warnbg{background:var(--warn)}
+
+  .flow{display:flex;align-items:stretch;gap:0}
+  .flow .step{flex:1;border:1px solid var(--rule);background:var(--sheet);padding:14px 16px;position:relative}
+  .flow .step + .step{border-left:none}
+  .flow .step .n{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.08em}
+  .flow .step .t{font-size:13px;font-weight:600;margin-top:4px;line-height:1.3}
+  .flow .step .d{font-size:11px;color:var(--ink-3);margin-top:5px;line-height:1.35}
+  .chevrons{display:flex;gap:6px}
+  .chev{flex:1;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 50%,calc(100% - 18px) 100%,0 100%,18px 50%);background:var(--sheet);border:1px solid var(--rule);padding:14px 22px 14px 30px;position:relative}
+  .chev:first-child{clip-path:polygon(0 0,calc(100% - 18px) 0,100% 50%,calc(100% - 18px) 100%,0 100%)}
+  .chev.first-off{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .chev.last{background:var(--ok);color:#fff;border-color:var(--ok)}
+
+  .matrix{position:relative;border-left:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2);height:300px;margin:0 0 8px 34px}
+  .matrix .grid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
+  .matrix .grid div{border-right:1px solid var(--rule);border-top:1px solid var(--rule)}
+  .matrix .yl{position:absolute;left:-34px;top:50%;transform:rotate(-90deg) translateX(50%);transform-origin:left center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+  .matrix .xl{position:absolute;bottom:-24px;left:0;width:100%;text-align:center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+  .dot{position:absolute;width:26px;height:26px;border-radius:50%;background:var(--brick);color:#fff;font-size:10px;font-family:var(--mono);display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%);box-shadow:0 0 0 4px var(--paper)}
+  .dot.med{background:var(--warn)}
+  .dot.low{background:var(--ink-3)}
+
+  .gantt{display:grid;grid-template-columns:200px repeat(20,1fr);row-gap:8px;align-items:center}
+  .gantt .h{grid-row:1;font-family:var(--mono);font-size:9px;color:var(--ink-3);text-align:center;border-left:1px solid var(--rule);padding-bottom:4px}
+  .gantt .rl{grid-column:1;font-size:12px;font-weight:600;padding-right:14px}
+  .gantt .rl span{display:block;font-weight:400;font-size:10px;color:var(--ink-3);letter-spacing:.06em}
+  .gantt .b{height:20px;background:var(--accent);color:#fff;font-size:9px;font-family:var(--mono);display:flex;align-items:center;padding-left:6px;grid-row:auto}
+  .gantt .b.p{background:var(--brick)}
+  .gantt .b.g{background:var(--ok)}
+  .gantt .b.late{background:var(--warn)}
+  .v1line{position:absolute;top:0;bottom:0;width:2px;background:var(--brick);opacity:.7}
+  .v1lab{position:absolute;top:-22px;left:8px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--brick);white-space:nowrap}
+
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .big{font-family:var(--mono);font-size:26px;letter-spacing:-.02em;font-weight:600}
+  .huge{font-family:var(--mono);font-size:44px;line-height:1;letter-spacing:-.03em;font-weight:600}
+  .quote{font-family:var(--serif);font-style:italic;font-size:21px;line-height:1.4;color:var(--ink-2);max-width:70ch}
+  .divider-line{height:1px;background:var(--rule);margin:2px 0}
+
+  .nav{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:60}
+  .nav button{width:36px;height:36px;background:rgba(18,23,28,.55);border:1px solid rgba(255,255,255,.18);color:#EDE9DF;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s,border-color .2s}
+  .nav button:hover{background:rgba(18,23,28,.85);color:#fff;border-color:rgba(255,255,255,.45)}
+  .agenda{position:fixed;inset:0;background:rgba(10,12,15,.96);z-index:80;display:none;padding:56px 72px;color:#EDE9DF;overflow:auto}
+  .agenda.on{display:block}
+  .agenda h2{margin:0 0 24px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#8E9AA3;font-weight:600}
+  .agenda .g{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 34px}
+  .agenda button{background:none;border:none;border-bottom:1px solid rgba(255,255,255,.12);color:#DCD6C8;text-align:left;padding:9px 0;font-size:13px;cursor:pointer;display:flex;gap:12px;font-family:var(--sans)}
+  .agenda button:hover{color:#fff;border-color:#fff}
+  .agenda button i{font-style:normal;font-family:var(--mono);font-size:10px;color:#7C8890;min-width:22px;padding-top:2px}
+  .agenda .hint{margin-top:28px;font-size:11px;color:#6F7A82;letter-spacing:.08em}
+
+  @media (prefers-reduced-motion: reduce){
+    .progress{transition:none}
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="progress" id="progress"></div>
+  <div class="brandbar"><b>Crown Books</b><span id="sectionLabel">Technical plan</span></div>
+
+  <!-- 1 COVER -->
+  <section class="slide dark on" data-title="Cover" data-section="Opening" data-source="Crown Books replatform, October 2026">
+    <div style="flex:1;display:grid;grid-template-columns:1.25fr .75fr;gap:60px;align-items:center">
+      <div>
+        <div class="kicker" data-an="up"><span class="num">01</span> Technical plan · Version 1</div>
+        <h1 data-an="up" style="font-size:74px;line-height:1.03;letter-spacing:-.045em;font-weight:700;margin:6px 0 18px">Replace the domain.<br>Keep the plumbing.</h1>
+        <p data-an="up" style="font-family:var(--serif);font-style:italic;font-size:23px;line-height:1.45;color:#C9C2B4;max-width:26ch;margin:0 0 34px">A gym CRM becomes a double-entry books application for small businesses.</p>
+        <div data-an="up" style="display:flex;gap:44px;border-top:1px solid #2B353D;padding-top:18px;max-width:640px">
+          <div><div class="mono" style="font-size:24px;color:#EDE9DF">58,327</div><div class="tiny" style="color:#8E9AA3;margin-top:4px">lines of source code</div></div>
+          <div><div class="mono" style="font-size:24px;color:#EDE9DF">91%</div><div class="tiny" style="color:#8E9AA3;margin-top:4px">of feature code retired</div></div>
+          <div><div class="mono" style="font-size:24px;color:#EDE9DF">8 weeks</div><div class="tiny" style="color:#8E9AA3;margin-top:4px">to creditors and debtors</div></div>
+        </div>
+      </div>
+      <div data-an="fade" style="border-left:1px solid #2B353D;padding-left:34px">
+        <svg viewBox="0 0 320 430" width="100%" height="430" aria-hidden="true">
+          <g stroke="#33404A" stroke-width="1">
+            <line x1="0" y1="40" x2="320" y2="40"/><line x1="0" y1="96" x2="320" y2="96"/>
+            <line x1="0" y1="152" x2="320" y2="152"/><line x1="0" y1="208" x2="320" y2="208"/>
+            <line x1="0" y1="264" x2="320" y2="264"/><line x1="0" y1="320" x2="320" y2="320"/>
+            <line x1="0" y1="376" x2="320" y2="376"/>
+          </g>
+          <g font-family="ui-monospace,Consolas,monospace" font-size="11" fill="#8E9AA3">
+            <text x="0" y="28">P0  DE-GYM</text><text x="0" y="84">P1  MASTERS</text>
+            <text x="0" y="140">P2  POSTING ENGINE</text><text x="0" y="196">P3  DEBTORS</text>
+            <text x="0" y="252">P4  CREDITORS</text><text x="0" y="308">P5  STOCK</text>
+            <text x="0" y="364">P6  REPORTS</text>
+          </g>
+          <g fill="#EDE9DF">
+            <rect x="238" y="18" width="82" height="2"/><rect x="238" y="74" width="82" height="2"/>
+            <rect x="238" y="130" width="82" height="2"/><rect x="238" y="186" width="82" height="2"/>
+          </g>
+          <g fill="#8C3B2A"><rect x="238" y="242" width="82" height="2"/><rect x="238" y="298" width="82" height="2"/><rect x="238" y="354" width="82" height="2"/></g>
+          <rect x="0" y="404" width="320" height="1" fill="#EDE9DF"/>
+          <text x="0" y="424" font-family="ui-monospace,Consolas,monospace" font-size="10" fill="#EDE9DF">V1 RELEASE AT WEEK 8</text>
+        </svg>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Prepared for stakeholders · October 2026 · Draft for approval</span><span class="pg">01</span></div>
+  </section>
+
+  <!-- 2 EXEC SUMMARY -->
+  <section class="slide" data-title="Executive summary" data-section="The answer" data-source="Source: codebase audit, October 2026">
+    <div class="kicker" data-an="up"><span class="num">02</span> Executive summary</div>
+    <h1 class="action" data-an="up">The platform is reusable. The business model is <em>not.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div class="stack" style="height:100%;justify-content:space-between">
+          <div class="panel" data-an="up">
+            <h3>What the audit found</h3>
+            <table>
+              <tr><td style="width:92px"><span class="mono" style="font-size:19px">418</span></td><td>source files, 58,327 lines. Electron, React 19, SQLite, typed IPC, migrations and 84 test files.</td></tr>
+              <tr><td><span class="mono" style="font-size:19px">38</span></td><td>database tables describing gym memberships, leads, plans and refunds. None describes a voucher, a ledger or an allocation.</td></tr>
+              <tr><td><span class="mono" style="font-size:19px">91%</span></td><td>of renderer feature code is gym specific or must be rebuilt for accounting.</td></tr>
+            </table>
+          </div>
+          <div class="panel tint" data-an="up">
+            <h3>The move</h3>
+            <p style="font-size:15px;color:var(--ink)">Keep six platform modules. Replace five domain modules with one voucher engine. Ship creditors and debtors before stock and tax reporting.</p>
+          </div>
+          <div class="panel" data-an="up">
+            <h3>Not in this plan</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;font-size:12.5px;line-height:1.45">
+              <div><span class="strong">No CRM.</span> Pipeline, follow-ups and memberships are deleted.</div>
+              <div><span class="strong">No cloud.</span> No bank feeds or e-invoicing in version 1.</div>
+              <div><span class="strong">No payroll.</span> Salary journals are manual until phase 9.</div>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="panel" data-an="up" style="flex:1">
+            <h3>Why this is the cheaper path</h3>
+            <div class="stack" style="flex:1;justify-content:center;gap:26px;margin-top:6px">
+              <div><div class="mono" style="font-size:11px;color:var(--accent)">01</div><div style="font-size:13.5px;line-height:1.45;margin-top:2px">The desktop stack is solved. Rebuilding it adds ten weeks and no customer value.</div></div>
+              <div><div class="mono" style="font-size:11px;color:var(--accent)">02</div><div style="font-size:13.5px;line-height:1.45;margin-top:2px">The accounting risk is in rules, not frameworks. Concentrate effort there.</div></div>
+              <div><div class="mono" style="font-size:11px;color:var(--accent)">03</div><div style="font-size:13.5px;line-height:1.45;margin-top:2px">One document table removes duplicate lifecycles for invoices, bills, notes and receipts.</div></div>
+            </div>
+          </div>
+          <div class="panel brick" data-an="up">
+            <div style="font-size:12px;line-height:1.5;color:var(--ink)"><span class="strong">The cost of being wrong:</span> a half migrated domain leaves two truths in one database. We delete the gym tables outright and start the books on a new file.</div>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:12px;display:flex;justify-content:space-between;gap:40px">
+        <div style="font-size:13px;line-height:1.45;max-width:60ch"><span class="strong">Consequence:</span> version 1 is an 8 week build, not an 18 week rewrite. The risk sits in accounting rules, and rules can be tested.</div>
+        <div class="mono" style="font-size:11px;color:var(--ink-3);white-space:nowrap">DECISION: APPROVE P0</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: repository audit, line counts by module; docs/08-refactor-inventory.md</span><span class="pg">02</span></div>
+  </section>
+
+  <!-- 3 SCQA -->
+  <section class="slide" data-title="Situation, complication, question, answer" data-section="The answer" data-source="Source: analysis">
+    <div class="kicker" data-an="up"><span class="num">03</span> The argument</div>
+    <h1 class="action" data-an="up">We do not have a technology problem. We have a domain <em>problem.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body" style="justify-content:center;gap:0">
+      <div data-an="up" style="display:grid;grid-template-columns:64px 1fr;border-top:1px solid var(--rule-2);padding:16px 0">
+        <div class="mono" style="font-size:30px;color:var(--rule-2)">S</div>
+        <div><div class="small" style="letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px">Situation</div><div style="font-size:15px;line-height:1.5;max-width:100ch">A working Windows desktop application. Electron, React 19, SQLite through <span class="mono">node:sqlite</span>, typed IPC, migrations, role based access, a PDF engine and a test suite. It starts fast, installs offline and has never needed a server.</div></div>
+      </div>
+      <div data-an="up" style="display:grid;grid-template-columns:64px 1fr;border-top:1px solid var(--rule);padding:16px 0">
+        <div class="mono" style="font-size:30px;color:var(--rule-2)">C</div>
+        <div><div class="small" style="letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px">Complication</div><div style="font-size:15px;line-height:1.5;max-width:100ch">Its domain is a gym. Thirty-eight tables and 122 IPC channels describe leads, memberships, plans, freezes and refunds. Not one of them can post a debit and a credit. The screens look like billing, but the model underneath is subscription entitlements.</div></div>
+      </div>
+      <div data-an="up" style="display:grid;grid-template-columns:64px 1fr;border-top:1px solid var(--rule);padding:16px 0">
+        <div class="mono" style="font-size:30px;color:var(--rule-2)">Q</div>
+        <div><div class="small" style="letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px">Question</div><div style="font-size:15px;line-height:1.5;max-width:100ch">Do we start from zero, or rebuild the domain on a platform we already trust?</div></div>
+      </div>
+      <div data-an="up" style="display:grid;grid-template-columns:64px 1fr;border-top:2px solid var(--accent);border-bottom:2px solid var(--accent);padding:20px 0;background:var(--accent-soft);margin-top:8px">
+        <div class="mono" style="font-size:30px;color:var(--accent);padding-left:14px">A</div>
+        <div style="padding-right:14px"><div class="small" style="letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px;color:var(--accent)">Answer</div><div style="font-size:17px;line-height:1.5;max-width:96ch"><span class="strong">Rebuild the domain.</span> Delete the gym feature modules, keep the platform, and make one voucher engine the only path that writes money to the database.</div></div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: repository audit; docs/00-product-brief.md</span><span class="pg">03</span></div>
+  </section>
+
+  <!-- 4 DIAGNOSIS -->
+  <section class="slide" data-title="Where the code lives" data-section="Diagnosis" data-source="Source: renderer feature line counts, October 2026">
+    <div class="kicker" data-an="up"><span class="num">04</span> Diagnosis</div>
+    <h1 class="action" data-an="up">Feature code is concentrated in modules that <em>do not survive.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div data-an="up" style="height:100%;display:flex;flex-direction:column">
+          <div class="stack" style="flex:1;justify-content:space-between;gap:0">
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">leads</div><div style="flex:1"><div class="bar brickbg" data-an="bar" style="--w:100%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">6,243</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">finance</div><div style="flex:1"><div class="bar warnbg" data-an="bar" style="--w:67.6%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">4,220</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">invoices</div><div style="flex:1"><div class="bar warnbg" data-an="bar" style="--w:56%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">3,495</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">dashboard</div><div style="flex:1"><div class="bar warnbg" data-an="bar" style="--w:55.6%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">3,474</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">memberships</div><div style="flex:1"><div class="bar brickbg" data-an="bar" style="--w:51.8%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">3,231</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">catalog</div><div style="flex:1"><div class="bar brickbg" data-an="bar" style="--w:49%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">3,056</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">identity</div><div style="flex:1"><div class="bar okbg" data-an="bar" style="--w:39.6%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">2,475</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">customers</div><div style="flex:1"><div class="bar warnbg" data-an="bar" style="--w:38%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">2,375</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">followups</div><div style="flex:1"><div class="bar brickbg" data-an="bar" style="--w:22.2%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">1,383</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">collections</div><div style="flex:1"><div class="bar brickbg" data-an="bar" style="--w:12.9%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">806</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">activities</div><div style="flex:1"><div class="bar brickbg" data-an="bar" style="--w:6.6%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">414</div></div>
+            <div class="row"><div style="width:112px;font-size:11.5px;text-align:right;color:var(--ink-2)">people</div><div style="flex:1"><div class="bar brickbg" data-an="bar" style="--w:6%;height:13px"></div></div><div class="mono" style="width:52px;font-size:11px;text-align:right">372</div></div>
+          </div>
+          <div class="row" style="margin-top:16px;gap:18px;flex:none">
+            <div class="row" style="gap:6px"><span class="bar" style="width:14px;height:8px;background:var(--ok)"></span><span class="tiny">keep</span></div>
+            <div class="row" style="gap:6px"><span class="bar" style="width:14px;height:8px;background:var(--warn)"></span><span class="tiny">rebuild</span></div>
+            <div class="row" style="gap:6px"><span class="bar" style="width:14px;height:8px;background:var(--brick)"></span><span class="tiny">delete</span></div>
+          </div>
+        </div>
+        <div class="stack" style="height:100%;justify-content:space-between">
+          <div class="panel tint" data-an="up">
+            <h3>So what</h3>
+            <p>Of 31,846 feature lines, about 2,777 are identity, export, print and licensing. The other 29,069 either disappear or get rewritten.</p>
+            <p>This is not a redesign of screens with a new coat of paint. It is a replacement of the domain, with the platform layers deliberately kept.</p>
+          </div>
+          <div class="panel" data-an="up">
+            <h3>Read the shape, not the size</h3>
+            <p>Leads alone is larger than the entire identity module. The previous product's centre of gravity was the sales pipeline. The new centre of gravity has to be the voucher.</p>
+          </div>
+          <div data-an="up" style="border-top:1px solid var(--rule-2);padding-top:10px">
+            <div class="tiny">MAIN PROCESS: 17,599 LINES</div>
+            <div style="font-size:12px;line-height:1.45;color:var(--ink-2);margin-top:3px">Roughly half is domain and application code that gets replaced. The database, IPC, auth and licensing layers stay.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: line counts per feature folder. Colour shows the planned fate of each module, not its quality.</span><span class="pg">04</span></div>
+  </section>
+
+  <!-- 5 KEEP REPLACE DELETE -->
+  <section class="slide" data-title="Keep, replace, delete" data-section="Diagnosis" data-source="Source: docs/08-refactor-inventory.md">
+    <div class="kicker" data-an="up"><span class="num">05</span> The change list</div>
+    <h1 class="action" data-an="up">Eight modules stay, five are rewritten, eleven are <em>deleted.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c3" style="flex:1;align-items:stretch">
+        <div class="panel ok" data-an="up" style="display:flex;flex-direction:column">
+          <div class="between"><h3 style="margin:0">Keep unchanged</h3><span class="mono" style="font-size:11px;color:var(--ok)">8 MODULES</span></div>
+          <div class="divider-line" style="margin:10px 0 12px"></div>
+          <div class="stack" style="gap:9px;font-size:12.5px;line-height:1.4">
+            <div>Database connection and transactions</div>
+            <div>Migration runner</div>
+            <div>IPC envelope and Zod validation</div>
+            <div>Authentication and sessions</div>
+            <div>Roles and permissions</div>
+            <div>PDF renderer</div>
+            <div>Excel export</div>
+            <div>Installer and licensing</div>
+          </div>
+          <div class="small" style="margin-top:auto;padding-top:14px;color:var(--ok)">2,777 lines kept as they are</div>
+        </div>
+        <div class="panel warn" data-an="up" style="display:flex;flex-direction:column">
+          <div class="between"><h3 style="margin:0">Rewrite in place</h3><span class="mono" style="font-size:11px;color:var(--warn)">5 MODULES</span></div>
+          <div class="divider-line" style="margin:10px 0 12px"></div>
+          <div class="stack" style="gap:9px;font-size:12.5px;line-height:1.4">
+            <div>Identity becomes Company</div>
+            <div>Customers become Parties</div>
+            <div>Invoices become Vouchers</div>
+            <div>Payment pages become Receipts and Payments</div>
+            <div>Dashboard becomes a books dashboard</div>
+            <div>Permissions catalogue replaced</div>
+          </div>
+          <div class="small" style="margin-top:auto;padding-top:14px;color:var(--warn)">Same patterns, different model</div>
+        </div>
+        <div class="panel brick" data-an="up" style="display:flex;flex-direction:column">
+          <div class="between"><h3 style="margin:0">Delete</h3><span class="mono" style="font-size:11px;color:var(--brick)">11 MODULES</span></div>
+          <div class="divider-line" style="margin:10px 0 12px"></div>
+          <div class="stack" style="gap:9px;font-size:12.5px;line-height:1.4">
+            <div>Leads and pipeline</div>
+            <div>Follow-ups</div>
+            <div>Activities</div>
+            <div>Plans and offers</div>
+            <div>Memberships and freezes</div>
+            <div>Refunds and store credit</div>
+            <div>Daily collection</div>
+            <div>Blacklist</div>
+            <div>Member photos and webcam</div>
+            <div>Gym dashboard widgets</div>
+            <div>Gym test suite</div>
+          </div>
+          <div class="small" style="margin-top:auto;padding-top:14px;color:var(--brick)">About 26,000 feature lines removed</div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:12px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:13px">No business rule survives. The conventions do, and conventions are the expensive part to rebuild.</div>
+        <div class="mono" style="font-size:10.5px;color:var(--ink-3)">DELETE IS PERMANENT, NOT HIDDEN</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/08-refactor-inventory.md, sections 2 to 4</span><span class="pg">05</span></div>
+  </section>
+
+  <!-- 6 ONE VOUCHER -->
+  <section class="slide" data-title="One voucher table" data-section="Design" data-source="Source: docs/01-domain-model.md, docs/03-voucher-posting-rules.md">
+    <div class="kicker" data-an="up"><span class="num">06</span> The central simplification</div>
+    <h1 class="action" data-an="up">Six document tables collapse into one voucher and four <em>satellites.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2b" style="flex:1">
+        <div class="panel brick" data-an="up" style="display:flex;flex-direction:column">
+          <h3>Today</h3>
+          <div class="stack" style="gap:6px;margin-top:2px">
+            <div style="border:1px solid #DEC7BF;background:#FBF4F1;padding:11px 12px;font-size:12.5px">invoices <span class="tiny">DRAFT, FINAL, VOID</span></div>
+            <div style="border:1px solid #DEC7BF;background:#FBF4F1;padding:11px 12px;font-size:12.5px">invoice_lines</div>
+            <div style="border:1px solid #DEC7BF;background:#FBF4F1;padding:11px 12px;font-size:12.5px">payments</div>
+            <div style="border:1px solid #DEC7BF;background:#FBF4F1;padding:11px 12px;font-size:12.5px">payment_allocations</div>
+            <div style="border:1px solid #DEC7BF;background:#FBF4F1;padding:11px 12px;font-size:12.5px">refunds</div>
+            <div style="border:1px solid #DEC7BF;background:#FBF4F1;padding:11px 12px;font-size:12.5px">credits</div>
+          </div>
+          <div class="small" style="margin-top:12px">Six lifecycles. Six numbering paths. Three ways to cancel. No concept of a purchase at all.</div>
+        </div>
+        <div class="panel tint" data-an="up" style="display:flex;flex-direction:column">
+          <h3>The books model</h3>
+          <div style="border:1px solid #C6D6DF;background:#F7FAFC;padding:10px 12px;font-size:13px;font-weight:600;display:flex;justify-content:space-between"><span>vouchers</span><span class="mono" style="font-size:10px;font-weight:400;color:var(--accent)">11 TYPES</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+            <div style="border:1px solid var(--rule);background:var(--sheet);padding:8px 10px;font-size:11.5px">voucher_item_lines</div>
+            <div style="border:1px solid var(--rule);background:var(--sheet);padding:8px 10px;font-size:11.5px">ledger_lines</div>
+            <div style="border:1px solid var(--rule);background:var(--sheet);padding:8px 10px;font-size:11.5px">stock_movements</div>
+            <div style="border:1px solid var(--rule);background:var(--sheet);padding:8px 10px;font-size:11.5px">bill_allocations</div>
+          </div>
+          <div class="stack" style="gap:13px;margin-top:16px;font-size:12.5px;line-height:1.45">
+            <div><span class="mono" style="font-size:10px;color:var(--accent)">01</span> One numbering path for every document</div>
+            <div><span class="mono" style="font-size:10px;color:var(--accent)">02</span> One cancellation path, one audit trail</div>
+            <div><span class="mono" style="font-size:10px;color:var(--accent)">03</span> One printing pipeline</div>
+            <div><span class="mono" style="font-size:10px;color:var(--accent)">04</span> Day book becomes a query, not a feature</div>
+          </div>
+        </div>
+      </div>
+      <div class="cols c2" style="flex:none">
+        <div data-an="up" style="border-left:3px solid var(--accent);padding-left:12px;font-size:12.5px;line-height:1.45">A sale, a purchase, a receipt, a payment and a return are the same object with a different rule. Storing them separately duplicates the hard parts and hides the differences.</div>
+        <div data-an="up" style="border-left:3px solid var(--ink-3);padding-left:12px;font-size:12.5px;line-height:1.45">The clerk still sees five different screens. The database sees one table. That gap is where the maintenance saving lives.</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/01-domain-model.md, voucher section; docs/02-database-schema.md</span><span class="pg">06</span></div>
+  </section>
+
+  <!-- 7 ARCHITECTURE -->
+  <section class="slide" data-title="Target architecture" data-section="Design" data-source="Source: docs/backend-implementation-guidelines.md">
+    <div class="kicker" data-an="up"><span class="num">07</span> Target architecture</div>
+    <h1 class="action" data-an="up">Seven layers, one write path, and rules that cannot be <em>bypassed.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div class="stack" style="gap:5px;justify-content:center">
+          <div data-an="left" style="display:grid;grid-template-columns:150px 1fr;border:1px solid var(--rule);background:var(--sheet)"><div style="padding:13px 14px;border-right:1px solid var(--rule);font-size:12px;font-weight:600">Renderer</div><div style="padding:13px 14px;font-size:11.5px;color:var(--ink-3)">Screens. Preview totals. Never compute a stored amount.</div></div>
+          <div data-an="left" style="display:grid;grid-template-columns:150px 1fr;border:1px solid var(--rule);background:var(--sheet)"><div style="padding:13px 14px;border-right:1px solid var(--rule);font-size:12px;font-weight:600">Preload</div><div style="padding:13px 14px;font-size:11.5px;color:var(--ink-3)">Typed bridge. No logic, no validation.</div></div>
+          <div data-an="left" style="display:grid;grid-template-columns:150px 1fr;border:1px solid var(--rule);background:var(--sheet)"><div style="padding:13px 14px;border-right:1px solid var(--rule);font-size:12px;font-weight:600">IPC handler</div><div style="padding:13px 14px;font-size:11.5px;color:var(--ink-3)">Zod at the boundary. Maps errors to stable codes.</div></div>
+          <div data-an="left" style="display:grid;grid-template-columns:150px 1fr;border:1px solid #C6D6DF;background:var(--accent-soft)"><div style="padding:13px 14px;border-right:1px solid #C6D6DF;font-size:12px;font-weight:600">Application</div><div style="padding:13px 14px;font-size:11.5px;color:var(--ink-2)">Owns the transaction. Orchestrates one use case.</div></div>
+          <div data-an="left" style="display:grid;grid-template-columns:150px 1fr;border:1px solid #C6D6DF;background:var(--accent-soft)"><div style="padding:13px 14px;border-right:1px solid #C6D6DF;font-size:12px;font-weight:600">Domain</div><div style="padding:13px 14px;font-size:11.5px;color:var(--ink-2)">Posting rules, tax, rounding, allocation. Pure functions.</div></div>
+          <div data-an="left" style="display:grid;grid-template-columns:150px 1fr;border:1px solid var(--rule);background:var(--sheet)"><div style="padding:13px 14px;border-right:1px solid var(--rule);font-size:12px;font-weight:600">Repository</div><div style="padding:13px 14px;font-size:11.5px;color:var(--ink-3)">Queries only. Never opens a transaction.</div></div>
+          <div data-an="left" style="display:grid;grid-template-columns:150px 1fr;border:1px solid var(--ink);background:var(--ink);color:var(--paper)"><div style="padding:13px 14px;border-right:1px solid #2B353D;font-size:12px;font-weight:600">SQLite</div><div style="padding:13px 14px;font-size:11.5px;color:#B9B2A4">WAL, foreign keys, one file, no server.</div></div>
+        </div>
+        <div class="stack" style="justify-content:center">
+          <div class="panel" data-an="up"><h3>Three rules that keep it honest</h3>
+            <p><span class="strong">The renderer never stores money.</span> It previews with the same function, then accepts what the server returns.</p>
+            <p><span class="strong">A repository never opens a transaction.</span> The use case owns the boundary, so a failure rolls back everything.</p>
+            <p><span class="strong">The domain never touches the database.</span> Rules are testable without a file on disk.</p>
+          </div>
+          <div class="panel ok" data-an="up">
+            <h3>What this buys</h3>
+            <p>Every screen, every import and every test goes through the same posting path. There is no second way to write a ledger line, which is the usual source of a books app that stops balancing in year three.</p>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;flex:none">
+        <div style="font-size:13px">Every screen, import and test uses the same path. There is no second way to write a ledger line.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">ONE WRITE PATH</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/backend-implementation-guidelines.md, layer contract</span><span class="pg">07</span></div>
+  </section>
+
+  <!-- 8 POSTING ENGINE -->
+  <section class="slide" data-title="Posting engine" data-section="Design" data-source="Source: docs/03-voucher-posting-rules.md">
+    <div class="kicker" data-an="up"><span class="num">08</span> The engine</div>
+    <h1 class="action" data-an="up">The clerk enters a document. The engine decides the <em>entries.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="flow" data-an="up" style="flex:none">
+        <div class="step"><div class="n">INPUT</div><div class="t">Voucher</div><div class="d">Type, party, lines, tax, allocations</div></div>
+        <div class="step"><div class="n">LOOKUP</div><div class="t">Rule</div><div class="d">Resolved by system key, not account name</div></div>
+        <div class="step"><div class="n">GENERATE</div><div class="t">Ledger lines</div><div class="d">Debits and credits per rule</div></div>
+        <div class="step"><div class="n">GENERATE</div><div class="t">Stock and allocations</div><div class="d">Quantities and bill references</div></div>
+        <div class="step"><div class="n">ASSERT</div><div class="t">Balance</div><div class="d">Debits equal credits before any write</div></div>
+        <div class="step" style="background:var(--ink);color:var(--paper);border-color:var(--ink)"><div class="n" style="color:#8FB4C8">COMMIT</div><div class="t">One transaction</div><div class="d" style="color:#B9B2A4">Rows land together or not at all</div></div>
+      </div>
+      <div class="cols c2a" style="flex:1;margin-top:6px">
+        <table data-an="up">
+          <tr><th>Voucher</th><th>Debit</th><th>Credit</th><th style="text-align:center">Stock</th></tr>
+          <tr><td>Sales</td><td>Party or cash</td><td>Sales, output GST, round off</td><td style="text-align:center">out</td></tr>
+          <tr><td>Purchase</td><td>Inventory, input GST, round off</td><td>Party or cash</td><td style="text-align:center">in</td></tr>
+          <tr><td>Receipt</td><td>Cash or bank</td><td>Party</td><td style="text-align:center">-</td></tr>
+          <tr><td>Payment</td><td>Party</td><td>Cash or bank</td><td style="text-align:center">-</td></tr>
+          <tr><td>Credit note</td><td>Sales returns, output GST</td><td>Party</td><td style="text-align:center">in</td></tr>
+          <tr><td>Debit note</td><td>Party</td><td>Purchase returns, input GST</td><td style="text-align:center">out</td></tr>
+          <tr><td>Journal</td><td>Free</td><td>Free, must balance</td><td style="text-align:center">opt</td></tr>
+          <tr><td>Contra</td><td>Bank</td><td>Cash</td><td style="text-align:center">-</td></tr>
+        </table>
+        <div class="stack">
+          <div class="panel tint" data-an="up"><h3>Why a rule table</h3><p>A new document type is a new rule and a new screen. It is not a new schema, a new sequence or a new cancellation route.</p></div>
+          <div class="panel" data-an="up"><h3>Accounts by key</h3><p>The engine asks for <span class="mono" style="font-size:11px">OUTPUT_CGST</span>. The user can rename that account to anything in the chart of accounts. Posting still works.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/03-voucher-posting-rules.md, sections 2 and 3</span><span class="pg">08</span></div>
+  </section>
+
+  <!-- 9 DOUBLE ENTRY -->
+  <section class="slide" data-title="Double entry enforced" data-section="Design" data-source="Source: docs/03-voucher-posting-rules.md, docs/09-testing-strategy.md">
+    <div class="kicker" data-an="up"><span class="num">09</span> The invariant</div>
+    <h1 class="action" data-an="up">Debits equal credits is enforced in four places, not <em>hoped for.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div class="stack" style="justify-content:center">
+          <div data-an="up" style="display:grid;grid-template-columns:44px 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--rule-2)">
+            <div class="mono" style="font-size:22px;color:var(--rule-2)">01</div>
+            <div><div style="font-size:13.5px;font-weight:600">Boundary validation</div><div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-top:2px">Zod rejects malformed payloads before the application layer runs. Amounts must be positive integers.</div></div>
+          </div>
+          <div data-an="up" style="display:grid;grid-template-columns:44px 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--rule)">
+            <div class="mono" style="font-size:22px;color:var(--rule-2)">02</div>
+            <div><div style="font-size:13.5px;font-weight:600">Domain assertion</div><div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-top:2px">The rule produces lines, then the engine sums both sides. A mismatch throws before a single row is written.</div></div>
+          </div>
+          <div data-an="up" style="display:grid;grid-template-columns:44px 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--rule)">
+            <div class="mono" style="font-size:22px;color:var(--rule-2)">03</div>
+            <div><div style="font-size:13.5px;font-weight:600">Single transaction</div><div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-top:2px">Voucher, lines, movements, allocations and audit land together. A crash leaves nothing behind.</div></div>
+          </div>
+          <div data-an="up" style="display:grid;grid-template-columns:44px 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule-2)">
+            <div class="mono" style="font-size:22px;color:var(--accent)">04</div>
+            <div><div style="font-size:13.5px;font-weight:600">Proof, every day</div><div style="font-size:12px;color:var(--ink-3);line-height:1.45;margin-top:2px">Trial balance on screen, integrity report in admin, and a property test over 1,000 generated voucher sets.</div></div>
+          </div>
+        </div>
+        <div class="stack">
+          <div data-an="up" style="background:var(--night);color:#E8E3D7;padding:16px 18px;font-family:var(--mono);font-size:11.5px;line-height:1.75;white-space:pre">// application/vouchers.ts
+return withTransaction(() => {
+  const lines = rule.ledger(voucher)
+  const dr = sum(lines.debit)
+  const cr = sum(lines.credit)
+  assert(dr === cr)
+  insertVoucher(voucher)
+  insertLedgerLines(lines)
+  insertStockMovements(...)
+  writeAudit(voucher, 'POST')
+})</div>
+          <div class="panel brick" data-an="up"><h3>What cannot happen</h3><p>A voucher with 13,173.33 on one side and 13,173.34 on the other. A stock movement without its bill. A posted voucher with no audit row. A number consumed by a failed post.</p></div>
+        </div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;flex:none">
+        <div style="font-size:13px">A posted voucher either exists completely or it does not exist at all.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">INVARIANT</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/03-voucher-posting-rules.md, section 10; docs/09-testing-strategy.md</span><span class="pg">09</span></div>
+  </section>
+
+  <!-- 10 MONEY TAX ROUNDING -->
+  <section class="slide" data-title="Money, tax and rounding" data-section="Design" data-source="Source: purchase bill TC/2026-27/583; docs/04-tax-rounding-and-numbering.md">
+    <div class="kicker" data-an="up"><span class="num">10</span> The paisa discipline</div>
+    <h1 class="action" data-an="up">Tax is computed once, in integers, and rounding lands in its own <em>account.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div>
+          <div class="stack" style="gap:0">
+            <div data-an="up" style="display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)"><span class="mono" style="font-size:10px;color:var(--accent)">01</span><span style="font-size:12.5px">Gross, quantity times rate</span><span class="mono" style="font-size:12px">7,700.00</span></div>
+            <div data-an="up" style="display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)"><span class="mono" style="font-size:10px;color:var(--accent)">02</span><span style="font-size:12.5px">Discount, basis points, half up</span><span class="mono" style="font-size:12px">1,174.67</span></div>
+            <div data-an="up" style="display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)"><span class="mono" style="font-size:10px;color:var(--accent)">03</span><span style="font-size:12.5px">Taxable value, nine lines</span><span class="mono" style="font-size:12px">13,173.33</span></div>
+            <div data-an="up" style="display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)"><span class="mono" style="font-size:10px;color:var(--accent)">04</span><span style="font-size:12.5px">Place of supply decides CGST plus SGST or IGST</span><span class="mono" style="font-size:12px">intra</span></div>
+            <div data-an="up" style="display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)"><span class="mono" style="font-size:10px;color:var(--accent)">05</span><span style="font-size:12.5px">Tax per line, per rate group</span><span class="mono" style="font-size:12px">2,371.20</span></div>
+            <div data-an="up" style="display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule)"><span class="mono" style="font-size:10px;color:var(--accent)">06</span><span style="font-size:12.5px">Round to the rupee, difference to round off</span><span class="mono" style="font-size:12px">0.47</span></div>
+            <div data-an="up" style="display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;padding:11px 0;border-bottom:2px solid var(--ink)"><span class="mono" style="font-size:10px;color:var(--ink-3)">=</span><span style="font-size:13.5px;font-weight:600">Invoice total</span><span class="mono" style="font-size:15px;font-weight:600">15,545.00</span></div>
+          </div>
+          <div data-an="up" class="panel" style="margin-top:14px">
+            <h3>Ledger lines</h3>
+            <div class="mono" style="font-size:11.5px;line-height:1.9">
+              Dr&nbsp;&nbsp;Purchases&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;13,173.33<br>
+              Dr&nbsp;&nbsp;Input CGST&nbsp;&nbsp;&nbsp;1,185.60<br>
+              Dr&nbsp;&nbsp;Input SGST&nbsp;&nbsp;&nbsp;1,185.60<br>
+              Dr&nbsp;&nbsp;Round off&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.47<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Supplier&nbsp;&nbsp;&nbsp;&nbsp;15,545.00
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="panel tint" data-an="up"><h3>The printed bill says 1,185.59</h3><p>Nine percent of 1,521.20 is 136.908. We round half up to 136.91, so our CGST is one paisa higher. The total is identical because round off absorbs it.</p><p>We document the difference instead of copying another system's truncation. Our books stay internally consistent.</p></div>
+          <div class="panel" data-an="up"><h3>No floats, anywhere</h3><p>Money is integer paise. Quantity is integer scaled by 10,000. Percentages are basis points. One rounding function, unit tested at the half, above it and below it.</p></div>
+          <div data-an="up" style="border-top:1px solid var(--rule-2);padding-top:10px;font-size:12px;line-height:1.45"><span class="strong">Why it matters:</span> a one paisa error is harmless once and expensive after 40,000 invoices and one GST return.</div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/04-tax-rounding-and-numbering.md, sections 3 and 8</span><span class="pg">10</span></div>
+  </section>
+
+  <!-- 11 IMMUTABILITY -->
+  <section class="slide" data-title="Immutability, numbering, idempotency" data-section="Design" data-source="Source: docs/01-domain-model.md; docs/04-tax-rounding-and-numbering.md">
+    <div class="kicker" data-an="up"><span class="num">11</span> Three safeguards</div>
+    <h1 class="action" data-an="up">A posted voucher is a fact. Corrections are new <em>facts.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c3" style="flex:1;align-items:stretch">
+        <div class="panel" data-an="up" style="display:flex;flex-direction:column">
+          <h3>Correction, not editing</h3>
+          <div style="display:flex;align-items:center;gap:8px;margin:8px 0 14px;font-family:var(--mono);font-size:10px">
+            <span style="border:1px solid var(--rule-2);padding:4px 7px">DRAFT</span>
+            <span style="color:var(--ink-3)">-&gt;</span>
+            <span style="border:1px solid var(--accent);color:var(--accent);padding:4px 7px">POSTED</span>
+            <span style="color:var(--ink-3)">-&gt;</span>
+            <span style="border:1px solid var(--brick);color:var(--brick);padding:4px 7px">CANCELLED</span>
+          </div>
+          <p>Cancel writes a mirror voucher, reverses stock and allocations, and keeps both documents in the day book, linked.</p>
+          <p>The number is not reused. The original never changes.</p>
+          <div class="small" style="margin-top:auto;padding-top:12px">Audited: who, when, why.</div>
+        </div>
+        <div class="panel" data-an="up" style="display:flex;flex-direction:column">
+          <h3>One sequence per book</h3>
+          <div class="mono" style="font-size:11px;line-height:1.8;margin:8px 0 12px;color:var(--ink-2)">
+            SALES / INV / 2026-27<br>
+            <span style="color:var(--accent)">INV/0042</span><br><br>
+            PURCHASE / PUR / 2026-27<br>
+            <span style="color:var(--accent)">PUR/0118</span>
+          </div>
+          <p>The number is allocated inside the posting transaction. A rollback does not consume it.</p>
+          <p>Cancelled vouchers keep their number, so the audit trail has no holes.</p>
+        </div>
+        <div class="panel" data-an="up" style="display:flex;flex-direction:column">
+          <h3>A double click posts once</h3>
+          <p>Every mutation carries a request key. The second call returns the first result instead of writing a second voucher.</p>
+          <div style="border:1px solid var(--rule);background:var(--sheet);padding:10px 12px;margin:10px 0;font-family:var(--mono);font-size:10.5px;line-height:1.7">
+            POST /vouchers<br>
+            key: 7f3a-...<br>
+            <span style="color:var(--ok)">200 voucher INV/0042</span><br>
+            repeat, same key<br>
+            <span style="color:var(--ok)">200 voucher INV/0042</span>
+          </div>
+          <p class="small" style="margin-top:auto">Same key, different payload: conflict, refused.</p>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:12px;display:flex;justify-content:space-between;align-items:baseline">
+        <div class="quote" style="font-size:18px">"The books must be reconstructable from rows alone. If a number is stored rather than derived, it will eventually disagree with its source."</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">DESIGN PRINCIPLE 03</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/01-domain-model.md, state machines; docs/04-tax-rounding-and-numbering.md, sections 4 and 6</span><span class="pg">11</span></div>
+  </section>
+
+  <!-- 12 SCHEMA -->
+  <section class="slide" data-title="Schema at a glance" data-section="Design" data-source="Source: docs/02-database-schema.md">
+    <div class="kicker" data-an="up"><span class="num">12</span> Data model</div>
+    <h1 class="action" data-an="up">Twenty-five tables replace thirty-eight, and nine of them carry the <em>books.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div class="panel" data-an="up">
+          <h3>The core, and how it relates</h3>
+          <table style="margin-top:4px">
+            <tr><td style="width:150px"><span class="strong">Party</span> <span class="tiny">customer, supplier, both</span></td><td class="num">1 : N</td><td>Voucher</td></tr>
+            <tr><td><span class="strong">Voucher</span></td><td class="num">1 : N</td><td>Item line, ledger line, stock movement, allocation</td></tr>
+            <tr><td><span class="strong">Account</span></td><td class="num">1 : N</td><td>Ledger line</td></tr>
+            <tr><td><span class="strong">Item</span></td><td class="num">1 : N</td><td>Item line, stock movement</td></tr>
+            <tr><td><span class="strong">Receipt or payment</span></td><td class="num">N : N</td><td>Bills, through allocations</td></tr>
+            <tr><td><span class="strong">Company</span></td><td class="num">1 : N</td><td>Everything above</td></tr>
+          </table>
+          <div class="small" style="margin-top:12px">Every table carries a company id. A report cannot accidentally read another firm's books.</div>
+        </div>
+        <div>
+          <div data-an="up" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div class="panel flat" style="border:1px solid var(--rule);padding:10px 12px"><div class="tiny" style="letter-spacing:.12em;color:var(--accent)">ACCESS</div><div style="font-size:11.5px;line-height:1.55;margin-top:4px">companies<br>users, roles<br>permissions<br>company_users</div></div>
+            <div class="panel flat" style="border:1px solid var(--rule);padding:10px 12px"><div class="tiny" style="letter-spacing:.12em;color:var(--accent)">MASTERS</div><div style="font-size:11.5px;line-height:1.55;margin-top:4px">accounts, groups<br>parties, party_accounts<br>items, units<br>godowns, tax rates</div></div>
+            <div class="panel flat" style="border:1px solid var(--rule);padding:10px 12px"><div class="tiny" style="letter-spacing:.12em;color:var(--accent)">DOCUMENTS</div><div style="font-size:11.5px;line-height:1.55;margin-top:4px">vouchers<br>voucher_item_lines<br>ledger_lines<br>stock_movements<br>bill_allocations</div></div>
+          </div>
+          <div class="panel tint" data-an="up" style="margin-top:10px">
+            <h3>What is not stored</h3>
+            <p>No account balance. No bill outstanding. No stock on hand. No party total. Each is a query over immutable rows, which is why a report can never drift from its source.</p>
+          </div>
+          <div data-an="up" style="margin-top:10px;font-size:12px;line-height:1.45;color:var(--ink-2)"><span class="strong">38 to 25</span> is not a diet. Six gym tables had overlapping meanings. The new model has one meaning per row.</div>
+        </div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;flex:none">
+        <div style="font-size:13px">25 tables, 9 of them core, and no stored balance anywhere in the schema.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">STRUCTURE</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/02-database-schema.md, table map and relationship section</span><span class="pg">12</span></div>
+  </section>
+
+  <!-- 13 V1 SCOPE -->
+  <section class="slide" data-title="What version 1 ships" data-section="Plan" data-source="Source: docs/00-product-brief.md">
+    <div class="kicker" data-an="up"><span class="num">13</span> Release scope</div>
+    <h1 class="action" data-an="up">Version 1 is creditors and debtors, finished. Stock is recorded, not <em>reported.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2" style="flex:1;position:relative;align-items:stretch">
+        <div class="panel ok" data-an="up">
+          <div class="between" style="margin-bottom:8px"><h3 style="margin:0">Ships</h3><span class="tag g">Version 1</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:12.5px;line-height:1.45">
+            <div>Company and financial year</div><div>Chart of accounts</div>
+            <div>Parties, customer and supplier</div><div>Items with HSN and GST</div>
+            <div>Sales invoices</div><div>Purchase bills</div>
+            <div>Receipts and payments</div><div>Bill wise allocation</div>
+            <div>Credit and debit notes</div><div>Journal and contra</div>
+            <div>Receivables and payables</div><div>Ageing and statements</div>
+            <div>Day book, ledger, trial balance</div><div>Profit and loss, balance sheet</div>
+            <div>Sales and purchase registers</div><div>Tax invoice PDF</div>
+            <div>Roles and permissions</div><div>Backup and restore</div>
+          </div>
+        </div>
+        <div class="panel" data-an="up">
+          <div class="between" style="margin-bottom:8px"><h3 style="margin:0">Does not ship</h3><span class="tag y">Phases 5 to 9</span></div>
+          <div class="stack" style="gap:7px;font-size:12.5px;line-height:1.45">
+            <div class="between"><span>Stock summary and stock journal</span><span class="tiny">P5</span></div>
+            <div class="between"><span>GSTR-1, GSTR-3B, HSN summary</span><span class="tiny">P6</span></div>
+            <div class="between"><span>Bank reconciliation and cheque printing</span><span class="tiny">P7</span></div>
+            <div class="between"><span>Reminders, recurring, attachments</span><span class="tiny">P8</span></div>
+            <div class="between"><span>Quotations, orders, challans</span><span class="tiny">P9</span></div>
+            <div class="between"><span>Payroll, TDS, multi currency</span><span class="tiny">P9</span></div>
+          </div>
+          <div style="border-top:1px solid var(--rule);margin-top:12px;padding-top:10px" class="small">
+            Inventory mechanics still run in the background: goods purchases add stock, sales remove it, cost of goods sold posts. Only the reports wait.
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:12px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:13px">Scope discipline is the plan's main protection. Every request to add a module moves a release date.</div>
+        <div class="mono" style="font-size:10.5px;color:var(--ink-3)">CUT LINE IS CONTRACTUAL</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/00-product-brief.md, scope tables</span><span class="pg">13</span></div>
+  </section>
+
+  <!-- 14 ROADMAP -->
+  <section class="slide" data-title="Roadmap" data-section="Plan" data-source="Source: docs/07-phase-plan.md">
+    <div class="kicker" data-an="up"><span class="num">14</span> Roadmap</div>
+    <h1 class="action" data-an="up">Eight weeks to a usable books product, then ten more to a <em>complete</em> one.</h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div style="position:relative;flex:1;display:flex;flex-direction:column;justify-content:center;padding-top:26px">
+        <div class="gantt" data-an="fade" style="margin-bottom:6px">
+          <div class="h" style="grid-column:2">W1</div><div class="h" style="grid-column:3">W2</div><div class="h" style="grid-column:4">W3</div><div class="h" style="grid-column:5">W4</div><div class="h" style="grid-column:6">W5</div><div class="h" style="grid-column:7">W6</div><div class="h" style="grid-column:8">W7</div><div class="h" style="grid-column:9">W8</div><div class="h" style="grid-column:10">W9</div><div class="h" style="grid-column:11">W10</div><div class="h" style="grid-column:12">W11</div><div class="h" style="grid-column:13">W12</div><div class="h" style="grid-column:14">W13</div><div class="h" style="grid-column:15">W14</div><div class="h" style="grid-column:16">W15</div><div class="h" style="grid-column:17">W16</div><div class="h" style="grid-column:18">W17</div><div class="h" style="grid-column:19">W18</div><div class="h" style="grid-column:20">W19</div><div class="h" style="grid-column:21">W20</div>
+        </div>
+        <div class="gantt">
+          <div class="rl">P0 De-gym<span>1 week</span></div><div class="b" data-an="bar" style="grid-column:2 / span 1">P0</div>
+          <div class="rl">P1 Masters<span>1.5 weeks</span></div><div class="b" data-an="bar" style="grid-column:3 / span 2">P1</div>
+          <div class="rl">P2 Posting engine<span>2 weeks</span></div><div class="b p" data-an="bar" style="grid-column:5 / span 2">P2 GATE</div>
+          <div class="rl">P3 Debtors<span>1.5 weeks</span></div><div class="b" data-an="bar" style="grid-column:7 / span 2">P3</div>
+          <div class="rl">P4 Creditors<span>1 week</span></div><div class="b g" data-an="bar" style="grid-column:9 / span 1">V1</div>
+          <div class="rl">P5 Stock reports<span>2 weeks</span></div><div class="b" data-an="bar" style="grid-column:10 / span 2">P5</div>
+          <div class="rl">P6 Reports and GST<span>1.5 weeks</span></div><div class="b" data-an="bar" style="grid-column:12 / span 2">P6</div>
+          <div class="rl">P7 Banking<span>1.5 weeks</span></div><div class="b" data-an="bar" style="grid-column:14 / span 2">P7</div>
+          <div class="rl">P8 Operations<span>2 weeks</span></div><div class="b" data-an="bar" style="grid-column:16 / span 2">P8</div>
+          <div class="rl">P9 Extended parity<span>ongoing</span></div><div class="b late" data-an="bar" style="grid-column:18 / span 4">P9</div>
+        </div>
+        <div style="position:absolute;left:calc(200px + (8/20) * (100% - 200px));top:26px;bottom:0;width:2px;background:var(--brick);opacity:.55" data-an="fade"></div>
+        <div style="position:absolute;left:calc(200px + (8/20) * (100% - 200px) + 8px);top:2px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--brick);white-space:nowrap" data-an="fade">Version 1 ships here</div>
+      </div>
+      <div class="cols c3" style="flex:none;gap:18px">
+        <div data-an="up" style="border-top:2px solid var(--brick);padding-top:8px"><div class="strong" style="font-size:12.5px">P2 is the gate</div><div class="small" style="margin-top:3px">If posting is not proven on both sample bills, P3 and P4 produce screens that cannot be trusted.</div></div>
+        <div data-an="up" style="border-top:2px solid var(--accent);padding-top:8px"><div class="strong" style="font-size:12.5px">P3 and P4 are parallel work</div><div class="small" style="margin-top:3px">Same engine, mirrored UI. A second developer can take creditors while the first finishes debtors.</div></div>
+        <div data-an="up" style="border-top:2px solid var(--ok);padding-top:8px"><div class="strong" style="font-size:12.5px">P5 to P8 are reorderable</div><div class="small" style="margin-top:3px">Customer feedback decides whether stock, GST or banking comes first after version 1.</div></div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/07-phase-plan.md, phase overview. Durations assume one focused developer with agent support.</span><span class="pg">14</span></div>
+  </section>
+
+  <!-- 15 CRITICAL PATH -->
+  <section class="slide" data-title="Critical path to V1" data-section="Plan" data-source="Source: docs/07-phase-plan.md">
+    <div class="kicker" data-an="up"><span class="num">15</span> The path</div>
+    <h1 class="action" data-an="up">Each phase has one exit test. Nothing starts until the previous test <em>passes.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="chevrons" data-an="up" style="flex:none">
+        <div class="chev first-off"><div class="mono" style="font-size:9px;opacity:.8">P0 · WEEK 1</div><div style="font-size:13px;font-weight:600;margin-top:3px">De-gym</div></div>
+        <div class="chev"><div class="mono" style="font-size:9px;color:var(--ink-3)">P1 · WEEK 2</div><div style="font-size:13px;font-weight:600;margin-top:3px">Masters</div></div>
+        <div class="chev" style="background:var(--brick-soft)"><div class="mono" style="font-size:9px;color:var(--brick)">P2 · WEEKS 3-4</div><div style="font-size:13px;font-weight:600;margin-top:3px">Posting engine</div></div>
+        <div class="chev"><div class="mono" style="font-size:9px;color:var(--ink-3)">P3 · WEEKS 5-6</div><div style="font-size:13px;font-weight:600;margin-top:3px">Debtors</div></div>
+        <div class="chev last"><div class="mono" style="font-size:9px;opacity:.8">P4 · WEEK 7-8</div><div style="font-size:13px;font-weight:600;margin-top:3px">Creditors</div></div>
+      </div>
+      <div class="cols" style="grid-template-columns:repeat(5,1fr);gap:18px;flex:1;margin-top:10px">
+        <div data-an="up" style="border-top:1px solid var(--rule);padding-top:10px;display:flex;flex-direction:column">
+          <div><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Deliverables</div>
+          <div style="font-size:11.5px;line-height:1.6;margin-top:6px;color:var(--ink-2)">Delete 11 gym modules<br>Rename tenancy to company<br>25 table schema<br>Ledger Paper shell</div></div>
+          <div style="padding-top:12px;margin-top:34px"><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Watch</div><div style="font-size:11.5px;line-height:1.5;margin-top:5px;color:var(--ink-2)">First checkpoint: no gym term survives a grep.</div></div><div style="padding-top:14px;border-top:1px solid var(--rule)">
+            <div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Exit test</div>
+            <div style="font-size:11.5px;line-height:1.5;margin-top:5px">Zero gym terms in source. Typecheck, lint and tests green. New database seeds 25 tables.</div>
+          </div>
+        </div>
+        <div data-an="up" style="border-top:1px solid var(--rule);padding-top:10px;display:flex;flex-direction:column">
+          <div><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Deliverables</div>
+          <div style="font-size:11.5px;line-height:1.6;margin-top:6px;color:var(--ink-2)">Company profile and FY<br>Chart of accounts<br>Parties and ledger accounts<br>Items, units, tax rates<br>Opening balance worksheet</div></div>
+          <div style="padding-top:12px;margin-top:34px"><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Watch</div><div style="font-size:11.5px;line-height:1.5;margin-top:5px;color:var(--ink-2)">Most rework risk: the default chart of accounts.</div></div><div style="padding-top:14px;border-top:1px solid var(--rule)">
+            <div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Exit test</div>
+            <div style="font-size:11.5px;line-height:1.5;margin-top:5px">Company set up from empty in 10 minutes. 50 parties and 200 items searchable. Opening balances post or refuse.</div>
+          </div>
+        </div>
+        <div data-an="up" style="border-top:2px solid var(--brick);padding-top:10px;display:flex;flex-direction:column">
+          <div><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:var(--brick)">Deliverables</div>
+          <div style="font-size:11.5px;line-height:1.6;margin-top:6px;color:var(--ink-2)">Voucher, line, ledger, stock tables<br>Posting rules per type<br>Numbering and idempotency<br>Cancellation and audit<br>Day book, ledger, trial balance</div></div>
+          <div style="padding-top:12px;margin-top:34px"><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Watch</div><div style="font-size:11.5px;line-height:1.5;margin-top:5px;color:var(--ink-2)">Proven on both bills, or stop the line.</div></div><div style="padding-top:14px;border-top:1px solid var(--rule)">
+            <div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:var(--brick)">Exit test</div>
+            <div style="font-size:11.5px;line-height:1.5;margin-top:5px">Both sample bills post exactly. 1,000 random voucher sets balance. Double submit writes once. Failure leaves nothing.</div>
+          </div>
+        </div>
+        <div data-an="up" style="border-top:1px solid var(--rule);padding-top:10px;display:flex;flex-direction:column">
+          <div><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Deliverables</div>
+          <div style="font-size:11.5px;line-height:1.6;margin-top:6px;color:var(--ink-2)">Sales entry and credit notes<br>Receipts with allocation<br>Customer list and statements<br>Receivables and ageing<br>Tax invoice PDF</div></div>
+          <div style="padding-top:12px;margin-top:34px"><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Watch</div><div style="font-size:11.5px;line-height:1.5;margin-top:5px;color:var(--ink-2)">Clerk usability run this week, not later.</div></div><div style="padding-top:14px;border-top:1px solid var(--rule)">
+            <div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Exit test</div>
+            <div style="font-size:11.5px;line-height:1.5;margin-top:5px">Invoice 4,550, receipt 2,000 split, outstanding and ageing correct. Statement matches the ledger. Print matches the sample.</div>
+          </div>
+        </div>
+        <div data-an="up" style="border-top:1px solid var(--rule);padding-top:10px;display:flex;flex-direction:column">
+          <div><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Deliverables</div>
+          <div style="font-size:11.5px;line-height:1.6;margin-top:6px;color:var(--ink-2)">Purchase entry with discount<br>Debit notes<br>Payments with allocation<br>Supplier list and payables<br>Purchase register</div></div>
+          <div style="padding-top:12px;margin-top:34px"><div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Watch</div><div style="font-size:11.5px;line-height:1.5;margin-top:5px;color:var(--ink-2)">Version 1 acceptance script signed off.</div></div><div style="padding-top:14px;border-top:1px solid var(--rule)">
+            <div class="small" style="letter-spacing:.1em;text-transform:uppercase;font-size:9.5px">Exit test</div>
+            <div style="font-size:11.5px;line-height:1.5;margin-top:5px">Purchase bill 15,545 posts with documented tax split. Partial payment moves the ageing bucket. Acceptance script passes on a clean install.</div>
+          </div>
+        </div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:12.5px"><span class="strong">The one number to watch:</span> if the sample bills do not post to the paisa by the end of week 4, stop and fix the engine. Do not build screens over a broken ledger.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">GATE REVIEW AT WEEK 4</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/07-phase-plan.md, phase exit criteria</span><span class="pg">15</span></div>
+  </section>
+
+  <!-- 16 RISKS -->
+  <section class="slide" data-title="Risk register" data-section="Plan" data-source="Source: docs/07-phase-plan.md, risks">
+    <div class="kicker" data-an="up"><span class="num">16</span> Risk</div>
+    <h1 class="action" data-an="up">The risks are in rules and scope, not in the desktop <em>stack.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div data-an="up">
+          <div class="matrix">
+            <div class="grid"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+            <div class="yl">Impact</div>
+            <div class="xl">Likelihood</div>
+            <div class="dot" style="left:84%;top:16%">R1</div>
+            <div class="dot" style="left:84%;top:38%">R2</div>
+            <div class="dot med" style="left:50%;top:16%">R3</div>
+            <div class="dot med" style="left:50%;top:50%">R4</div>
+            <div class="dot low" style="left:16%;top:16%">R5</div>
+            <div class="dot low" style="left:50%;top:84%">R6</div>
+          </div>
+          <div class="small" style="margin-top:28px">Position is a judgement, not a score. The point is where attention goes.</div>
+        </div>
+        <table data-an="up">
+          <tr><th style="width:26px"></th><th>Risk</th><th>Mitigation</th></tr>
+          <tr><td class="mono" style="color:var(--brick)">R1</td><td>Rounding and tax disputes</td><td>One rounding module, documented policy, round off account, golden tests</td></tr>
+          <tr><td class="mono" style="color:var(--brick)">R2</td><td>Scope creep from "Tally does X"</td><td>The V1 cut line is written and treated as contractual</td></tr>
+          <tr><td class="mono" style="color:var(--warn)">R3</td><td>Clerk rejects the keyboard model</td><td>Usability run with a real clerk in P3, before creditors are built</td></tr>
+          <tr><td class="mono" style="color:var(--warn)">R4</td><td>Report performance after five years</td><td>Seed 50,000 vouchers in P2 and measure every report against a budget</td></tr>
+          <tr><td class="mono" style="color:var(--ink-3)">R5</td><td>Data loss during the rewrite</td><td>New database file, old file untouched, backup before first run</td></tr>
+          <tr><td class="mono" style="color:var(--ink-3)">R6</td><td>GST rules change</td><td>Rates, HSN and series are data rows with effective dates</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/07-phase-plan.md, section 14. The two high risks are the ones with the least technical uncertainty.</span><span class="pg">16</span></div>
+  </section>
+
+  <!-- 17 QUALITY -->
+  <section class="slide" data-title="Quality gates" data-section="Plan" data-source="Source: docs/09-testing-strategy.md">
+    <div class="kicker" data-an="up"><span class="num">17</span> Assurance</div>
+    <h1 class="action" data-an="up">We test the rules that cost money, not the pixels that <em>decorate.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2a" style="flex:1">
+        <div style="display:flex;flex-direction:column;justify-content:center;gap:6px">
+          <div data-an="up" style="display:grid;grid-template-columns:1fr 90px;align-items:center;gap:12px">
+            <div style="clip-path:polygon(0 0,100% 0,94% 100%,6% 100%);background:var(--ink);color:#fff;padding:8px 0;text-align:center;font-size:11.5px;margin:0 16%">12 end to end scripts</div>
+            <div class="mono" style="font-size:11px;color:var(--ink-3)">3 min</div>
+          </div>
+          <div data-an="up" style="display:grid;grid-template-columns:1fr 90px;align-items:center;gap:12px">
+            <div style="clip-path:polygon(0 0,100% 0,94% 100%,6% 100%);background:var(--accent);color:#fff;padding:8px 0;text-align:center;font-size:11.5px;margin:0 11%">80 component tests</div>
+            <div class="mono" style="font-size:11px;color:var(--ink-3)">20 s</div>
+          </div>
+          <div data-an="up" style="display:grid;grid-template-columns:1fr 90px;align-items:center;gap:12px">
+            <div style="clip-path:polygon(0 0,100% 0,94% 100%,6% 100%);background:#3D6F86;color:#fff;padding:8px 0;text-align:center;font-size:11.5px;margin:0 6%">60 integration tests</div>
+            <div class="mono" style="font-size:11px;color:var(--ink-3)">30 s</div>
+          </div>
+          <div data-an="up" style="display:grid;grid-template-columns:1fr 90px;align-items:center;gap:12px">
+            <div style="clip-path:polygon(0 0,100% 0,94% 100%,6% 100%);background:var(--ok);color:#fff;padding:8px 0;text-align:center;font-size:11.5px;margin:0 0">300 domain tests, plus 5 property tests</div>
+            <div class="mono" style="font-size:11px;color:var(--ink-3)">2 s</div>
+          </div>
+          <div class="small" style="margin-top:8px">Test counts are targets for version 1, not a vanity metric. Coverage floor is 70 percent on the posting domain.</div>
+        </div>
+        <div class="stack">
+          <div class="panel" data-an="up"><h3>Every pull request</h3><div class="mono" style="font-size:11px;line-height:1.9;color:var(--ink-2)">npm run typecheck<br>npm run lint<br>npm test<br>npm run test:e2e -- --grep @smoke</div></div>
+          <div class="panel tint" data-an="up"><h3>Property test</h3><p>Generate 1,000 voucher sets. Post all of them. Assert that every voucher balances, the trial balance equals the raw ledger sums, and cancelling a random subset returns the books to the prior state.</p></div>
+          <div class="panel brick" data-an="up"><h3>Blocking conditions</h3><p>A new `any` in the main process. An edited migration. A new IPC channel without a contract. Coverage under the floor.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/09-testing-strategy.md, CI gates and property tests</span><span class="pg">17</span></div>
+  </section>
+
+  <!-- 18 SAMPLE BILLS -->
+  <section class="slide" data-title="Acceptance tests" data-section="Plan" data-source="Source: docs/sales-bill.pdf, docs/purchase-bill.pdf, docs/03-voucher-posting-rules.md">
+    <div class="kicker" data-an="up"><span class="num">18</span> Acceptance</div>
+    <h1 class="action" data-an="up">Two real bills from the shop floor are the release <em>test.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2" style="flex:1">
+        <div class="panel" data-an="up" style="display:flex;flex-direction:column">
+          <div class="between"><h3 style="margin:0">Sales invoice 84/2026-27</h3><span class="tag b">1 line, 18% GST</span></div>
+          <div class="huge" style="margin:12px 0 4px">4,550.00</div>
+          <div class="small">SSD 256GB, tax exclusive, same state</div>
+          <div style="height:1px;background:var(--rule);margin:12px 0"></div>
+          <div class="mono" style="font-size:13px;line-height:2.1">
+            Dr&nbsp;&nbsp;Party&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4,550.00<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Sales&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3,855.93<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Output CGST&nbsp;&nbsp;347.03<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Output SGST&nbsp;&nbsp;347.03<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Round off&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.01
+          </div>
+          <div style="border-top:1px solid var(--rule);margin-top:14px;padding-top:10px;font-size:12px;line-height:1.5;color:var(--ink-2)"><span class="strong">Proves:</span> tax exclusive entry, place of supply split, a one paisa round off, and cost of goods sold taken from stock.</div>
+          <div class="small" style="margin-top:auto;padding-top:12px">Second entry: Dr COGS 3,200.00, Cr Inventory 3,200.00, one unit out.</div>
+        </div>
+        <div class="panel" data-an="up" style="display:flex;flex-direction:column">
+          <div class="between"><h3 style="margin:0">Purchase bill TC/2026-27/583</h3><span class="tag b">9 lines, 15.254% discount</span></div>
+          <div class="huge" style="margin:12px 0 4px">15,545.00</div>
+          <div class="small">Taxable 13,173.33, GST 2,371.20, round off 0.47</div>
+          <div style="height:1px;background:var(--rule);margin:12px 0"></div>
+          <div class="mono" style="font-size:13px;line-height:2.1">
+            Dr&nbsp;&nbsp;Purchases&nbsp;&nbsp;&nbsp;&nbsp;13,173.33<br>
+            Dr&nbsp;&nbsp;Input CGST&nbsp;&nbsp;&nbsp;1,185.60<br>
+            Dr&nbsp;&nbsp;Input SGST&nbsp;&nbsp;&nbsp;1,185.60<br>
+            Dr&nbsp;&nbsp;Round off&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.47<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;Cr&nbsp;&nbsp;Supplier&nbsp;&nbsp;&nbsp;&nbsp;15,545.00
+          </div>
+          <div style="border-top:1px solid var(--rule);margin-top:14px;padding-top:10px;font-size:12px;line-height:1.5;color:var(--ink-2)"><span class="strong">Proves:</span> discount at 15.254 percent, nine lines, per HSN tax grouping, and a rounding difference absorbed without changing the total.</div>
+          <div class="small" style="margin-top:auto;padding-top:12px">Printer truncates the 3215 group. We round half up, so tax is one paisa higher per side and round off absorbs it.</div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid var(--ink);padding-top:12px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:13px">If these two documents post correctly, the engine is right. Everything after that is screens and reports.</div>
+        <div class="mono" style="font-size:10.5px;color:var(--ink-3)">GOLDEN FIXTURES IN CI</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: the two PDFs supplied with the project; expected ledger lines in docs/03-voucher-posting-rules.md</span><span class="pg">18</span></div>
+  </section>
+
+  <!-- 19 USERS -->
+  <section class="slide" data-title="What changes for users" data-section="Plan" data-source="Source: docs/06-design-system.md; docs/08-refactor-inventory.md">
+    <div class="kicker" data-an="up"><span class="num">19</span> Change management</div>
+    <h1 class="action" data-an="up">The clerk loses a pipeline and gains a <em>ledger.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <div class="cols c2" style="flex:1">
+        <div data-an="up">
+          <div class="small" style="letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;color:var(--brick)">Today</div>
+          <div class="stack" style="gap:0;font-size:12.5px">
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Dashboard of gym activity</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Pipeline, follow-ups, activities</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Customers and memberships</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Plans and offers</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Invoices</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Daily collection</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Payments and refunds</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)">Reports for a gym</div>
+          </div>
+        </div>
+        <div data-an="up">
+          <div class="small" style="letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;color:var(--accent)">Version 1</div>
+          <div class="stack" style="gap:0;font-size:12.5px">
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Money in, money out, owed, owing</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Day book and vouchers</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Customers, suppliers, one party list</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Items with HSN and GST</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Sales and purchase entry</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Receipts and payments with bill allocation</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule)">Credit and debit notes</div>
+            <div style="padding:7px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)">Receivables, payables, ageing, statements, trial balance</div>
+          </div>
+        </div>
+      </div>
+      <div class="cols c3" style="flex:none;gap:18px">
+        <div data-an="up" style="border-top:2px solid var(--accent);padding-top:8px"><div class="strong" style="font-size:12px">Faster to bill</div><div class="small" style="margin-top:3px">One invoice screen, keyboard first, totals live as you type.</div></div>
+        <div data-an="up" style="border-top:2px solid var(--accent);padding-top:8px"><div class="strong" style="font-size:12px">Easier to collect</div><div class="small" style="margin-top:3px">Ageing and statements replace chasing three separate lists.</div></div>
+        <div data-an="up" style="border-top:2px solid var(--accent);padding-top:8px"><div class="strong" style="font-size:12px">Ready for an accountant</div><div class="small" style="margin-top:3px">A real trial balance and ledger, not a spreadsheet export.</div></div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/06-design-system.md, navigation; docs/07-phase-plan.md</span><span class="pg">19</span></div>
+  </section>
+
+  <!-- 20 DECISIONS -->
+  <section class="slide" data-title="Decisions required" data-section="Close" data-source="Source: docs/07-phase-plan.md, decision log">
+    <div class="kicker" data-an="up"><span class="num">20</span> Decisions</div>
+    <h1 class="action" data-an="up">Seven decisions unlock the build. Five can be answered in this <em>meeting.</em></h1>
+    <div class="rule" data-an="fade"></div>
+    <div class="body">
+      <table data-an="up" style="font-size:13px">
+        <tr><th style="width:30px">#</th><th>Decision</th><th>Recommendation</th><th style="width:90px">Needed by</th><th style="width:100px">Owner</th><th style="width:70px">Status</th></tr>
+        <tr><td class="mono">1</td><td>Product name</td><td>Crown Books</td><td class="mono">P0</td><td>Owner</td><td><span class="tag y">Open</span></td></tr>
+        <tr><td class="mono">2</td><td>Keep the commercial licensing gate</td><td>Keep unchanged</td><td class="mono">P0</td><td>Owner</td><td><span class="tag y">Open</span></td></tr>
+        <tr><td class="mono">3</td><td>Purchase accounting</td><td>Inventory asset, perpetual method</td><td class="mono">P2</td><td>Accountant</td><td><span class="tag">Proposed</span></td></tr>
+        <tr><td class="mono">4</td><td>Editing a posted voucher</td><td>Never. Cancel and reissue</td><td class="mono">P2</td><td>Owner</td><td><span class="tag">Proposed</span></td></tr>
+        <tr><td class="mono">5</td><td>Negative stock</td><td>Allowed, with a warning</td><td class="mono">P2</td><td>Accountant</td><td><span class="tag">Proposed</span></td></tr>
+        <tr><td class="mono">6</td><td>Rounding mode</td><td>Invoice level, round off as its own account</td><td class="mono">P2</td><td>Accountant</td><td><span class="tag">Proposed</span></td></tr>
+        <tr><td class="mono">7</td><td>GST filing scope for v1</td><td>Working papers and export, no direct filing</td><td class="mono">P6</td><td>Accountant</td><td><span class="tag">Proposed</span></td></tr>
+      </table>
+      <div class="cols c2" style="flex:none;margin-top:6px">
+        <div data-an="up" class="panel tint" style="padding:12px 16px"><div style="font-size:12.5px;line-height:1.5"><span class="strong">Default if nobody decides:</span> the recommendation ships. A later change to any of these is a rework, not a configuration toggle, which is why they are listed.</div></div>
+        <div data-an="up" class="panel" style="padding:12px 16px"><div style="font-size:12.5px;line-height:1.5"><span class="strong">What approval buys:</span> P0 starts on Monday. Week 4 gives a working posting engine demonstrated on both sample bills.</div></div>
+      </div>
+      <div data-an="up" style="margin-top:auto;border-top:1px solid var(--ink);padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;flex:none">
+        <div style="font-size:13px">A decision made late costs a rework. A decision left open costs another meeting.</div>
+        <div class="mono" style="font-size:10px;color:var(--ink-3);white-space:nowrap">DECISION LOG</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Source: docs/07-phase-plan.md, section 13</span><span class="pg">20</span></div>
+  </section>
+
+  <!-- 21 CLOSE -->
+  <section class="slide dark" data-title="Close" data-section="Close" data-source="Crown Books, October 2026">
+    <div class="kicker" data-an="up"><span class="num">21</span> What we are asking for</div>
+    <h1 class="action" data-an="up" style="font-size:52px;line-height:1.1;max-width:1100px">Three things must be true in <em>eight weeks.</em></h1>
+    <div class="rule" data-an="fade" style="background:#2B353D"></div>
+    <div class="body">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:34px;flex:1;align-content:center">
+        <div data-an="up" style="border-top:2px solid #EDE9DF;padding-top:14px">
+          <div class="mono" style="font-size:10px;color:#8FB4C8">01 / ENGINE</div>
+          <div style="font-size:19px;line-height:1.35;margin-top:8px;color:#EDE9DF">Both sample bills post to the paisa, every time.</div>
+          <div style="font-size:12px;line-height:1.5;margin-top:8px;color:#9AA5AD">Verified in CI on every commit, not by a manual demo.</div>
+        </div>
+        <div data-an="up" style="border-top:2px solid #EDE9DF;padding-top:14px">
+          <div class="mono" style="font-size:10px;color:#8FB4C8">02 / CLERK</div>
+          <div style="font-size:19px;line-height:1.35;margin-top:8px;color:#EDE9DF">A biller can raise an invoice without touching the mouse.</div>
+          <div style="font-size:12px;line-height:1.5;margin-top:8px;color:#9AA5AD">Tested with a real clerk in week 6, before creditors are built.</div>
+        </div>
+        <div data-an="up" style="border-top:2px solid #EDE9DF;padding-top:14px">
+          <div class="mono" style="font-size:10px;color:#8FB4C8">03 / BOOKS</div>
+          <div style="font-size:19px;line-height:1.35;margin-top:8px;color:#EDE9DF">The trial balance is green after every path through the app.</div>
+          <div style="font-size:12px;line-height:1.5;margin-top:8px;color:#9AA5AD">Sales, purchases, receipts, notes, cancellations, restore.</div>
+        </div>
+      </div>
+      <div data-an="up" style="border-top:1px solid #2B353D;padding-top:16px;display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:14px;color:#C9C2B4">Next step: approve decisions 1 to 7 and authorise P0.</div>
+        <div class="mono" style="font-size:10px;color:#7C8890">DRAFT FOR APPROVAL · OCTOBER 2026</div>
+      </div>
+    </div>
+    <div class="foot"><span class="src">Crown Books · Technical replatform · Prepared for stakeholder review</span><span class="pg">21</span></div>
+  </section>
+</div>
+
+<div class="nav">
+  <button id="agendaBtn" title="Agenda (G)">≡</button>
+  <button id="prevBtn" title="Previous">←</button>
+  <button id="nextBtn" title="Next">→</button>
+</div>
+
+<div class="agenda" id="agenda">
+  <h2>Contents</h2>
+  <div class="g" id="agendaList"></div>
+  <div class="hint">Click a slide to jump. Press G or Escape to close.</div>
+</div>
+
+<script src="vendor/gsap.min.js"></script>
+<script>if(!window.gsap){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"><\/script>')}</script>
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var agenda = document.getElementById('agenda');
+  var agendaList = document.getElementById('agendaList');
+  var progress = document.getElementById('progress');
+  var sectionLabel = document.getElementById('sectionLabel');
+  var current = 0;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var gsapReady = !!window.gsap;
+  var activeTl = null;
+
+  function fit(){
+    var s = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    stage.style.transform = 'translate(-50%, -50%) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  function fmt(n, dec){
+    return n.toLocaleString('en-IN', {minimumFractionDigits: dec, maximumFractionDigits: dec});
+  }
+
+  function resetAnim(slide){
+    if (!gsapReady) return;
+    var els = slide.querySelectorAll('[data-an]');
+    for (var i = 0; i < els.length; i++){
+      gsap.killTweensOf(els[i]);
+      var el = els[i];
+      var type = el.getAttribute('data-an');
+      if (type === 'bar'){
+        gsap.set(el, {scaleX: 0, transformOrigin: 'left center'});
+      } else if (type === 'left'){
+        gsap.set(el, {opacity: 0, x: -18});
+      } else if (type === 'scale'){
+        gsap.set(el, {opacity: 0, scale: 0.96});
+      } else if (type === 'draw'){
+        gsap.set(el, {opacity: 0});
+      } else {
+        gsap.set(el, {opacity: 0, y: 16});
+      }
+    }
+  }
+
+  function animate(slide){
+    if (!gsapReady || reduce) return null;
+    var els = slide.querySelectorAll('[data-an]');
+    var tl = gsap.timeline({defaults: {ease: 'power3.out'}});
+    Array.prototype.forEach.call(els, function(el, i){
+      var type = el.getAttribute('data-an');
+      var d = 0.5 + i * 0.055;
+      if (type === 'bar'){
+        tl.to(el, {scaleX: 1, duration: 0.8, ease: 'power2.out'}, d);
+      } else if (type === 'left'){
+        tl.to(el, {opacity: 1, x: 0, duration: 0.6}, d);
+      } else if (type === 'scale'){
+        tl.to(el, {opacity: 1, scale: 1, duration: 0.7}, d);
+      } else if (type === 'draw'){
+        tl.to(el, {opacity: 1, duration: 0.9}, d);
+      } else {
+        tl.to(el, {opacity: 1, y: 0, duration: 0.6}, d);
+      }
+    });
+    return tl;
+  }
+
+  function go(n){
+    current = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s, i){ s.classList.toggle('on', false); });
+    var s = slides[current];
+    resetAnim(s);
+    s.classList.add('on');
+    progress.style.width = ((current + 1) / slides.length * 100) + '%';
+    var label = s.getAttribute('data-section') || '';
+    sectionLabel.textContent = label;
+    requestAnimationFrame(function(){
+      try { activeTl = animate(s); }
+      catch (err) { gsap.set(s.querySelectorAll('[data-an]'), {clearProps: 'all'}); }
+    });
+    setTimeout(function(){
+      var els = s.querySelectorAll('[data-an]');
+      for (var k = 0; k < els.length; k++){
+        els[k].style.opacity = '1';
+        els[k].style.transform = 'none';
+      }
+    }, 3200);
+    try { history.replaceState(null, '', '#' + (current + 1)); } catch (err) { /* file protocol */ }
+  }
+
+
+  function next(){ go(current + 1); }
+  function prev(){ go(current - 1); }
+
+  document.getElementById('nextBtn').addEventListener('click', function(e){ e.stopPropagation(); next(); });
+  document.getElementById('prevBtn').addEventListener('click', function(e){ e.stopPropagation(); prev(); });
+  document.getElementById('agendaBtn').addEventListener('click', function(e){ e.stopPropagation(); agenda.classList.toggle('on'); });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); if (agenda.classList.contains('on')) return; next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace'){ e.preventDefault(); prev(); }
+    else if (e.key === 'g' || e.key === 'G'){ agenda.classList.toggle('on'); }
+    else if (e.key === 'Escape'){ agenda.classList.remove('on'); }
+    else if (e.key === 'Home'){ go(0); }
+    else if (e.key === 'End'){ go(slides.length - 1); }
+  });
+
+  document.addEventListener('click', function(e){
+    if (e.target.closest('.nav') || e.target.closest('.agenda')) return;
+    next();
+  });
+
+  var x0 = null;
+  window.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; }, {passive: true});
+  window.addEventListener('touchend', function(e){
+    if (x0 === null) return;
+    var d = e.changedTouches[0].clientX - x0;
+    if (Math.abs(d) > 50){ d < 0 ? next() : prev(); }
+    x0 = null;
+  }, {passive: true});
+
+  // agenda
+  slides.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.innerHTML = '<i>' + String(i + 1).padStart(2, '0') + '</i><span>' + (s.getAttribute('data-title') || '') + '</span>';
+    b.addEventListener('click', function(){ agenda.classList.remove('on'); go(i); });
+    agendaList.appendChild(b);
+  });
+
+  var start = parseInt((location.hash || '').replace('#', ''), 10);
+  go(isNaN(start) ? 0 : start - 1);
+})();
+</script>
+</body>
+</html>

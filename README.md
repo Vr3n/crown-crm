@@ -1,90 +1,88 @@
-# CrownCRM
+# Crown Books
 
-**Offline-first gym membership CRM for Windows.** Manage members, plans, billing, and check-ins from a fast native desktop app — your data stays on your machine.
+**Offline-first books for small businesses on Windows.** Creditors, debtors, GST bills and stock on your own machine.
 
-CrownCRM is a desktop application for gym owners and front-desk staff who want a reliable CRM that works even without an internet connection. Everything runs locally, so there is no account to create, no cloud to depend on, and no recurring subscription just to open your front desk.
+Crown Books replaces the gym CRM this repository started as (CrownCRM). The product is now a double-entry accounting application for small and medium trading or service businesses: the daily work a shop does in TallyPrime or QuickBooks, without the cloud.
 
-## Features
+Status: design and planning. No accounting code is implemented yet. The documents in `docs/` are the specification the build follows.
 
-- **Organization setup & sign-in** — set up your gym and its owner account in a few minutes, then sign in from any staff member.
-- **Member & membership management** — track leads, customers, plans, memberships, and their lifecycles.
-- **Billing, payments & finance** — invoices, receipts, payments, allocations, refunds, and outstanding balances.
-- **Role-based access control** — staff are assigned roles, and every action is checked against a permission, not a role name.
-- **Multi-tenancy ready** — data is scoped per organization, so supporting multiple gyms later needs no schema rewrite.
-- **Local & private** — data lives in a local database on the machine. No cloud, no telemetry.
+## What version 1 does
+
+- Company profile with GSTIN, state, financial year and invoice terms
+- Chart of accounts, parties (customer, supplier, or both), items with HSN and GST
+- GST sales invoices and purchase bills with multi line entry, discount, tax inclusive or exclusive rates, CGST/SGST or IGST, and round off
+- Receipts and payments applied against specific bills, plus advances and on account money
+- Credit notes and debit notes for returns
+- Receivables, payables, ageing, party statements, day book, ledger, trial balance, profit and loss, balance sheet
+- Print and PDF: tax invoice, statement of account
+- Roles: owner, accountant, billing clerk, auditor
+- Local database, local backup, no telemetry
+
+## What version 1 does not do
+
+Sales pipeline, memberships, plans and offers are deleted, not hidden. Inventory reports, GST filing working papers, bank reconciliation, reminders and e-invoicing come in later phases. See `docs/00-product-brief.md` for the cut line.
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| `docs/00-product-brief.md` | Scope, users, success measures |
+| `docs/01-domain-model.md` | Vocabulary, entities, invariants |
+| `docs/02-database-schema.md` | Tables, columns, indexes, migrations |
+| `docs/03-voucher-posting-rules.md` | Dr/Cr rules and worked examples |
+| `docs/04-tax-rounding-and-numbering.md` | GST split, rounding, series, idempotency |
+| `docs/05-reports-spec.md` | Every report, column by column |
+| `docs/06-design-system.md` | Ledger Paper tokens and screens |
+| `docs/07-phase-plan.md` | P0 to P9, exit criteria, risks |
+| `docs/08-refactor-inventory.md` | Exact files kept, deleted and added |
+| `docs/09-testing-strategy.md` | Fixtures, property tests, CI gates |
+| `docs/backend-implementation-guidelines.md` | How to add a feature |
+| `docs/form-implementation-guideline.md` | How to build a capture form |
+| `docs/presentations/` | Two stakeholder decks (HTML) |
+
+The source decks and sample bills that defined the domain stay in `docs/` as reference material.
 
 ## Built with
 
-- [Electron](https://www.electronjs.org/) + [electron-vite](https://electron-vite.org/) — desktop shell and tooling
-- [React](https://react.dev/) 19 + [TypeScript](https://www.typescriptlang.org/)
-- [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) — UI
-- [TanStack Query](https://tanstack.com/query) / [TanStack Form](https://tanstack.com/form) / [TanStack Table](https://tanstack.com/table)
-- [SQLite](https://www.sqlite.org/) via Node's built-in `node:sqlite` — local storage
+- Electron + electron-vite
+- React 19 + TypeScript
+- Tailwind CSS + shadcn/ui
+- TanStack Query, Form and Table
+- SQLite through Node's built in `node:sqlite`, with Drizzle ORM
+- Zod at the IPC boundary
+- Vitest and Playwright
 
 ## Prerequisites
 
-- **Node.js** 20 or newer (recent versions include the `node:sqlite` module used for storage)
-- A Windows machine (the primary supported platform)
+- Node.js 20 or newer, for `node:sqlite`
+- Windows for the packaged installer; development runs on Windows, macOS and Linux
 
 ## Getting started
 
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Start the app in development mode (with hot reload)
 npm run dev
 ```
 
-On first launch you'll be asked to set up your organization and its Owner account.
+On first launch the setup screen asks for the company profile and the owner account.
 
-## Building & running a release
+## Building
 
 ```bash
-# Type-check then produce the build output
-npm run build
-
-# Run the built app locally (like production)
-npm start
-
-# Package installers / binaries for distribution
+npm run build        # typecheck and bundle
+npm start            # run the built app
 npm run build:win    # Windows installer
-npm run build:mac    # macOS
-npm run build:linux  # Linux (AppImage, snap, deb)
 ```
 
-## Testing & quality
+## Quality
 
 ```bash
-npm run typecheck   # TypeScript type checks (main + renderer)
-npm run lint        # ESLint
-npm test            # Run the test suite (Vitest)
+npm run typecheck
+npm run lint
+npm test
+npm run test:e2e
 ```
 
-## Project structure
+## Data
 
-```
-src/
-  main/     Electron main process, SQLite, application services
-  preload/  Typed bridge between the renderer and the main process
-  renderer/ React UI (components, pages, styles)
-tests/      Automated tests (Vitest)
-docs/       Technical design and architecture specifications
-```
-
-## License
-
-**This is proprietary, closed-source software — not open source.**
-
-CrownCRM is a commercial product. This repository is the source code for the paid application and
-is provided for transparency and development purposes only. Access to this repository **does not**
-grant you any right to copy, modify, distribute, sell, or use the software.
-
-- The source code and all assets are **© 2026 Viren Patel. All Rights Reserved.**
-- Unauthorized copying, reproduction, or distribution of any part of this project is prohibited.
-- Using, running, or installing CrownCRM requires a separate, paid license from the author.
-- No license, express or implied, is granted by mere access to this repository.
-
-See the [`LICENSE`](./LICENSE) file for the full terms.
-
-For licensing, purchase, or other inquiries, please contact the author.
+The application writes `crown-books.db` in the Electron user data folder. The previous gym database file is left untouched on disk and is not read by this application.
