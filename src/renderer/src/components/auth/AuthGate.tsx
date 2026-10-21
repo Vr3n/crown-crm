@@ -125,17 +125,17 @@ export function AuthGate({
           <div>
             <div className="text-[0.9375rem] font-semibold tracking-tight">Crown Books</div>
             <div className="text-[0.6875rem] uppercase tracking-[0.18em] text-paper/50">
-              Books for small business
+              Simple books for growing businesses
             </div>
           </div>
         </div>
 
         <div className="max-w-[34ch] border-l-2 border-stamp pl-5">
           <h1 className="text-[2.625rem] font-semibold leading-[1.08] tracking-[-0.03em]">
-            Every bill has two sides. Keep both.
+            Run the business. We&apos;ll keep the books.
           </h1>
           <p className="mt-4 font-serif text-[1.0625rem] italic leading-relaxed text-paper/65">
-            Creditors, debtors, GST and stock, in one ledger that always proves itself.
+            Invoices, payments, GST and stock in one ledger that always proves itself.
           </p>
         </div>
 
@@ -168,7 +168,7 @@ export function AuthGate({
             {isSetup ? 'First run setup' : 'Sign in'}
           </p>
           <h2 className="mt-2 text-[1.625rem] font-semibold leading-tight tracking-tight">
-            {isSetup ? 'Set up the books' : 'Welcome back'}
+            {isSetup ? 'Set up the books' : 'Open your books'}
           </h2>
           <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-muted-foreground">
             {isSetup
