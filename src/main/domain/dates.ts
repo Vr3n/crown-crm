@@ -102,7 +102,7 @@ export function parseStoredInstant(raw: string): Date | null {
 /**
  * True instant → Excel cell Date showing Company-local wall time.
  * Excel carries no timezone: the serial is built from the wall fields via
- * `Date.UTC`, so the formatted cell reads the gym's wall clock.
+ * `Date.UTC`, so the formatted cell reads the company wall clock.
  */
 export function excelDateForInstant(instant: Date, timezone: string): Date {
   const tz = resolveTimezone(timezone)

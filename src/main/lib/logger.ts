@@ -3,7 +3,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 const LEVEL_ORDER: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 }
 
 function resolveLevel(): LogLevel {
-  const raw = process.env.GYMCRM_LOG_LEVEL?.toLowerCase()
+  const raw = process.env.CROWN_BOOKS_LOG_LEVEL?.toLowerCase()
   return raw && raw in LEVEL_ORDER ? (raw as LogLevel) : 'info'
 }
 

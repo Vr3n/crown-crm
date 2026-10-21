@@ -13,8 +13,8 @@ import type { SessionContext } from '../../src/main/domain/identity'
 function makeSession(overrides: Partial<SessionContext> = {}): SessionContext {
   return {
     companyId: 1,
-    companySlug: 'example-gym',
-    companyName: 'Example Gym',
+    companySlug: 'example-books',
+    companyName: 'Example Books',
     userId: 1,
     userFullName: 'Neha',
     userEmail: 'neha@example.com',
