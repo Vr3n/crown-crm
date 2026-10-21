@@ -138,7 +138,7 @@ export function updateCompany(input: UpdateCompanyInput): Company {
 
 /**
  * First-run setup: creates the single company, seeds its chart of accounts and
- * roles, creates the Owner user and membership, all in one transaction.
+ * roles, creates the Owner user and staff membership, all in one transaction.
  */
 export function setupCompany(input: SetupCompanyInput): SessionContext {
   const name = input.name.trim()
@@ -214,13 +214,13 @@ export function login(input: LoginInput): SessionContext {
   if (all.length === 0) throw new NotFoundError('No company set up. Run setup first.')
   const company = all[0]
 
-  const membership = staffRepo.findActiveForLogin(company.id, email)
-  if (!membership || !verifyPassword(input.password, membership.user.passwordHash)) {
+  const staffMembership = staffRepo.findActiveForLogin(company.id, email)
+  if (!staffMembership || !verifyPassword(input.password, staffMembership.user.passwordHash)) {
     throw new UnauthorizedError('Invalid email or password')
   }
 
-  const session = buildSessionContext(company.id, membership.user.id)
-  rememberLogin(company.id, membership.user.id)
+  const session = buildSessionContext(company.id, staffMembership.user.id)
+  rememberLogin(company.id, staffMembership.user.id)
   return session
 }
 
@@ -248,8 +248,8 @@ export function restoreRememberedLogin(): SessionContext | null {
     return null
   }
 
-  const membership = staffRepo.findActiveMembership(remembered.companyId, remembered.userId)
-  if (!membership) {
+  const staffMembership = staffRepo.findActiveMembership(remembered.companyId, remembered.userId)
+  if (!staffMembership) {
     forgetLogin()
     return null
   }
