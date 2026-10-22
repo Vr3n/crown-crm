@@ -106,6 +106,7 @@ export interface VoucherListRow {
   number: string
   date: string
   partyName: string | null
+  narration: string | null
   totalMinor: number
   status: 'DRAFT' | 'POSTED' | 'CANCELLED'
   createdAt: string

@@ -325,7 +325,9 @@ export function postVoucher(input: PostVoucherInput): PostedVoucher {
         totalMinor:
           input.type === 'RECEIPT' || input.type === 'PAYMENT' || input.type === 'CONTRA'
             ? amountMinor
-            : totals.totalMinor,
+            : input.type === 'JOURNAL'
+              ? journalLines.reduce((sum, line) => sum + line.debitMinor, 0)
+              : totals.totalMinor,
         totalQtyE4: totals.totalQtyE4,
         paymentMethodId: input.paymentMethodId ?? null,
         bankAccountId: input.cashAccountId ?? null,

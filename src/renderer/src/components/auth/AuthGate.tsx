@@ -230,7 +230,7 @@ export function AuthGate({
                   value={booksBegin}
                   onChange={setBooksBegin}
                   type="date"
-                  hint="The day before your first entry. Opening balances use this date."
+                  hint="The first day Crown Books records transactions. Opening balances are as at the day before."
                 />
               </>
             ) : (

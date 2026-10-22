@@ -150,7 +150,7 @@ export function JournalsPage(): React.JSX.Element {
                     <td className="px-3 py-2">{row.date}</td>
                     <td className="px-3 py-2 text-muted-foreground">{row.type}</td>
                     <td className="px-3 py-2 font-mono text-[0.75rem]">{row.number}</td>
-                    <td className="px-3 py-2">{row.partyName ?? '-'}</td>
+                    <td className="px-3 py-2">{row.narration ?? '-'}</td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums">
                       {formatMinor(row.totalMinor, 'INR')}
                     </td>

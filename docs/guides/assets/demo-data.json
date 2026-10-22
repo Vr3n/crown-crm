@@ -1,0 +1,17 @@
+{
+  "customerId": 1,
+  "customer2Id": 2,
+  "supplierId": 3,
+  "supplier2Id": 4,
+  "ssdId": 1,
+  "hubId": 2,
+  "standId": 3,
+  "amcId": 4,
+  "purchase1": 1,
+  "purchase2": 2,
+  "sale1": 3,
+  "sale2": 4,
+  "expenseName": "Office Expenses",
+  "cashName": "Cash",
+  "bankName": "Bank"
+}

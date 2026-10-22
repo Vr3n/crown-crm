@@ -9,6 +9,7 @@ import {
   getVoucher
 } from '../../../src/main/application/vouchers'
 import { partyRepo, itemRepo } from '../../../src/main/repositories/masters'
+import { voucherRepo } from '../../../src/main/repositories/vouchers'
 import { getDb, getDrizzle } from '../../../src/main/db/connection'
 import { vouchers } from '../../../src/main/db/schema'
 import type { PartyRow } from '../../../src/shared/contracts/masters'
@@ -297,12 +298,17 @@ describe('journals and cancellation', () => {
       requestId: 'req-journal-ok',
       type: 'JOURNAL',
       date: '2026-09-11',
+      narration: 'Office adjustment',
       journalLines: [
         { accountId: accounts[0].id, debitMinor: 100, creditMinor: 0 },
         { accountId: accounts[1].id, debitMinor: 0, creditMinor: 100 }
       ]
     })
     expect(posted.number).toBe('JV/0001')
+    const listed = voucherRepo
+      .list(companyId, { limit: 10, offset: 0 })
+      .find((row) => row.id === posted.id)
+    expect(listed).toMatchObject({ totalMinor: 100, narration: 'Office adjustment' })
   })
 
   it('cancels an unallocated bill and removes it from outstanding', () => {

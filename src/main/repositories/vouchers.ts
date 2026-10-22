@@ -373,7 +373,8 @@ export const voucherRepo = {
         totalMinor: vouchers.total_minor,
         status: vouchers.status,
         createdAt: vouchers.created_at,
-        partyName: parties.name
+        partyName: parties.name,
+        narration: vouchers.narration
       })
       .from(vouchers)
       .leftJoin(parties, eq(parties.id, vouchers.party_id))
@@ -397,6 +398,7 @@ export const voucherRepo = {
       number: row.number,
       date: row.date,
       partyName: row.partyName ?? null,
+      narration: row.narration ?? null,
       totalMinor: row.totalMinor,
       status: row.status as VoucherListRow['status'],
       createdAt: row.createdAt

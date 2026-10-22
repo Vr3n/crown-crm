@@ -37,6 +37,7 @@ Sales pipeline, memberships, plans and offers are deleted, not hidden. GST filin
 | `docs/07-phase-plan.md` | P0 to P9, exit criteria, risks |
 | `docs/08-refactor-inventory.md` | Exact files kept, deleted and added |
 | `docs/09-testing-strategy.md` | Fixtures, property tests, CI gates |
+| `docs/guides/crown-books-user-guide.pdf` | Step-by-step user guide for billing and accounts staff |
 | `docs/backend-implementation-guidelines.md` | How to add a feature |
 | `docs/form-implementation-guideline.md` | How to build a capture form |
 | `docs/presentations/` | Two stakeholder decks (HTML) |
