@@ -158,6 +158,125 @@
         background: #fff;
       }
 
+      .shot {
+        position: relative;
+        line-height: 0;
+      }
+
+      .marker {
+        position: absolute;
+        transform: translate(-82%, -82%);
+        width: 5.2mm;
+        height: 5.2mm;
+        border-radius: 999px;
+        background: var(--stamp);
+        color: #fff8f2;
+        border: 0.6pt solid #fff8f2;
+        box-shadow: 0 0 0 0.5pt rgba(23, 32, 39, 0.35);
+        font-family: 'Plex Mono', monospace;
+        font-size: 7pt;
+        font-weight: 600;
+        line-height: 5mm;
+        text-align: center;
+        z-index: 3;
+      }
+
+      .flowmap {
+        display: grid;
+        grid-template-columns: 1fr 7mm 1fr 7mm 1fr;
+        column-gap: 2mm;
+        row-gap: 6mm;
+        margin-top: 7mm;
+        align-items: stretch;
+      }
+
+      .flowcard {
+        border: 0.6pt solid var(--line-strong);
+        background: var(--card);
+        padding: 2.5mm;
+      }
+
+      .flowcard img {
+        display: block;
+        width: 100%;
+        height: 27mm;
+        object-fit: cover;
+        object-position: left top;
+        background: #fff;
+        border: 0.4pt solid var(--line);
+      }
+
+      .flowcard img.contain {
+        object-fit: contain;
+      }
+
+      .flowcard .meta {
+        margin-top: 2mm;
+        font-size: 8pt;
+        line-height: 1.35;
+      }
+
+      .flowcard .meta .n {
+        font-family: 'Plex Mono', monospace;
+        font-size: 6.5pt;
+        color: var(--stamp);
+        letter-spacing: 0.05em;
+        margin-right: 1mm;
+      }
+
+      .flowcard .meta strong {
+        font-size: 9pt;
+      }
+
+      .flowcard .meta span {
+        display: block;
+        color: var(--muted);
+        font-size: 7.5pt;
+        margin-top: 0.5mm;
+      }
+
+      .flowarrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--line-strong);
+        font-size: 15pt;
+      }
+
+      .flow-note {
+        margin-top: 7mm;
+        border-top: 0.6pt solid var(--line);
+        padding-top: 4mm;
+        font-size: 9pt;
+        line-height: 1.55;
+        color: var(--muted);
+        max-width: 68ch;
+      }
+
+      .flow-explain {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8mm;
+        margin-top: 8mm;
+        padding-top: 4mm;
+        border-top: 0.6pt solid var(--line);
+      }
+
+      .flow-explain h3 {
+        font-size: 6.8pt;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--stamp);
+        margin-bottom: 1.5mm;
+      }
+
+      .flow-explain p {
+        font-size: 8.8pt;
+        line-height: 1.55;
+        color: var(--muted);
+        margin: 0;
+      }
+
       .figure.setup {
         width: 116mm;
         margin-left: auto;
@@ -537,26 +656,26 @@
       <div class="path">
         <div class="path-row">
           <span class="n">01</span><span class="t">Set up the company</span
-          ><span class="p">page 2</span>
-        </div>
-        <div class="path-row">
-          <span class="n">02</span><span class="t">Add a customer and a supplier</span
           ><span class="p">page 3</span>
         </div>
         <div class="path-row">
-          <span class="n">03</span><span class="t">Add an item</span><span class="p">page 4</span>
+          <span class="n">02</span><span class="t">Add a customer and a supplier</span
+          ><span class="p">page 4</span>
+        </div>
+        <div class="path-row">
+          <span class="n">03</span><span class="t">Add an item</span><span class="p">page 5</span>
         </div>
         <div class="path-row">
           <span class="n">04</span><span class="t">Post a purchase bill</span
-          ><span class="p">page 5</span>
-        </div>
-        <div class="path-row">
-          <span class="n">05</span><span class="t">Post a sales invoice</span
           ><span class="p">page 6</span>
         </div>
         <div class="path-row">
-          <span class="n">06</span><span class="t">Print, check and back up</span
+          <span class="n">05</span><span class="t">Post a sales invoice</span
           ><span class="p">page 7</span>
+        </div>
+        <div class="path-row">
+          <span class="n">06</span><span class="t">Print, check and back up</span
+          ><span class="p">page 8</span>
         </div>
       </div>
 
@@ -585,10 +704,97 @@
       </div>
     </section>
 
+    <!-- ============================================================ FLOW -->
+    <section class="page">
+      <header class="runhead">
+        <span class="step">Overview · the flow</span><span>Masters → vouchers → proof</span>
+      </header>
+
+      <div class="step-head">
+        <div class="big-num">00</div>
+        <div>
+          <h1>The same six screens, every cycle.</h1>
+          <p class="lede">
+            Create the master, post the document, print it, then prove the books. The next six pages
+            take each screen in order and mark the exact buttons.
+          </p>
+        </div>
+      </div>
+
+      <div class="flowmap">
+        <div class="flowcard">
+          <img src="assets/screens/quick-full-parties.png" alt="Parties list with New party" />
+          <div class="meta">
+            <span class="n">01</span><strong>Parties</strong><span>New party</span>
+          </div>
+        </div>
+        <div class="flowarrow">→</div>
+        <div class="flowcard">
+          <img src="assets/screens/quick-full-items.png" alt="Items list with New item" />
+          <div class="meta">
+            <span class="n">02</span><strong>Items</strong><span>New item</span>
+          </div>
+        </div>
+        <div class="flowarrow">→</div>
+        <div class="flowcard">
+          <img src="assets/screens/quick-full-purchases.png" alt="Purchases list with New bill" />
+          <div class="meta">
+            <span class="n">03</span><strong>Purchases</strong><span>New bill</span>
+          </div>
+        </div>
+
+        <div class="flowcard">
+          <img src="assets/screens/quick-full-sales.png" alt="Sales list with New invoice" />
+          <div class="meta">
+            <span class="n">04</span><strong>Sales</strong><span>New invoice</span>
+          </div>
+        </div>
+        <div class="flowarrow">→</div>
+        <div class="flowcard">
+          <img class="contain" src="assets/screens/15-invoice-print.png" alt="Printed invoice" />
+          <div class="meta">
+            <span class="n">05</span><strong>Print</strong><span>Save as PDF</span>
+          </div>
+        </div>
+        <div class="flowarrow">→</div>
+        <div class="flowcard">
+          <img src="assets/screens/quick-full-backup.png" alt="Backup screen" />
+          <div class="meta">
+            <span class="n">06</span><strong>Backup</strong><span>Create backup</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="flow-note">
+        The thumbnails are the map. The steps that follow carry a large screenshot with numbered
+        callouts. Each number on the picture is the same number in the instruction list, so there is
+        nothing to guess.
+      </p>
+
+      <div class="flow-explain">
+        <div>
+          <h3>Masters first</h3>
+          <p>A party and an item must exist before a voucher can use them.</p>
+        </div>
+        <div>
+          <h3>Vouchers next</h3>
+          <p>Each bill or invoice writes both sides of the entry and moves stock.</p>
+        </div>
+        <div>
+          <h3>Proof last</h3>
+          <p>The print, trial balance and backup all read the same posted rows.</p>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span>Crown Books · 10-minute quick start</span><span class="right">2 / 8</span>
+      </div>
+    </section>
+
     <!-- ============================================================ STEP 1 -->
     <section class="page">
       <header class="runhead">
-        <span class="step">Step 1 of 6 · Setup</span><span>Crown Books quick start</span>
+        <span class="step">Step 1 of 6 · Setup</span><span>First launch → Set up the books</span>
       </header>
 
       <div class="step-head">
@@ -602,17 +808,18 @@
         </div>
       </div>
 
-      <figure class="figure setup">
-        <img src="assets/screens/quick-setup.png" alt="First-run company setup form" />
+      <figure class="figure setup" data-shot="quick-setup">
+        <div class="shot">
+          <img src="assets/screens/quick-setup.png" alt="First-run company setup form" />
+        </div>
         <figcaption>
-          <strong>Figure 1.</strong> The first-run form. The left marketing panel is removed here so
-          the fields are easier to read.
+          <strong>Figure 1.</strong> The first-run form. The numbered callouts match the steps
+          below.
         </figcaption>
       </figure>
 
       <ol class="steps">
-        <li><strong>Business name.</strong> The name printed on invoices.</li>
-        <li><strong>Owner name and phone.</strong> The phone is optional.</li>
+        <li><strong>Business name, owner name and phone.</strong> The phone is optional.</li>
         <li><strong>Owner email.</strong> This becomes your sign-in name.</li>
         <li>
           <strong>Password.</strong> At least 8 characters. There is no email reset in this edition.
@@ -634,14 +841,15 @@
       </p>
 
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">2 / 7</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">3 / 8</span>
       </div>
     </section>
 
     <!-- ============================================================ STEP 2 -->
     <section class="page">
       <header class="runhead">
-        <span class="step">Step 2 of 6 · Parties</span><span>Crown Books quick start</span>
+        <span class="step">Step 2 of 6 · Parties</span
+        ><span>Parties → All Parties → New party</span>
       </header>
 
       <div class="step-head">
@@ -655,27 +863,24 @@
         </div>
       </div>
 
-      <figure class="figure dialog">
-        <img src="assets/screens/03-party-form.png" alt="New party form" />
+      <figure class="figure dialog" data-shot="03-party-form">
+        <div class="shot"><img src="assets/screens/03-party-form.png" alt="New party form" /></div>
         <figcaption>
-          <strong>Figure 2.</strong> A party that is both a customer and a supplier. Opening balance
-          stays at zero for a new business.
+          <strong>Figure 2.</strong> A party that is both a customer and a supplier. The callouts
+          match the steps below.
         </figcaption>
       </figure>
 
       <ol class="steps">
-        <li>Open <strong>Parties → All Parties</strong> and click <strong>New party</strong>.</li>
         <li>Enter <strong>Name</strong>, <strong>Phone</strong> and <strong>Email</strong>.</li>
         <li>Enter <strong>GSTIN</strong> and the two-digit <strong>State code</strong>.</li>
         <li>Set <strong>Credit days</strong>, usually 30. Credit limit is optional.</li>
         <li>
-          Leave <strong>Opening balance</strong> at zero, or enter the old balance with the correct
-          Dr / Cr side.
+          Leave <strong>Opening balance</strong> at zero for a new business, or enter the old
+          balance with the correct Dr / Cr side.
         </li>
-        <li>
-          Tick <strong>Customer</strong>, <strong>Supplier</strong>, or both. Click
-          <strong>Add party</strong>.
-        </li>
+        <li>Tick <strong>Customer</strong>, <strong>Supplier</strong>, or both.</li>
+        <li>Click <strong>Add party</strong>.</li>
       </ol>
 
       <div class="callout">
@@ -685,14 +890,14 @@
       </div>
 
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">3 / 7</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">4 / 8</span>
       </div>
     </section>
 
     <!-- ============================================================ STEP 3 -->
     <section class="page">
       <header class="runhead">
-        <span class="step">Step 3 of 6 · Items</span><span>Crown Books quick start</span>
+        <span class="step">Step 3 of 6 · Items</span><span>Items → Items → New item</span>
       </header>
 
       <div class="step-head">
@@ -705,24 +910,24 @@
         </div>
       </div>
 
-      <figure class="figure dialog">
-        <img src="assets/screens/05-item-form.png" alt="New item form" />
+      <figure class="figure dialog" data-shot="05-item-form">
+        <div class="shot"><img src="assets/screens/05-item-form.png" alt="New item form" /></div>
         <figcaption>
-          <strong>Figure 3.</strong> A goods item with opening stock. Leave opening quantity at zero
-          if you are going to enter old purchase bills instead.
+          <strong>Figure 3.</strong> A goods item with opening stock. The callouts match the steps
+          below.
         </figcaption>
       </figure>
 
       <ol class="steps">
-        <li>Open <strong>Items → Items</strong> and click <strong>New item</strong>.</li>
-        <li>Enter <strong>Name</strong> and <strong>SKU</strong>.</li>
-        <li>Enter <strong>HSN / SAC</strong> and choose a <strong>Unit</strong>.</li>
-        <li>Choose the <strong>GST rate</strong>: 0, 5, 12, 18 or 28 percent.</li>
+        <li>Enter <strong>Name</strong>, <strong>SKU</strong> and <strong>HSN / SAC</strong>.</li>
+        <li>Choose a <strong>Unit</strong> and the <strong>GST rate</strong>.</li>
         <li>Tick <strong>Service item (no stock)</strong> only for services.</li>
+        <li>Enter <strong>Sale price</strong> and <strong>Purchase price</strong>.</li>
         <li>
-          Enter <strong>Sale price</strong> and <strong>Purchase price</strong>. Click
-          <strong>Add item</strong>.
+          Enter <strong>Opening qty</strong> and <strong>Opening rate</strong>, or leave both at
+          zero.
         </li>
+        <li>Click <strong>Add item</strong>.</li>
       </ol>
 
       <div class="callout tip">
@@ -733,14 +938,14 @@
       </div>
 
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">4 / 7</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">5 / 8</span>
       </div>
     </section>
 
     <!-- ============================================================ STEP 4 -->
     <section class="page">
       <header class="runhead">
-        <span class="step">Step 4 of 6 · Buying</span><span>Crown Books quick start</span>
+        <span class="step">Step 4 of 6 · Buying</span><span>Purchases → New bill</span>
       </header>
 
       <div class="step-head">
@@ -754,23 +959,27 @@
         </div>
       </div>
 
-      <figure class="figure full">
-        <img src="assets/screens/09-purchase-entry.png" alt="New purchase bill" />
+      <figure class="figure full" data-shot="09-purchase-entry">
+        <div class="shot">
+          <img src="assets/screens/09-purchase-entry.png" alt="New purchase bill" />
+        </div>
         <figcaption>
-          <strong>Figure 4.</strong> A purchase bill with two lines. The total is calculated before
-          posting.
+          <strong>Figure 4.</strong> A purchase bill with two lines. The callouts match the steps
+          below.
         </figcaption>
       </figure>
 
       <ol class="steps">
-        <li>Open <strong>Books → Purchases</strong> and click <strong>New bill</strong>.</li>
         <li>Choose the <strong>supplier</strong>.</li>
-        <li>Check the <strong>Date</strong> and <strong>Due date</strong>.</li>
-        <li>Enter the supplier’s bill number in <strong>Reference</strong>.</li>
-        <li><strong>Place of supply</strong> is the supplier’s state.</li>
         <li>
-          <strong>Add line</strong>, choose the item, then enter <strong>Qty</strong>,
-          <strong>Rate</strong>, <strong>Disc %</strong> and <strong>GST %</strong>.
+          Check the <strong>Date</strong> and <strong>Due date</strong>. Enter the supplier’s bill
+          number in <strong>Reference</strong>; set <strong>Place of supply</strong> to the
+          supplier’s state.
+        </li>
+        <li>Click <strong>Add line</strong> and choose the item.</li>
+        <li>
+          Enter <strong>Qty</strong>, <strong>Rate</strong>, <strong>Disc %</strong> and
+          <strong>GST %</strong>.
         </li>
         <li>Check the <strong>Total</strong> against the paper bill.</li>
         <li>Click <strong>Post bill</strong>.</li>
@@ -783,14 +992,14 @@
       </div>
 
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">5 / 7</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">6 / 8</span>
       </div>
     </section>
 
     <!-- ============================================================ STEP 5 -->
     <section class="page">
       <header class="runhead">
-        <span class="step">Step 5 of 6 · Selling</span><span>Crown Books quick start</span>
+        <span class="step">Step 5 of 6 · Selling</span><span>Sales → New invoice</span>
       </header>
 
       <div class="step-head">
@@ -804,21 +1013,28 @@
         </div>
       </div>
 
-      <figure class="figure full">
-        <img src="assets/screens/13-sales-entry.png" alt="New sales invoice" />
+      <figure class="figure full" data-shot="13-sales-entry">
+        <div class="shot">
+          <img src="assets/screens/13-sales-entry.png" alt="New sales invoice" />
+        </div>
         <figcaption>
           <strong>Figure 5.</strong> A sale to a Maharashtra customer, so the tax is CGST + SGST.
+          The callouts match the steps below.
         </figcaption>
       </figure>
 
       <ol class="steps">
-        <li>Open <strong>Books → Sales</strong> and click <strong>New invoice</strong>.</li>
         <li>Choose the <strong>customer</strong>.</li>
-        <li>Check the <strong>Date</strong> and <strong>Due date</strong>.</li>
-        <li>Enter the customer’s purchase order in <strong>Reference</strong>.</li>
-        <li><strong>Place of supply</strong> is the customer’s state.</li>
         <li>
-          <strong>Add line</strong>, choose the item, then enter <strong>Qty</strong> and
+          Check the <strong>Date</strong> and <strong>Due date</strong>. Enter the customer’s
+          purchase order in <strong>Reference</strong>.
+        </li>
+        <li>
+          Set <strong>Place of supply</strong> to the customer’s state. Same state = CGST + SGST;
+          different state = IGST.
+        </li>
+        <li>
+          Click <strong>Add line</strong>, choose the item, then enter <strong>Qty</strong> and
           <strong>Rate</strong>.
         </li>
         <li>Check the tax split and <strong>Total</strong>.</li>
@@ -832,14 +1048,14 @@
       </div>
 
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">6 / 7</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">7 / 8</span>
       </div>
     </section>
 
     <!-- ============================================================ STEP 6 -->
     <section class="page">
       <header class="runhead">
-        <span class="step">Step 6 of 6 · Finish</span><span>Crown Books quick start</span>
+        <span class="step">Step 6 of 6 · Finish</span><span>Sales → Invoice → Print</span>
       </header>
 
       <div class="step-head">
@@ -912,8 +1128,29 @@
       </div>
 
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">7 / 7</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">8 / 8</span>
       </div>
     </section>
+
+    <script src="assets/annotations.js"></script>
+    <script>
+      ;(() => {
+        const all = window.CROWN_ANNOTATIONS || {}
+        document.querySelectorAll('[data-shot]').forEach((figure) => {
+          const key = figure.getAttribute('data-shot')
+          const marks = all[key] || []
+          const shot = figure.querySelector('.shot')
+          if (!shot) return
+          marks.forEach((mark) => {
+            const dot = document.createElement('span')
+            dot.className = 'marker'
+            dot.textContent = String(mark.label)
+            dot.style.left = `${mark.xPct}%`
+            dot.style.top = `${mark.yPct}%`
+            shot.appendChild(dot)
+          })
+        })
+      })()
+    </script>
   </body>
 </html>

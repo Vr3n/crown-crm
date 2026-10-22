@@ -93,31 +93,31 @@
     {
       "label": 1,
       "text": "Legal or trading name",
-      "xPct": 5.21,
+      "xPct": 2.8,
       "yPct": 17.24
     },
     {
       "label": 2,
       "text": "GSTIN and state code control the tax type",
-      "xPct": 5.21,
+      "xPct": 2.8,
       "yPct": 38
     },
     {
       "label": 3,
       "text": "Credit days set the default due date",
-      "xPct": 5.21,
+      "xPct": 2.8,
       "yPct": 58.77
     },
     {
       "label": 4,
       "text": "Opening balance is posted later, once",
-      "xPct": 5.21,
+      "xPct": 2.8,
       "yPct": 69.16
     },
     {
       "label": 5,
       "text": "Customer, supplier, or both",
-      "xPct": 5.21,
+      "xPct": 2.8,
       "yPct": 83.09
     },
     {
@@ -151,31 +151,31 @@
     {
       "label": 1,
       "text": "Name, SKU and HSN or SAC",
-      "xPct": 5.06,
+      "xPct": 2.8,
       "yPct": 18.84
     },
     {
       "label": 2,
       "text": "Unit and GST rate",
-      "xPct": 51.19,
+      "xPct": 48.5,
       "yPct": 30.19
     },
     {
       "label": 3,
       "text": "Tick for services, which never hold stock",
-      "xPct": 51.19,
+      "xPct": 48.5,
       "yPct": 42.52
     },
     {
       "label": 4,
       "text": "Default sale and purchase prices",
-      "xPct": 5.06,
+      "xPct": 2.8,
       "yPct": 52.24
     },
     {
       "label": 5,
       "text": "Opening stock and cost",
-      "xPct": 5.06,
+      "xPct": 2.8,
       "yPct": 63.59
     },
     {
@@ -249,7 +249,7 @@
     {
       "label": 1,
       "text": "Choose the supplier",
-      "xPct": 24.01,
+      "xPct": 19.5,
       "yPct": 24.23
     },
     {
@@ -383,7 +383,7 @@
     {
       "label": 1,
       "text": "Choose the customer",
-      "xPct": 24.01,
+      "xPct": 19.5,
       "yPct": 24.23
     },
     {
@@ -407,8 +407,8 @@
     {
       "label": 5,
       "text": "CGST + SGST, or IGST, calculated from the place of supply",
-      "xPct": 68.85,
-      "yPct": 35.9
+      "xPct": 84,
+      "yPct": 63.5
     },
     {
       "label": 6,
@@ -827,6 +827,44 @@
       "text": "Every backup with its timestamp and size",
       "xPct": 24.43,
       "yPct": 29.01
+    }
+  ],
+  "quick-setup": [
+    {
+      "label": 1,
+      "text": "Business name, owner and phone",
+      "xPct": 19.5,
+      "yPct": 20.89
+    },
+    {
+      "label": 2,
+      "text": "Owner email is the sign-in name",
+      "xPct": 19.5,
+      "yPct": 39.67
+    },
+    {
+      "label": 3,
+      "text": "Password, at least 8 characters",
+      "xPct": 19.5,
+      "yPct": 49.07
+    },
+    {
+      "label": 4,
+      "text": "State and GSTIN decide the tax treatment",
+      "xPct": 19.5,
+      "yPct": 61.34
+    },
+    {
+      "label": 5,
+      "text": "First day of your books",
+      "xPct": 19.5,
+      "yPct": 70.72
+    },
+    {
+      "label": 6,
+      "text": "Creates the company and signs you in",
+      "xPct": 31,
+      "yPct": 84.33
     }
   ]
 }
