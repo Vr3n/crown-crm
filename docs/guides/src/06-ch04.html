@@ -1,0 +1,208 @@
+<section class="chapter" id="ch04">
+      <header class="chapter-head">
+        <div class="chapter-kicker"><span>Chapter 04</span><span>Crown Books · 1.0</span></div>
+        <div class="chapter-title-row">
+          <div class="chapter-num">04</div>
+          <h1>Items and stock</h1>
+        </div>
+        <p class="chapter-lead">
+          An item is anything you buy or sell: a physical product with stock, or a service with no
+          stock. The item carries the HSN or SAC, the unit, the GST rate and the default prices.
+        </p>
+        <div class="chapter-in">
+          <strong>In this chapter</strong>Goods and services · Create an item · Opening stock · Item
+          list · Stock summary · How stock moves
+        </div>
+      </header>
+
+      <h2><span class="num">4.1</span>Goods and services</h2>
+      <p>
+        A <strong>goods item</strong> carries stock. Buying it increases quantity, selling it
+        decreases quantity, and the stock summary shows what is left. A
+        <strong>service item</strong> has no stock; it is used for maintenance, consulting or any
+        other work billed by quantity, hours or a flat rate.
+      </p>
+
+      <div class="procedure">
+        <h2><span class="num">4.2</span>Create an item</h2>
+        <p>Open <strong>Items → Items</strong> and click <strong>New item</strong>.</p>
+
+        <div class="access">
+          <div class="access-shot">
+            <img
+              src="assets/screens/quick-access-items.png"
+              alt="Sidebar Items and New item button"
+            />
+            <span class="access-marker" style="left: 7%; top: 50%">1</span>
+            <span class="access-marker" style="left: 82%; top: 28%">2</span>
+          </div>
+          <p class="access-caption">
+            <b>1</b> Click <strong>Items</strong> in the sidebar, then <strong>Items</strong>.
+            <b>2</b> Click <strong>New item</strong>.
+          </p>
+        </div>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>
+              <strong>Name</strong> and <strong>SKU.</strong> The name appears on the invoice; the
+              SKU is your internal code.
+            </li>
+            <li>
+              <strong>HSN / SAC.</strong> The GST classification. Goods use HSN, services use SAC.
+            </li>
+            <li>
+              <strong>Unit</strong> and <strong>GST rate.</strong> 0, 5, 12, 18 or 28 percent. The
+              rate is copied to a new invoice line but can be changed there.
+            </li>
+            <li><strong>Service item (no stock).</strong> Tick for services.</li>
+            <li>
+              <strong>Sale price</strong> and <strong>Purchase price.</strong> Defaults, not locked
+              prices.
+            </li>
+            <li>
+              <strong>Opening qty</strong> and <strong>Opening rate.</strong> Only for goods you
+              already hold. Fixed after saving.
+            </li>
+            <li>
+              <strong>Reorder level.</strong> A reference for purchasing; it does not create an
+              alert in this edition.
+            </li>
+            <li>Click <strong>Add item</strong>.</li>
+          </ol>
+
+          <figure class="figure dialog">
+            <div class="shot">
+              <img src="assets/screens/05-item-form.png" alt="New item form" />
+              <span class="marker" style="left: 2.6%; top: 18.84%">1</span>
+              <span class="marker" style="left: 49%; top: 30.19%">3</span>
+              <span class="marker" style="left: 49%; top: 42.52%">4</span>
+              <span class="marker" style="left: 2.6%; top: 52.24%">5</span>
+              <span class="marker" style="left: 2.6%; top: 63.59%">6</span>
+              <span class="marker" style="left: 92%; top: 89.91%">8</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 4.1</span> The New item form, filled for a goods item with
+              opening stock.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="keep break-before">
+        <h2><span class="num">4.3</span>Opening stock</h2>
+        <p>
+          Opening quantity and rate are included in the one-time opening voucher. They are not a
+          purchase bill. If you enter opening stock and then also enter a purchase bill for the same
+          goods, stock and cost will be counted twice.
+        </p>
+        <div class="callout remember">
+          <span class="label">Choose one method</span>
+          <strong>Opening stock only:</strong> enter what you hold now and start buying from today.
+          <strong>Full purchase history:</strong> leave opening stock at zero and enter the old
+          purchase bills. Do not mix the two for the same goods.
+        </div>
+      </div>
+
+      <h2><span class="num">4.4</span>The item list</h2>
+      <figure class="figure report">
+        <div class="shot">
+          <img src="assets/screens/04-items-detail.png" alt="Item list" />
+          <span class="marker" style="left: 91.5%; top: 12.34%">1</span>
+          <span class="marker" style="left: 48.8%; top: 44.98%">2</span>
+          <span class="marker" style="left: 55%; top: 44.98%">3</span>
+        </div>
+        <figcaption>
+          <span class="fig-no">Figure 4.2</span> The item list. Stock and prices are shown per item;
+          service items are tagged.
+        </figcaption>
+        <ol class="figure-key">
+          <li><span class="k">1</span>Create a goods or service item</li>
+          <li><span class="k">2</span>HSN or SAC and GST rate</li>
+          <li><span class="k">3</span>Quantity on hand, from posted movements</li>
+        </ol>
+      </figure>
+
+      <p>
+        The list shows HSN or SAC, unit, GST rate, stock on hand, sale price and purchase price. Use
+        the search box for name, SKU or HSN. <strong>Edit</strong> changes the descriptive fields
+        and default prices; opening quantity and rate stay fixed. <strong>Deactivate</strong> hides
+        an item from new entries without deleting history.
+      </p>
+
+      <div class="keep break-before">
+        <h2><span class="num">4.5</span>Stock summary</h2>
+        <p>
+          Open <strong>Items → Stock Summary</strong>. This is a computed report, not a data-entry
+          screen. It reads every posted purchase, sale and return.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/19-stock-detail.png" alt="Stock summary" />
+            <span class="marker" style="left: 52%; top: 36.28%">1</span>
+            <span class="marker" style="left: 71.5%; top: 36.28%">2</span>
+            <span class="marker" style="left: 15%; top: 85.68%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 4.3</span> Stock on hand by item, with quantity and value at
+            weighted average cost.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Quantity after every posted movement</li>
+            <li><span class="k">2</span>Value at weighted average cost</li>
+            <li><span class="k">3</span>Total stock value</li>
+          </ol>
+        </figure>
+
+        <p>
+          Quantity is what is left. Value is quantity multiplied by the weighted average cost of the
+          item. The total at the bottom is the inventory value that appears on the balance sheet.
+          Services are not shown because they hold no stock.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">4.6</span>How stock moves</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 26%">Action</th>
+              <th style="width: 24%">Effect on stock</th>
+              <th>Effect on the books</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Post a purchase bill</td>
+              <td>Quantity increases.</td>
+              <td>Creditor increases, inventory increases, input GST is recorded.</td>
+            </tr>
+            <tr>
+              <td>Post a sales invoice</td>
+              <td>Quantity decreases.</td>
+              <td>
+                Customer owes you, sales and output GST increase, cost of goods sold is recorded.
+              </td>
+            </tr>
+            <tr>
+              <td>Cancel a purchase or sale</td>
+              <td>The original movement is reversed.</td>
+              <td>The ledger effect is reversed; the voucher stays with status Cancelled.</td>
+            </tr>
+            <tr>
+              <td>Enter opening stock</td>
+              <td>Quantity starts at the opening figure.</td>
+              <td>Inventory and the opening difference are recorded once.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <span class="label">Why the stock value can change without a new purchase</span>
+          The costing method is weighted average. When a new purchase arrives at a different rate,
+          the average cost of the remaining stock changes, so the value of the same quantity can
+          move.
+        </div>
+      </div>
+    </section>

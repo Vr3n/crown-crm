@@ -1,0 +1,305 @@
+<section class="chapter" id="ch05">
+      <header class="chapter-head">
+        <div class="chapter-kicker"><span>Chapter 05</span><span>Crown Books · 1.0</span></div>
+        <div class="chapter-title-row">
+          <div class="chapter-num">05</div>
+          <h1>Buying: bills and payments</h1>
+        </div>
+        <p class="chapter-lead">
+          A purchase bill brings stock in and creates what you owe the supplier. A payment reduces
+          that balance. The payables report tells you what is still open and when it is due.
+        </p>
+        <div class="chapter-in">
+          <strong>In this chapter</strong>The buying flow · New purchase bill · What posting does ·
+          Pay a supplier · Payables · Purchase register
+        </div>
+      </header>
+
+      <h2><span class="num">5.1</span>The buying flow</h2>
+      <div class="flow tight">
+        <div class="flow-box">
+          <span class="step">01</span><strong>Purchase bill</strong
+          ><span>Stock comes in. The supplier becomes a creditor.</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          <span class="step">02</span><strong>Payment</strong
+          ><span>Money goes out. Allocate it to the bill it settles.</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          <span class="step">03</span><strong>Payables</strong
+          ><span>What is still owed, split into not due and overdue.</span>
+        </div>
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">5.2</span>New purchase bill</h2>
+        <p>
+          Open <strong>Books → Purchases</strong> and click <strong>New bill</strong>. The screen is
+          a bill, not a payment. Enter what the supplier billed you.
+        </p>
+
+        <div class="access">
+          <div class="access-shot">
+            <img
+              src="assets/screens/quick-access-purchases.png"
+              alt="Sidebar Purchases and New bill button"
+            />
+            <span class="access-marker" style="left: 7%; top: 50%">1</span>
+            <span class="access-marker" style="left: 82%; top: 28%">2</span>
+          </div>
+          <p class="access-caption">
+            <b>1</b> Click <strong>Purchases</strong> in the sidebar. <b>2</b> Click
+            <strong>New bill</strong>.
+          </p>
+        </div>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>
+              <strong>Party.</strong> Choose the supplier. The list shows the current balance and
+              credit days.
+            </li>
+            <li>
+              <strong>Date</strong> and <strong>Due date.</strong> The bill date decides the
+              financial year and the register period. The due date fills from credit days.
+            </li>
+            <li>
+              <strong>Reference.</strong> The supplier’s bill number, for example
+              <span class="mono">TC/26-27/604</span>.
+            </li>
+            <li>
+              <strong>Place of supply.</strong> The supplier’s state. Same state gives CGST + SGST;
+              a different state gives IGST.
+            </li>
+            <li>
+              <strong>Add line</strong> for each item. Choose the item or type a free-text
+              description.
+            </li>
+            <li>
+              Enter <strong>Qty</strong>, <strong>Rate</strong>, <strong>Disc %</strong> and
+              <strong>GST %</strong>. HSN and unit fill from the item.
+            </li>
+            <li>
+              Check <strong>Taxable value</strong>, the tax split, <strong>Round off</strong> and
+              <strong>Total</strong>.
+            </li>
+            <li>Add a <strong>Narration</strong> that will make sense in six months.</li>
+            <li>
+              Click <strong>Post bill</strong>. The number, for example
+              <span class="mono">PUR/0001</span>, is assigned at that moment.
+            </li>
+          </ol>
+
+          <figure class="figure">
+            <div class="shot">
+              <img src="assets/screens/09-purchase-entry.png" alt="New purchase bill" />
+              <span class="marker" style="left: 19.6%; top: 24.23%">1</span>
+              <span class="marker" style="left: 61.5%; top: 29.6%">2</span>
+              <span class="marker" style="left: 91.7%; top: 40.7%">5</span>
+              <span class="marker" style="left: 56.5%; top: 48.2%">6</span>
+              <span class="marker" style="left: 76.5%; top: 60.8%">7</span>
+              <span class="marker" style="left: 92.5%; top: 90.4%">9</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 5.1</span> A new purchase bill with two item lines. The
+              total is calculated before posting.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">5.3</span>What posting does</h2>
+        <ul>
+          <li>The supplier’s payable increases by the bill total.</li>
+          <li>
+            Inventory increases by the taxable value of goods lines; services post to the expense or
+            purchase ledger without stock.
+          </li>
+          <li>Input CGST, SGST or IGST is recorded according to the place of supply.</li>
+          <li>
+            The voucher gets a permanent number and appears in the purchase register and payables.
+          </li>
+        </ul>
+        <p>
+          To print the posted bill, open it from <strong>Purchases</strong> and click
+          <strong>Print</strong>. The print dialog also offers <strong>Save as PDF</strong>.
+        </p>
+        <div class="callout">
+          <span class="label">The bill is not the payment</span>
+          Posting a purchase bill does not move money. It records the obligation. Use a payment
+          voucher when the money actually leaves.
+        </div>
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">5.4</span>Pay a supplier</h2>
+        <p>
+          Open <strong>Books → Payments</strong> and click <strong>New payment</strong>. A payment
+          can settle one bill, several bills, or stay on account as an advance.
+        </p>
+
+        <div class="access">
+          <div class="access-shot">
+            <img
+              src="assets/screens/quick-access-payments.png"
+              alt="Sidebar Payments and New payment button"
+            />
+            <span class="access-marker" style="left: 7%; top: 50%">1</span>
+            <span class="access-marker" style="left: 82%; top: 28%">2</span>
+          </div>
+          <p class="access-caption">
+            <b>1</b> Click <strong>Payments</strong> in the sidebar. <b>2</b> Click
+            <strong>New payment</strong>.
+          </p>
+        </div>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>
+              <strong>Party.</strong> Choose the supplier. The screen shows the current balance.
+            </li>
+            <li><strong>Date.</strong> The date money left, not the bill date.</li>
+            <li><strong>Amount.</strong> The total paid, for example 25,000.</li>
+            <li>
+              <strong>Method</strong> and <strong>Reference.</strong> NEFT, UPI, cheque or cash, and
+              the bank reference.
+            </li>
+            <li>
+              <strong>Open bills</strong> lists unpaid bills with due dates and outstanding amounts.
+            </li>
+            <li>
+              Enter the amount against the bill in <strong>Allocate</strong>. Leave the rest
+              unallocated if it is an advance.
+            </li>
+            <li>
+              Check <strong>Paid</strong>, <strong>Allocated</strong> and
+              <strong>On account</strong> at the bottom.
+            </li>
+            <li>Click <strong>Post payment</strong>.</li>
+          </ol>
+
+          <figure class="figure">
+            <div class="shot">
+              <img src="assets/screens/11-payment-entry.png" alt="Supplier payment" />
+              <span class="marker" style="left: 19.6%; top: 24.23%">1</span>
+              <span class="marker" style="left: 19.6%; top: 34.97%">4</span>
+              <span class="marker" style="left: 14.4%; top: 50.67%">5</span>
+              <span class="marker" style="left: 74.2%; top: 55.2%">6</span>
+              <span class="marker" style="left: 85.3%; top: 61.3%">7</span>
+              <span class="marker" style="left: 94%; top: 70.47%">8</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 5.2</span> A supplier payment. The amount is 25,000, of
+              which 20,000 is allocated to PUR/0001.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="keep">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 30%">Situation</th>
+              <th>What to do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Pay one bill in full</td>
+              <td>Allocate the full outstanding amount to that bill.</td>
+            </tr>
+            <tr>
+              <td>Part payment</td>
+              <td>Allocate less than the outstanding. The rest stays open.</td>
+            </tr>
+            <tr>
+              <td>Pay several bills</td>
+              <td>Enter an allocation against each bill in the same payment.</td>
+            </tr>
+            <tr>
+              <td>Advance</td>
+              <td>Leave the allocation blank. The money sits on account until a bill arrives.</td>
+            </tr>
+            <tr>
+              <td>Pay more than the bill</td>
+              <td>Allocate the bill amount and leave the excess on account.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout remember">
+          <span class="label">Cash and bank in this edition</span>
+          Receipts and payments post to the Cash ledger. The <strong>Method</strong> list is a label
+          on the entry screen. To move money between cash and bank, use
+          <strong>Journals → New contra</strong>
+          after the receipt or payment. Bank reconciliation is not part of this edition.
+        </div>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">5.5</span>Payables</h2>
+        <p>
+          Open <strong>Reports → Payables</strong>. The report shows who you owe, split into amounts
+          not yet due and amounts past the due date.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/12-payables-detail.png" alt="Payables report" />
+            <span class="marker" style="left: 81.3%; top: 24.67%">1</span>
+            <span class="marker" style="left: 91.9%; top: 24.67%">2</span>
+            <span class="marker" style="left: 46%; top: 41.83%">3</span>
+            <span class="marker" style="left: 58.7%; top: 41.83%">4</span>
+            <span class="marker" style="left: 78.6%; top: 41.83%">5</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 5.3</span> Payables as on 22 October 2026. Both suppliers
+            are past their due dates in this example.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>As-of date</li>
+            <li><span class="k">2</span>Due date or bill date basis</li>
+            <li><span class="k">3</span>Not yet due</li>
+            <li><span class="k">4</span>Past the due date</li>
+            <li><span class="k">5</span>Supplier total</li>
+          </ol>
+        </figure>
+
+        <p>
+          <strong>As of</strong> is the date you are looking at. <strong>Basis</strong> decides
+          whether a bill is measured by its bill date or its due date. Use
+          <strong>Due date</strong> for collection and payment planning; use
+          <strong>Bill date</strong> when you want the age of the document.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">5.6</span>Purchase register</h2>
+        <p>
+          Open <strong>Reports → Purchase Register</strong>. It lists every purchase bill in the
+          period with taxable value, GST, round off and total.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/21-purchase-register-detail.png" alt="Purchase register" />
+            <span class="marker" style="left: 27%; top: 41.83%">1</span>
+            <span class="marker" style="left: 66%; top: 41.83%">2</span>
+            <span class="marker" style="left: 15%; top: 83.92%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 5.4</span> The purchase register for the financial year.
+            Totals at the bottom tie to the purchase ledger.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Every purchase bill in the period</li>
+            <li><span class="k">2</span>Input GST for the period</li>
+            <li><span class="k">3</span>Totals to tie to the books</li>
+          </ol>
+        </figure>
+      </div>
+    </section>

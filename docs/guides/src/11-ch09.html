@@ -1,0 +1,201 @@
+<section class="chapter" id="ch09">
+      <header class="chapter-head">
+        <div class="chapter-kicker"><span>Chapter 09</span><span>Crown Books · 1.0</span></div>
+        <div class="chapter-title-row">
+          <div class="chapter-num">09</div>
+          <h1>Backup and safety</h1>
+        </div>
+        <p class="chapter-lead">
+          The books live in one SQLite file on this computer. A backup is a copy of that file.
+          Restore is deliberately manual so that a live database is never swapped underneath the
+          app.
+        </p>
+        <div class="chapter-in">
+          <strong>In this chapter</strong>Create a backup · Restore · When to back up · Safety rules
+          · This computer only
+        </div>
+      </header>
+
+      <div class="procedure">
+        <h2><span class="num">9.1</span>Create a backup</h2>
+        <p>
+          Open <strong>Admin → Backup</strong> and click <strong>Create backup</strong>. The app
+          writes a timestamped copy, for example
+          <span class="mono">crown-books-2026-10-22T09-15-00-000Z.db</span>, into the backup folder
+          next to the database.
+        </p>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>Click <strong>Create backup</strong>.</li>
+            <li>
+              Confirm the new row in the list. It shows the file name, creation time and size.
+            </li>
+            <li>
+              Copy that file to a different drive or a USB stick. A backup on the same laptop is not
+              enough.
+            </li>
+          </ol>
+
+          <figure class="figure">
+            <div class="shot">
+              <img src="assets/screens/30-backup-detail.png" alt="Backup screen" />
+              <span class="marker" style="left: 81.5%; top: 16.18%">1</span>
+              <span class="marker" style="left: 22.2%; top: 74.53%">2</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 9.1</span> The backup screen. Each row is a full copy of
+              the books at that moment.
+            </figcaption>
+          </figure>
+        </div>
+        <p class="small muted">
+          A backup is a complete copy, not a delta. Restore is done outside the app, with the app
+          closed.
+        </p>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">Close the app first</span>
+        Restoring while Crown Books is open can corrupt the database. Close the app completely,
+        including any window in the taskbar, before replacing the file.
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">9.2</span>Restore a backup</h2>
+        <ol class="steps two-col">
+          <li>
+            Create a fresh backup of the current books, even if they are wrong. It is your safety
+            net.
+          </li>
+          <li>Close Crown Books.</li>
+          <li>
+            Open the app data folder. On Windows this is usually
+            <span class="mono">%APPDATA%\crown-books</span>.
+          </li>
+          <li>
+            Rename the current <span class="mono">crown-books.db</span> to
+            <span class="mono">crown-books.before-restore.db</span>.
+          </li>
+          <li>Copy the chosen backup from the backups folder into the app data folder.</li>
+          <li>Rename the copy to <span class="mono">crown-books.db</span>.</li>
+          <li>
+            Open Crown Books and sign in. Check the dashboard, the trial balance and a recent
+            invoice.
+          </li>
+        </ol>
+        <p class="small muted">
+          The backup folder is usually <span class="mono">%APPDATA%\crown-books\backups</span>. If
+          your installation uses a different folder, ask your administrator before moving files.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">9.3</span>When to back up</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 34%">When</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Before the first real bill</td>
+              <td>So you can return to an empty, known state.</td>
+            </tr>
+            <tr>
+              <td>Every day after posting</td>
+              <td>The day’s work is the most expensive thing to lose.</td>
+            </tr>
+            <tr>
+              <td>Before a GST return</td>
+              <td>Freeze the numbers you are about to file.</td>
+            </tr>
+            <tr>
+              <td>Before a restore or upgrade</td>
+              <td>Keep a copy of the current state even if it is imperfect.</td>
+            </tr>
+            <tr>
+              <td>Every Friday, off the machine</td>
+              <td>Protect against disk failure, theft or ransomware.</td>
+            </tr>
+            <tr>
+              <td>At month end</td>
+              <td>A clean copy for the accountant.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">9.4</span>Safety rules</h2>
+        <ul class="checklist">
+          <li>Do not edit the database with another program while Crown Books is open.</li>
+          <li>
+            Do not copy the app folder to another computer. The install lock will refuse to run, and
+            the data may not be the same.
+          </li>
+          <li>Do not restore a backup over a live database. Close the app first.</li>
+          <li>Do not keep every backup on the same laptop. Use a second drive or a USB stick.</li>
+        </ul>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">9.5</span>This computer only</h2>
+        <p>
+          Crown Books is offline by design. There is no cloud sync, no remote login and no automatic
+          off-site copy. That is a feature for privacy and a risk for disaster recovery. The backup
+          routine is the disaster recovery plan.
+        </p>
+
+        <div class="callout remember">
+          <span class="label">The 3-2-1 rule, in plain language</span>
+          Keep <strong>3 copies</strong>, on <strong>2 different kinds of storage</strong>, with
+          <strong>1 copy off the computer</strong>. For a small shop, that can be the live database,
+          a daily backup on the laptop, and a weekly copy on a USB drive kept elsewhere.
+        </div>
+
+        <h3>Backup log</h3>
+        <p class="small muted">
+          Print this page or keep a note in the shop. A backup is only real when someone has checked
+          that it opens and contains the right day’s work.
+        </p>
+        <table class="log">
+          <thead>
+            <tr>
+              <th style="width: 20%">Date</th>
+              <th style="width: 34%">File name</th>
+              <th style="width: 26%">Kept where</th>
+              <th>Checked by</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>&nbsp;</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>&nbsp;</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>&nbsp;</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>&nbsp;</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>

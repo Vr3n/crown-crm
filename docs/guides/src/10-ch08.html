@@ -1,0 +1,256 @@
+<section class="chapter" id="ch08">
+      <header class="chapter-head">
+        <div class="chapter-kicker"><span>Chapter 08</span><span>Crown Books · 1.0</span></div>
+        <div class="chapter-title-row">
+          <div class="chapter-num">08</div>
+          <h1>Reports</h1>
+        </div>
+        <p class="chapter-lead">
+          Reports are reads of posted vouchers. They do not store totals, so a cancelled voucher
+          disappears from the report and a new one appears immediately.
+        </p>
+        <div class="chapter-in">
+          <strong>In this chapter</strong>How reports work · Day book · Trial balance · Profit and
+          loss · Balance sheet · Report map
+        </div>
+      </header>
+
+      <div class="keep">
+        <h2><span class="num">8.1</span>How reports work</h2>
+        <p>
+          Every report reads the posted vouchers for the current company. A cancelled voucher is
+          excluded from the ledger effect. The date controls mean different things:
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 22%">Control</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>From / To</strong></td>
+              <td>
+                A period, for example 1 April to 22 October. Used by profit and loss, balance sheet
+                and registers.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>As of</strong></td>
+              <td>
+                A single date. Used by receivables, payables and ageing: what was open on that day.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Basis</strong></td>
+              <td>
+                Age by due date (default) or by bill date. Due date is better for collection; bill
+                date is better for document age.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <span class="label">Three checks before you trust a report</span>
+          Is the voucher posted, not cancelled? Is the date range or as-of date the one you meant?
+          Does the trial balance still say “Debits equal credits”?
+        </div>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">8.2</span>Report map</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 24%">Report</th>
+              <th>Question it answers</th>
+              <th style="width: 36%">When to use it</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Receivables</td>
+              <td>Who owes us, and how much is overdue?</td>
+              <td>Weekly collection review.</td>
+            </tr>
+            <tr>
+              <td>Ageing</td>
+              <td>How old are the unpaid bills?</td>
+              <td>Prioritise the oldest debts.</td>
+            </tr>
+            <tr>
+              <td>Payables</td>
+              <td>Who do we owe, and what is due?</td>
+              <td>Weekly payment run.</td>
+            </tr>
+            <tr>
+              <td>Day book</td>
+              <td>What was posted on a date?</td>
+              <td>Find a voucher or check an entry.</td>
+            </tr>
+            <tr>
+              <td>Sales register</td>
+              <td>What did we sell, and what GST did we charge?</td>
+              <td>Before a GST return or a sales review.</td>
+            </tr>
+            <tr>
+              <td>Purchase register</td>
+              <td>What did we buy, and what input GST was recorded?</td>
+              <td>Before a GST return or a cost review.</td>
+            </tr>
+            <tr>
+              <td>Trial balance</td>
+              <td>Do the books balance?</td>
+              <td>Month end, before any report is trusted.</td>
+            </tr>
+            <tr>
+              <td>Profit and loss</td>
+              <td>Did we make money this period?</td>
+              <td>Monthly management review.</td>
+            </tr>
+            <tr>
+              <td>Balance sheet</td>
+              <td>What do we own and owe?</td>
+              <td>Month end, bank or investor review.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">8.3</span>Day book</h2>
+        <p>
+          The day book lists every voucher in date order, whatever its type. It is the first place
+          to look when you cannot find a document.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/25-day-book-detail.png" alt="Day book" />
+            <span class="marker" style="left: 18.5%; top: 35.22%">1</span>
+            <span class="marker" style="left: 22.8%; top: 73.91%">2</span>
+            <span class="marker" style="left: 67%; top: 48.59%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 8.1</span> The day book for October. Click any number to
+            open the voucher.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Filter by date, status or text</li>
+            <li><span class="k">2</span>Open the voucher</li>
+            <li><span class="k">3</span>Party and total</li>
+          </ol>
+        </figure>
+
+        <p class="small muted">
+          The date range defaults to the current month. Change <strong>From</strong> and
+          <strong>To</strong> for an older period, use <strong>Search</strong> for a number or
+          party, and filter by <strong>Status</strong> to see only posted or cancelled documents.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">8.4</span>Trial balance</h2>
+        <p>
+          The trial balance lists every account with a debit or credit balance. If the debit total
+          equals the credit total, the ledger is internally consistent. It does not prove that the
+          business made a profit; it proves that every voucher had two sides.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/22-trial-balance.png" alt="Trial balance" />
+            <span class="marker" style="left: 15%; top: 15.6%">1</span>
+            <span class="marker" style="left: 62.3%; top: 15.6%">2</span>
+            <span class="marker" style="left: 15%; top: 93.6%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 8.2</span> The trial balance. The green line at the bottom
+            confirms that debits equal credits.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Every account with a balance</li>
+            <li><span class="k">2</span>Debit and credit columns</li>
+            <li><span class="k">3</span>The proof: debits equal credits</li>
+          </ol>
+        </figure>
+
+        <p class="small muted">
+          Read it by group. Assets and expenses normally sit on the debit side; liabilities, equity
+          and income on the credit side. A party can appear on either side because the balance is
+          net.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">8.5</span>Profit and loss</h2>
+        <p>
+          Profit and loss answers one question: did the business make money in this period? It shows
+          income, expenses and net profit. The period is controlled by <strong>From</strong> and
+          <strong>To</strong>.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/23-profit-loss.png" alt="Profit and loss" />
+            <span class="marker" style="left: 81.3%; top: 9.2%">1</span>
+            <span class="marker" style="left: 15%; top: 15.6%">2</span>
+            <span class="marker" style="left: 15%; top: 33.4%">3</span>
+            <span class="marker" style="left: 15%; top: 55.1%">4</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 8.3</span> Profit and loss for 1 April to 22 October 2026.
+            Cost of goods sold is the cost of the items that were sold.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>From and To set the period</li>
+            <li><span class="k">2</span>Income accounts</li>
+            <li><span class="k">3</span>Expense accounts</li>
+            <li><span class="k">4</span>Net profit for the period</li>
+          </ol>
+        </figure>
+
+        <p class="small muted">
+          Sales is shown net of returns. Cost of goods sold is the weighted average cost of the
+          stock that left. Expenses include round off and any journals posted to expense accounts. A
+          loss is shown in red.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">8.6</span>Balance sheet</h2>
+        <p>
+          The balance sheet is a photograph at a date: what the business owns, what it owes, and the
+          owner’s stake. It must satisfy <strong>Assets = Liabilities + Equity</strong>.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/24-balance-sheet.png" alt="Balance sheet" />
+            <span class="marker" style="left: 15%; top: 15.6%">1</span>
+            <span class="marker" style="left: 58.4%; top: 15.6%">2</span>
+            <span class="marker" style="left: 58.4%; top: 51.86%">3</span>
+            <span class="marker" style="left: 15%; top: 67.55%">4</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 8.4</span> The balance sheet. Equity includes owner capital
+            and the current period profit.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>What the business owns</li>
+            <li><span class="k">2</span>What it owes</li>
+            <li><span class="k">3</span>Owner stake plus current profit</li>
+            <li><span class="k">4</span>The check: assets equal liabilities plus equity</li>
+          </ol>
+        </figure>
+
+        <p class="small muted">
+          Inventory is valued at weighted average cost. Customer and supplier balances are net.
+          Current period profit is added to equity automatically, so the sheet balances without a
+          manual closing entry.
+        </p>
+      </div>
+    </section>

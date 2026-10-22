@@ -1,0 +1,284 @@
+<section class="chapter" id="ch07">
+      <header class="chapter-head">
+        <div class="chapter-kicker"><span>Chapter 07</span><span>Crown Books · 1.0</span></div>
+        <div class="chapter-title-row">
+          <div class="chapter-num">07</div>
+          <h1>Adjustments and corrections</h1>
+        </div>
+        <p class="chapter-lead">
+          The books keep a history. A mistake is corrected by cancelling the voucher and entering a
+          new one, or by posting a journal. Nothing is deleted.
+        </p>
+        <div class="chapter-in">
+          <strong>In this chapter</strong>Posted means posted · Cancel a voucher · Journal · Contra
+          · Journals list · Ask the accountant
+        </div>
+      </header>
+
+      <h2><span class="num">7.1</span>Posted means posted</h2>
+      <p>
+        A posted voucher is part of the audit trail. You cannot edit its lines, party, date or
+        amount. If it is wrong, cancel it with a reason and enter a fresh voucher. The cancelled
+        voucher stays visible with status <span class="pill red">Cancelled</span>, its number is not
+        reused, and its ledger and stock effect is reversed.
+      </p>
+
+      <div class="procedure">
+        <h2><span class="num">7.2</span>Cancel a voucher</h2>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>
+              Open the voucher from Sales, Purchases, Receipts, Payments, Day Book or a report link.
+            </li>
+            <li>Click <strong>Cancel voucher</strong> at the top right.</li>
+            <li>
+              Enter a <strong>Reason</strong> of at least three characters. “Wrong party” is enough;
+              “test” is not useful.
+            </li>
+            <li>
+              Click <strong>Cancel voucher</strong> in the dialog. The status becomes
+              <span class="pill red">Cancelled</span>.
+            </li>
+            <li>Enter the corrected voucher from the beginning.</li>
+          </ol>
+
+          <figure class="figure small-dialog">
+            <div class="shot">
+              <img src="assets/screens/29-cancel-dialog.png" alt="Cancel voucher dialog" />
+              <span class="marker" style="left: 4%; top: 45.72%">3</span>
+              <span class="marker" style="left: 66.9%; top: 73.5%">4</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 7.1</span> Cancelling a voucher. The reason is required;
+              Keep voucher backs out unchanged.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">Do not cancel just to hide a bill</span>
+        Cancellation reverses the ledger and stock effect, but the voucher remains in the day book
+        with its reason. It is for corrections, not for removing a real transaction from history.
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">7.3</span>Journal</h2>
+        <p>
+          A journal is a manual double entry. Use it for adjustments that are not a sale, purchase,
+          receipt or payment: owner capital, depreciation, an expense paid from cash, or an
+          accountant’s correction. Every journal needs at least two lines, and total debits must
+          equal total credits. The screen shows <strong>Balanced</strong> only when they match;
+          <strong>Post</strong> stays disabled until then.
+        </p>
+
+        <div class="access">
+          <div class="access-shot">
+            <img
+              src="assets/screens/quick-access-journals.png"
+              alt="Sidebar Journals and New journal button"
+            />
+            <span class="access-marker" style="left: 7%; top: 50%">1</span>
+            <span class="access-marker" style="left: 82%; top: 28%">2</span>
+          </div>
+          <p class="access-caption">
+            <b>1</b> Click <strong>Journals</strong> in the sidebar. <b>2</b> Click
+            <strong>New journal</strong>.
+          </p>
+        </div>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li><strong>Date.</strong> The date of the adjustment.</li>
+            <li>
+              <strong>Account</strong> to debit, with the amount. For an expense, debit the expense.
+            </li>
+            <li><strong>Account</strong> to credit, with the same amount. Usually Cash or Bank.</li>
+            <li>Enter a <strong>Narration</strong> that names the reason.</li>
+            <li>Check that the dialog shows <strong>Balanced</strong>.</li>
+            <li>Click <strong>Post</strong>.</li>
+          </ol>
+
+          <figure class="figure">
+            <div class="shot">
+              <img src="assets/screens/26-journal-dialog.png" alt="Journal dialog" />
+              <span class="marker" style="left: 2.2%; top: 21.75%">1</span>
+              <span class="marker" style="left: 2.2%; top: 35.57%">2</span>
+              <span class="marker" style="left: 2.2%; top: 44.07%">3</span>
+              <span class="marker" style="left: 88.8%; top: 73%">5</span>
+              <span class="marker" style="left: 89.5%; top: 84.5%">6</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 7.2</span> A balanced journal: Office Expenses is debited,
+              Cash is credited, both for 2,500.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">Before you journal</span>
+        Write down the two account names and the amount before you open the screen. If you cannot
+        name both accounts, stop and ask the accountant. A journal entered to “see if it works” is
+        harder to clean up than a phone call.
+      </div>
+
+      <div class="keep">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 36%">Example</th>
+              <th>Debit</th>
+              <th>Credit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Owner introduces capital</td>
+              <td>Cash</td>
+              <td>Owner Capital</td>
+            </tr>
+            <tr>
+              <td>Office expense paid in cash</td>
+              <td>Office Expenses</td>
+              <td>Cash</td>
+            </tr>
+            <tr>
+              <td>Depreciation for the month</td>
+              <td>Depreciation</td>
+              <td>Accumulated Depreciation</td>
+            </tr>
+            <tr>
+              <td>Correct an over-posted expense</td>
+              <td>The account that was wrongly debited</td>
+              <td>The expense account</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">7.4</span>Contra</h2>
+        <p>
+          A contra moves money between two cash or bank accounts. The common case is depositing cash
+          into the bank. It is not a receipt or a payment, so it does not affect a customer or
+          supplier.
+        </p>
+
+        <div class="access">
+          <div class="access-shot">
+            <img
+              src="assets/screens/quick-access-contra.png"
+              alt="Sidebar Journals and New contra button"
+            />
+            <span class="access-marker" style="left: 7%; top: 50%">1</span>
+            <span class="access-marker" style="left: 82%; top: 28%">2</span>
+          </div>
+          <p class="access-caption">
+            <b>1</b> Click <strong>Journals</strong> in the sidebar. <b>2</b> Click
+            <strong>New contra</strong>.
+          </p>
+        </div>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>Open <strong>Books → Journals</strong> and click <strong>New contra</strong>.</li>
+            <li>Choose the <strong>From account</strong>, usually Cash.</li>
+            <li>Choose the <strong>To account</strong>, usually Bank.</li>
+            <li>Enter the <strong>Date</strong> and <strong>Amount</strong>.</li>
+            <li>Add a <strong>Narration</strong>, for example “Cash deposited into the bank”.</li>
+            <li>Click <strong>Post</strong>.</li>
+          </ol>
+
+          <figure class="figure">
+            <div class="shot">
+              <img src="assets/screens/27-contra-dialog.png" alt="Contra dialog" />
+              <span class="marker" style="left: 35.5%; top: 29.07%">2</span>
+              <span class="marker" style="left: 66.5%; top: 29.07%">3</span>
+              <span class="marker" style="left: 2.2%; top: 47.55%">4</span>
+              <span class="marker" style="left: 89.5%; top: 80.5%">6</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 7.3</span> A contra for 5,000 from Cash to Bank. The
+              narration explains the transfer.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">7.5</span>The journals list</h2>
+        <p>
+          The <strong>Journals</strong> page lists both manual journals and contra transfers, newest
+          first. The <strong>Type</strong> column tells you which one it is; the
+          <strong>Number</strong>
+          column is the voucher you can quote to your accountant.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/28-journals-detail.png" alt="Journals list" />
+            <span class="marker" style="left: 91.5%; top: 16.62%">1</span>
+            <span class="marker" style="left: 84%; top: 16.62%">2</span>
+            <span class="marker" style="left: 30.8%; top: 41.83%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 7.4</span> Posted journals and contras, with the narration
+            and amount.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>New manual journal</li>
+            <li><span class="k">2</span>New contra</li>
+            <li><span class="k">3</span>Posted journals and transfers</li>
+          </ol>
+        </figure>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">7.6</span>When to ask your accountant</h2>
+        <ul>
+          <li>Opening balances do not tie to the old trial balance.</li>
+          <li>A GST return is due and the output or input tax looks wrong.</li>
+          <li>You need depreciation, prepaid expenses, provisions or any year-end adjustment.</li>
+          <li>
+            A party balance is negative or a supplier balance is positive and you cannot explain it.
+          </li>
+          <li>The trial balance does not say “Debits equal credits.”</li>
+        </ul>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40%">The mistake</th>
+              <th>What to do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Wrong party, date, item or amount on a posted bill</td>
+              <td>Cancel it with a reason and enter the correct voucher.</td>
+            </tr>
+            <tr>
+              <td>Wrong GST rate or place of supply on a posted invoice</td>
+              <td>
+                Cancel and re-enter. Do not patch it with a journal; the GST return needs the
+                corrected invoice.
+              </td>
+            </tr>
+            <tr>
+              <td>Expense posted to the wrong ledger</td>
+              <td>Post a journal: debit the correct expense, credit the wrong one.</td>
+            </tr>
+            <tr>
+              <td>Owner put money into the business</td>
+              <td>Journal: debit Cash or Bank, credit Owner Capital.</td>
+            </tr>
+            <tr>
+              <td>Cash deposited into the bank</td>
+              <td>Contra: from Cash, to Bank. Not a receipt or payment.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>

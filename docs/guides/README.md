@@ -2,8 +2,8 @@
 
 The PDF is written for the people who use the application, not for developers.
 
-- **Full guide:** [`crown-books-user-guide.pdf`](crown-books-user-guide.pdf) — 32 pages, 10 chapters, 30 figures.
-- **Quick start:** [`crown-books-10-minute-quick-start.pdf`](crown-books-10-minute-quick-start.pdf) — eight pages, one screen per page.
+- **Full guide:** [`crown-books-user-guide.pdf`](crown-books-user-guide.pdf) — 34 pages, 10 chapters, 30 figures.
+- **Quick start:** [`crown-books-10-minute-quick-start.pdf`](crown-books-10-minute-quick-start.pdf) — seven pages, one form per page.
 - **Built HTML:** [`crown-books-user-guide.html`](crown-books-user-guide.html)
 - **Source:** [`src/`](src/) — one partial per chapter, plus `guide.css` and `template.html`.
 - **Screenshots:** [`assets/screens/`](assets/screens/) — full captures and compact `-detail` crops.

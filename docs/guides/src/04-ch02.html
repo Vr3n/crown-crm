@@ -1,0 +1,249 @@
+<section class="chapter" id="ch02">
+      <header class="chapter-head">
+        <div class="chapter-kicker"><span>Chapter 02</span><span>Crown Books · 1.0</span></div>
+        <div class="chapter-title-row">
+          <div class="chapter-num">02</div>
+          <h1>Company and opening balances</h1>
+        </div>
+        <p class="chapter-lead">
+          The company profile is printed on every document. The chart of accounts is the list of
+          ledgers behind the reports. Opening balances are the one-time bridge from your old books.
+        </p>
+        <div class="chapter-in">
+          <strong>In this chapter</strong>Company settings · Books begin · Chart of accounts ·
+          Opening balances
+        </div>
+      </header>
+
+      <h2><span class="num">2.1</span>Company settings</h2>
+      <p>
+        Open <strong>Admin → Company</strong>. The page has four sections: identity, financial year,
+        stock and rounding, and invoice terms. The first two are printed on documents; the last two
+        control costing and rounding.
+      </p>
+
+      <figure class="figure wide">
+        <div class="shot">
+          <img src="assets/screens/06-company.png" alt="Company settings" />
+          <span class="marker" style="left: 26.6%; top: 18.81%">1</span>
+          <span class="marker" style="left: 26.6%; top: 82.03%">2</span>
+        </div>
+        <figcaption>
+          <span class="fig-no">Figure 2.1</span> Company settings. Identity is printed on documents;
+          the financial year drives numbering and reports.
+        </figcaption>
+        <ol class="figure-key">
+          <li><span class="k">1</span>Identity printed on invoices</li>
+          <li><span class="k">2</span>Financial year and books begin</li>
+        </ol>
+      </figure>
+
+      <dl class="keylist">
+        <div class="row">
+          <dt>Registered name</dt>
+          <dd>The name printed on invoices, usually the legal or trading name.</dd>
+        </div>
+        <div class="row">
+          <dt>GSTIN, PAN, state code</dt>
+          <dd>
+            Registration details. The state code is two digits, for example 27 for Maharashtra.
+          </dd>
+        </div>
+        <div class="row">
+          <dt>Address, city, pincode</dt>
+          <dd>The address printed above the invoice lines.</dd>
+        </div>
+        <div class="row">
+          <dt>Financial year starts</dt>
+          <dd>The month your reporting year starts. April is the default for India.</dd>
+        </div>
+        <div class="row">
+          <dt>Books begin date</dt>
+          <dd>The first day this app records transactions. See 2.2.</dd>
+        </div>
+        <div class="row">
+          <dt>Costing method</dt>
+          <dd>
+            Keep <strong>Weighted average</strong>. This edition values stock at weighted average
+            cost.
+          </dd>
+        </div>
+        <div class="row">
+          <dt>Round off</dt>
+          <dd>
+            How the invoice total is rounded. <strong>Invoice total</strong> is the usual choice.
+          </dd>
+        </div>
+        <div class="row">
+          <dt>Default terms</dt>
+          <dd>Saved with the company, but not printed by the current invoice layout.</dd>
+        </div>
+      </dl>
+
+      <div class="callout warn">
+        <span class="label">Leave this unticked</span>
+        <strong>Allow selling below stock on hand</strong> is recorded as a setting but the current
+        build does not enforce a stock guard. Keep it unticked and check the stock summary before a
+        large sale.
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">2.2</span>What “books begin” means</h2>
+        <p>
+          Books begin is the first day Crown Books is responsible for the ledger. Before that date,
+          the history lives in your old system, your accountant’s file, or nowhere. At that date you
+          bring in one opening position: what you own, what you owe, and what customers owe you.
+        </p>
+        <p>
+          It is not the financial year. A business can have a financial year from 1 April to 31
+          March and still begin its Crown Books ledger on 1 October after migrating from Tally. An
+          October invoice still belongs to the current April-to-March year.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 32%">Situation</th>
+              <th>What to enter</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Starting a new business</td>
+              <td>
+                The day you want the books to start, often 1 April or the day of the first sale.
+              </td>
+            </tr>
+            <tr>
+              <td>Fresh financial year</td>
+              <td>
+                1 April of that year. Opening balances are the previous 31 March closing balances.
+              </td>
+            </tr>
+            <tr>
+              <td>Migrating mid-year</td>
+              <td>
+                The day after the last entry in the old system. Opening balances are as at the close
+                of the day before.
+              </td>
+            </tr>
+            <tr>
+              <td>Only using Crown Books for sales</td>
+              <td>
+                Still use the real start date. Do not enter a later date just to avoid old data.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout remember">
+        <span class="label">Opening balances are the day before</span>
+        If the old system is closed on 30 September and books begin is 1 October, the opening
+        balances are the position at the close of 30 September. Post the opening voucher dated 1
+        October, then start entering October transactions.
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">2.3</span>Chart of accounts</h2>
+        <p>
+          Every voucher writes to ledgers. The chart of accounts is the list of those ledgers,
+          grouped into assets, liabilities, equity, income and expenses. Crown Books seeds a working
+          set so you do not have to create one from scratch.
+        </p>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>Click <strong>New account</strong>.</li>
+            <li>Enter a <strong>Name</strong>, for example Office Expenses.</li>
+            <li>
+              Choose a <strong>Group</strong>. It decides the nature, for example Indirect Expenses.
+            </li>
+            <li>Check the <strong>Type</strong>. It follows the group but can be adjusted.</li>
+            <li>
+              Leave the opening balance at zero unless you are setting up the opening position.
+            </li>
+            <li>Click <strong>Add account</strong>.</li>
+          </ol>
+
+          <figure class="figure">
+            <div class="shot">
+              <img src="assets/screens/08-accounts.png" alt="Chart of accounts" />
+              <span class="marker" style="left: 93.5%; top: 6.6%">1</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 2.2</span> The chart of accounts. Rows marked Reserved are
+              used by the posting engine and cannot be deactivated.
+            </figcaption>
+          </figure>
+        </div>
+        <p class="small muted">
+          Reserved ledgers have a fixed job: sales, purchases, GST, inventory, cost of goods sold,
+          round off and the opening difference. Add your own ledgers for rent, salaries or travel
+          without touching them.
+        </p>
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">2.4</span>Opening balances</h2>
+        <p>
+          Opening balances come from three places: the party record, the account record and the item
+          record. They are collected into one opening voucher so that the trial balance stays
+          balanced.
+        </p>
+
+        <ol class="steps two-col">
+          <li>
+            Add party opening balances in the party records. Positive means the party owes you;
+            negative means you owe the party.
+          </li>
+          <li>Add the opening balance and side on each bank, cash, loan or capital account.</li>
+          <li>Add opening quantity and rate on each goods item. Services do not hold stock.</li>
+          <li>
+            Open <strong>Admin → Company</strong>, scroll to <strong>Opening balances</strong>, and
+            choose the <strong>Opening date</strong>.
+          </li>
+          <li>
+            Click <strong>Post opening balances</strong>. One
+            <span class="mono">OPN/0001</span> voucher is created.
+          </li>
+          <li>Open the trial balance and check that debits equal credits.</li>
+        </ol>
+
+        <figure class="figure wide">
+          <div class="shot">
+            <img
+              src="assets/screens/07-opening-balances-detail.png"
+              alt="Opening balances section in company settings"
+            />
+            <span class="marker" style="left: 4.5%; top: 69.9%">4</span>
+            <span class="marker" style="left: 50.7%; top: 71.5%">5</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 2.3</span> The opening balances section. It runs once,
+            before the first real voucher.
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">2.5</span>Opening balance checklist</h2>
+        <ul class="checklist two-col">
+          <li>The old system is closed and reconciled on the day before books begin.</li>
+          <li>Every customer and supplier balance has the correct Dr or Cr side.</li>
+          <li>Cash, bank, loans and capital are entered on the account records.</li>
+          <li>
+            Goods have opening quantity and rate, or zero if you are bringing purchase history.
+          </li>
+          <li>The opening date matches the day before the first new transaction.</li>
+          <li>
+            The trial balance says “Debits equal credits” and Opening Balance Difference is zero or
+            explained.
+          </li>
+        </ul>
+        <p class="small muted">
+          After the opening voucher is posted, the opening fields are locked. Corrections go through
+          a journal, not by editing the voucher.
+        </p>
+      </div>
+    </section>

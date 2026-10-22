@@ -43,7 +43,7 @@ await page.pdf({
   printBackground: true,
   preferCSSPageSize: false,
   displayHeaderFooter: false,
-  margin: { top: '16mm', right: '16mm', bottom: '16mm', left: '16mm' },
+  margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' },
   scale: 1
 })
 

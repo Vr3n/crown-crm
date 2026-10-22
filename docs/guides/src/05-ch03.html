@@ -1,0 +1,171 @@
+<section class="chapter" id="ch03">
+      <header class="chapter-head">
+        <div class="chapter-kicker"><span>Chapter 03</span><span>Crown Books · 1.0</span></div>
+        <div class="chapter-title-row">
+          <div class="chapter-num">03</div>
+          <h1>Customers and suppliers</h1>
+        </div>
+        <p class="chapter-lead">
+          One record per business. The same business can be a customer and a supplier. The balance
+          column tells you whether they owe you or you owe them.
+        </p>
+        <div class="chapter-in">
+          <strong>In this chapter</strong>One record per business · Create a party · Edit and
+          deactivate · Read the list · Credit terms
+        </div>
+      </header>
+
+      <h2><span class="num">3.1</span>One record per business</h2>
+      <p>
+        A party is a customer, a supplier, or both. Use one record for a business even if you buy
+        from and sell to them. The role is chosen when the party is created and is not changed
+        later, because the role decides which ledger accounts the party uses.
+      </p>
+      <p>
+        The balance is shown as <strong>Dr</strong> or <strong>Cr</strong>. For a customer, Dr means
+        they owe you. For a supplier, Cr means you owe them. A negative customer balance or a
+        positive supplier balance is possible after an advance or an overpayment; it is not
+        automatically an error.
+      </p>
+
+      <div class="procedure">
+        <h2><span class="num">3.2</span>Create a party</h2>
+        <p>Open <strong>Parties → All Parties</strong> and click <strong>New party</strong>.</p>
+
+        <div class="access">
+          <div class="access-shot">
+            <img
+              src="assets/screens/quick-access-parties.png"
+              alt="Sidebar Parties and New party button"
+            />
+            <span class="access-marker" style="left: 7%; top: 50%">1</span>
+            <span class="access-marker" style="left: 82%; top: 28%">2</span>
+          </div>
+          <p class="access-caption">
+            <b>1</b> Click <strong>Parties</strong> in the sidebar, then
+            <strong>All Parties</strong>. <b>2</b> Click <strong>New party</strong>.
+          </p>
+        </div>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>
+              <strong>Name.</strong> The trading name you will recognise in lists, for example Gupta
+              Traders.
+            </li>
+            <li><strong>Phone and Email.</strong> Optional, but useful when chasing a bill.</li>
+            <li>
+              <strong>GSTIN</strong> and <strong>State code.</strong> 15 characters and two digits.
+              The state decides CGST + SGST or IGST on a sale.
+            </li>
+            <li>
+              <strong>Credit days</strong> and <strong>Credit limit.</strong> 30 means the invoice
+              is due 30 days after the invoice date.
+            </li>
+            <li>
+              <strong>Opening balance.</strong> Positive if the party owes you, negative if you owe
+              the party. Fixed after saving.
+            </li>
+            <li><strong>Role.</strong> Customer, Supplier, or both. Fixed after saving.</li>
+            <li>Click <strong>Add party</strong>.</li>
+          </ol>
+
+          <figure class="figure dialog">
+            <div class="shot">
+              <img src="assets/screens/03-party-form.png" alt="New party form" />
+              <span class="marker" style="left: 2.8%; top: 17.24%">1</span>
+              <span class="marker" style="left: 2.8%; top: 38%">3</span>
+              <span class="marker" style="left: 2.8%; top: 58.77%">4</span>
+              <span class="marker" style="left: 2.8%; top: 69.16%">5</span>
+              <span class="marker" style="left: 2.8%; top: 83.09%">6</span>
+              <span class="marker" style="left: 91%; top: 90.76%">7</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 3.1</span> The New party form, filled for a business that
+              is both a customer and a supplier.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <h2><span class="num">3.3</span>Edit and deactivate</h2>
+      <p>
+        Use <strong>Edit</strong> on a row to correct a phone number, address, credit days or credit
+        limit. The role and the opening balance are fixed after the party is created. If a party is
+        no longer used, click <strong>Deactivate</strong>: the history stays in the books, and the
+        party stops appearing in new-entry lists.
+      </p>
+      <div class="callout tip">
+        <span class="label">Tip</span>
+        Deactivate a party instead of renaming it to “OLD”. Reports and old vouchers keep the
+        original name and history, and the list stays readable.
+      </div>
+
+      <h2><span class="num">3.4</span>Read the party list</h2>
+      <figure class="figure report">
+        <div class="shot">
+          <img src="assets/screens/02-parties-detail.png" alt="Parties list" />
+          <span class="marker" style="left: 91.5%; top: 12.26%">1</span>
+          <span class="marker" style="left: 15.3%; top: 36.14%">2</span>
+          <span class="marker" style="left: 75%; top: 30.36%">3</span>
+          <span class="marker" style="left: 70.5%; top: 76.22%">4</span>
+        </div>
+        <figcaption>
+          <span class="fig-no">Figure 3.2</span> The parties list. The balance column is the net
+          position across all posted vouchers.
+        </figcaption>
+        <ol class="figure-key">
+          <li><span class="k">1</span>Create a customer or supplier</li>
+          <li><span class="k">2</span>Search by name, phone or GSTIN</li>
+          <li><span class="k">3</span>Filter by role</li>
+          <li><span class="k">4</span>Net balance: Dr means they owe you</li>
+        </ol>
+      </figure>
+
+      <p>
+        Search matches name, phone and GSTIN. The role buttons filter to All, Customers or
+        Suppliers.
+        <strong>Show inactive</strong> reveals deactivated records. The <strong>Credit days</strong>
+        column is the default payment term, not the age of the current balance.
+      </p>
+
+      <div class="keep">
+        <h2><span class="num">3.5</span>Credit days and credit limit</h2>
+        <p>
+          Credit days are copied to the due date when you choose the party on an invoice. You can
+          change the due date for an individual invoice. Ageing reports use the due date by default,
+          so a wrong credit term makes a bill look overdue earlier or later than it really is.
+        </p>
+        <p>
+          Credit limit is a reference figure for your team. In this edition it does not stop an
+          invoice from being posted. If a customer is near the limit, the person entering the sale
+          must check.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 22%">Role</th>
+              <th>Use it when</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Customer</strong></td>
+              <td>You sell to them. They appear in Sales and Receivables.</td>
+            </tr>
+            <tr>
+              <td><strong>Supplier</strong></td>
+              <td>You buy from them. They appear in Purchases and Payables.</td>
+            </tr>
+            <tr>
+              <td><strong>Both</strong></td>
+              <td>
+                You buy and sell to the same business. One record keeps the net balance in one
+                place.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>

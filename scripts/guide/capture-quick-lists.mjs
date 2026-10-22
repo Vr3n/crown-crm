@@ -161,6 +161,9 @@ try {
   await full('#/purchases', 'quick-full-purchases', 'PUR/0001')
   await shot('#/sales', 'quick-flow-sales', 'INV/0001')
   await full('#/sales', 'quick-full-sales', 'INV/0001')
+  await full('#/receipts', 'quick-full-receipts', 'Receipts')
+  await full('#/payments', 'quick-full-payments', 'Payments')
+  await full('#/journals', 'quick-full-journals', 'Journals')
   await page.evaluate(() => {
     window.location.hash = '#/settings/backup'
   })

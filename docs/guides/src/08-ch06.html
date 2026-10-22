@@ -1,0 +1,350 @@
+<section class="chapter" id="ch06">
+      <header class="chapter-head">
+        <div class="chapter-kicker"><span>Chapter 06</span><span>Crown Books · 1.0</span></div>
+        <div class="chapter-title-row">
+          <div class="chapter-num">06</div>
+          <h1>Selling: invoices and receipts</h1>
+        </div>
+        <p class="chapter-lead">
+          An invoice records what a customer owes. A receipt records what they paid. Receivables and
+          ageing tell you who to chase and how old the bill is.
+        </p>
+        <div class="chapter-in">
+          <strong>In this chapter</strong>The selling flow · New invoice · GST and place of supply ·
+          Print · Receipt · Receivables and ageing · Sales register
+        </div>
+      </header>
+
+      <h2><span class="num">6.1</span>The selling flow</h2>
+      <div class="flow tight">
+        <div class="flow-box">
+          <span class="step">01</span><strong>Sales invoice</strong
+          ><span>Customer owes you. Stock goes out. GST is recorded.</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          <span class="step">02</span><strong>Receipt</strong
+          ><span>Money comes in. Allocate it to the invoice it settles.</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          <span class="step">03</span><strong>Receivables</strong
+          ><span>What is still owed, with ageing and due dates.</span>
+        </div>
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">6.2</span>New sales invoice</h2>
+        <p>
+          Open <strong>Books → Sales</strong> and click <strong>New invoice</strong>. Every sale is
+          against a customer; a cash sale is recorded as an invoice followed by a receipt.
+        </p>
+
+        <div class="access">
+          <div class="access-shot">
+            <img
+              src="assets/screens/quick-access-sales.png"
+              alt="Sidebar Sales and New invoice button"
+            />
+            <span class="access-marker" style="left: 7%; top: 50%">1</span>
+            <span class="access-marker" style="left: 82%; top: 28%">2</span>
+          </div>
+          <p class="access-caption">
+            <b>1</b> Click <strong>Sales</strong> in the sidebar. <b>2</b> Click
+            <strong>New invoice</strong>.
+          </p>
+        </div>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>
+              <strong>Party.</strong> Choose the customer. The screen shows their balance, credit
+              days and GSTIN.
+            </li>
+            <li>
+              <strong>Date</strong> and <strong>Due date.</strong> The invoice date decides the
+              financial year and the sales register.
+            </li>
+            <li>
+              <strong>Place of supply.</strong> The customer’s state. Same state as your company
+              gives CGST + SGST; a different state gives IGST.
+            </li>
+            <li>
+              <strong>Add line</strong> for each item. Choose the saved item or type a free-text
+              description.
+            </li>
+            <li>
+              Enter <strong>Qty</strong>, <strong>Rate</strong>, <strong>Disc %</strong> and
+              <strong>GST %</strong>.
+            </li>
+            <li>Check the totals and add a <strong>Narration</strong>.</li>
+            <li>
+              Click <strong>Post invoice</strong>. The number, for example
+              <span class="mono">INV/0001</span>, is assigned on posting.
+            </li>
+          </ol>
+
+          <figure class="figure">
+            <div class="shot">
+              <img src="assets/screens/13-sales-entry.png" alt="New sales invoice" />
+              <span class="marker" style="left: 19.6%; top: 24.23%">1</span>
+              <span class="marker" style="left: 53.8%; top: 27.8%">2</span>
+              <span class="marker" style="left: 53.8%; top: 37.2%">3</span>
+              <span class="marker" style="left: 56.5%; top: 48.2%">5</span>
+              <span class="marker" style="left: 97.2%; top: 90.4%">7</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 6.1</span> A new sales invoice for a Maharashtra customer,
+              so the tax is CGST + SGST.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <span class="label">Place of supply is the most common GST mistake</span>
+        The place of supply defaults to your company’s state. For an out-of-state customer, change
+        it to the customer’s state before posting. If you leave it on your own state, the invoice
+        will charge CGST + SGST instead of IGST and the GST return will be wrong.
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">6.3</span>GST and place of supply</h2>
+        <p>
+          GST is charged per line. The place of supply decides how the same 18 percent is split.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 30%">Place of supply</th>
+              <th style="width: 30%">What is charged</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Same state as the company</td>
+              <td>CGST + SGST, half the rate each.</td>
+              <td>Company in 27 (Maharashtra), customer in 27. 18% becomes 9% CGST + 9% SGST.</td>
+            </tr>
+            <tr>
+              <td>Different state</td>
+              <td>IGST at the full rate.</td>
+              <td>Company in 27, customer in 29 (Karnataka). 18% becomes 18% IGST.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          The tax is calculated on the taxable value after the line discount. The total is rounded
+          according to the company setting, usually at the invoice total. The summary on the right
+          shows taxable value, CGST, SGST, IGST, round off and total before you post.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">6.4</span>Print or save the invoice</h2>
+        <p>
+          Open <strong>Sales</strong>, click the invoice number, and use <strong>Print</strong>. In
+          the system print dialog, choose a printer or <strong>Save as PDF</strong>. The printed
+          page carries the company name and GSTIN, the customer, the invoice number and date, the
+          line items with HSN, the tax split and the total.
+        </p>
+
+        <figure class="figure wide">
+          <div class="shot">
+            <img src="assets/screens/15-invoice-print.png" alt="Printed invoice" />
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 6.2</span> What the printed invoice looks like. The
+            navigation and top bar are hidden on paper.
+          </figcaption>
+        </figure>
+
+        <figure class="figure medium">
+          <div class="shot">
+            <img src="assets/screens/14-sales-detail.png" alt="Posted sales invoice" />
+            <span class="marker" style="left: 19.8%; top: 19.17%">1</span>
+            <span class="marker" style="left: 80.4%; top: 20.62%">2</span>
+            <span class="marker" style="left: 79.2%; top: 6.4%">3</span>
+            <span class="marker" style="left: 75%; top: 25.4%">4</span>
+            <span class="marker" style="left: 73.5%; top: 55%">5</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 6.3</span> The posted invoice screen. Print and Cancel
+            voucher are at the top.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Invoice number, date and due date</li>
+            <li><span class="k">2</span>Customer and GSTIN</li>
+            <li><span class="k">3</span>Print, or save as PDF</li>
+            <li><span class="k">4</span>Line detail and tax split</li>
+            <li><span class="k">5</span>Amount due from the customer</li>
+          </ol>
+        </figure>
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">6.5</span>Receipt from a customer</h2>
+        <p>
+          Open <strong>Books → Receipts</strong> and click <strong>New receipt</strong>. A receipt
+          can settle one invoice, several invoices, or stay on account as an advance.
+        </p>
+
+        <div class="access">
+          <div class="access-shot">
+            <img
+              src="assets/screens/quick-access-receipts.png"
+              alt="Sidebar Receipts and New receipt button"
+            />
+            <span class="access-marker" style="left: 7%; top: 50%">1</span>
+            <span class="access-marker" style="left: 82%; top: 28%">2</span>
+          </div>
+          <p class="access-caption">
+            <b>1</b> Click <strong>Receipts</strong> in the sidebar. <b>2</b> Click
+            <strong>New receipt</strong>.
+          </p>
+        </div>
+
+        <div class="procedure-grid">
+          <ol class="steps">
+            <li>
+              <strong>Party.</strong> Choose the customer. The screen shows the current balance.
+            </li>
+            <li><strong>Date.</strong> The date money was received.</li>
+            <li><strong>Amount.</strong> The total received.</li>
+            <li>
+              <strong>Method</strong> and <strong>Reference.</strong> UPI, NEFT, cheque or cash, and
+              the reference number.
+            </li>
+            <li>
+              <strong>Open invoices</strong> lists unpaid invoices with due dates and outstanding
+              amounts.
+            </li>
+            <li>Enter the amount against the invoice in <strong>Allocate</strong>.</li>
+            <li>
+              Check <strong>Received</strong>, <strong>Allocated</strong> and
+              <strong>On account</strong>.
+            </li>
+            <li>Click <strong>Post receipt</strong>.</li>
+          </ol>
+
+          <figure class="figure">
+            <div class="shot">
+              <img src="assets/screens/16-receipt-entry.png" alt="Customer receipt" />
+              <span class="marker" style="left: 19.6%; top: 24.23%">1</span>
+              <span class="marker" style="left: 19.6%; top: 34.97%">4</span>
+              <span class="marker" style="left: 14.4%; top: 50.67%">5</span>
+              <span class="marker" style="left: 74.2%; top: 55.2%">6</span>
+              <span class="marker" style="left: 85.3%; top: 61.3%">7</span>
+              <span class="marker" style="left: 94%; top: 70.47%">8</span>
+            </div>
+            <figcaption>
+              <span class="fig-no">Figure 6.4</span> A customer receipt. 10,000 is received and
+              allocated to INV/0001.
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <p class="small muted">
+        <strong>Advances and part payments.</strong> A receipt larger than the open invoice leaves
+        the excess on account. A receipt with no allocation is an advance. When the next invoice is
+        posted, use a new receipt, or adjust the advance through a journal if your accountant
+        prefers.
+      </p>
+
+      <div class="keep">
+        <h2><span class="num">6.6</span>Receivables and ageing</h2>
+        <p>
+          Open <strong>Reports → Receivables</strong> for the customer totals, and
+          <strong>Reports → Ageing</strong> for the age buckets.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/17-receivables-detail.png" alt="Receivables report" />
+            <span class="marker" style="left: 81.3%; top: 24.67%">1</span>
+            <span class="marker" style="left: 43.8%; top: 41.83%">2</span>
+            <span class="marker" style="left: 58.6%; top: 41.83%">3</span>
+            <span class="marker" style="left: 78.5%; top: 41.83%">4</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 6.5</span> Receivables as on 22 October 2026. The overdue
+            column is the money to chase first.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>As-of date</li>
+            <li><span class="k">2</span>Not yet due</li>
+            <li><span class="k">3</span>Overdue amount</li>
+            <li><span class="k">4</span>Total owed by each customer</li>
+          </ol>
+        </figure>
+
+        <p>
+          Receivables shows not yet due and overdue per customer. Ageing splits the overdue amount
+          into 30-day buckets. Use <strong>Basis</strong> to age by due date (default) or bill date;
+          a bill not yet due stays in Not due even if the invoice is old.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h3>Ageing by party</h3>
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/18-ageing-detail.png" alt="Ageing report" />
+            <span class="marker" style="left: 17%; top: 41.83%">1</span>
+            <span class="marker" style="left: 49.7%; top: 41.83%">2</span>
+            <span class="marker" style="left: 75.9%; top: 41.83%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 6.6</span> Bills are grouped into 0–30, 31–60, 61–90, 91–180
+            and 180+ days.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Ageing by party</li>
+            <li><span class="k">2</span>Thirty-day buckets</li>
+            <li><span class="k">3</span>Chase the oldest first</li>
+          </ol>
+        </figure>
+
+        <div class="callout tip">
+          <span class="label">Who to chase first</span>
+          Start with the largest amount in 61–90 and 91–180, not the largest total. Then check 31–60
+          for customers who are about to become a bigger problem. A 180+ balance needs a decision:
+          collect, write off, or ask the accountant.
+        </div>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">6.7</span>Sales register</h2>
+        <p>
+          The sales register lists every invoice in a period with taxable value, GST, round off and
+          total. It is the first check before a GST return or a management review.
+        </p>
+
+        <figure class="figure report">
+          <div class="shot">
+            <img src="assets/screens/20-sales-register-detail.png" alt="Sales register" />
+            <span class="marker" style="left: 81.3%; top: 24.67%">1</span>
+            <span class="marker" style="left: 65.1%; top: 41.83%">2</span>
+            <span class="marker" style="left: 15.5%; top: 83.92%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 6.7</span> The sales register for the financial year, with
+            the period total at the bottom.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>From and To dates</li>
+            <li><span class="k">2</span>Taxable value and GST per invoice</li>
+            <li><span class="k">3</span>Period totals</li>
+          </ol>
+        </figure>
+
+        <ul class="checklist">
+          <li>Every invoice in the period is present, and none is cancelled by mistake.</li>
+          <li>The total GST agrees with the output tax in the trial balance.</li>
+        </ul>
+      </div>
+    </section>
