@@ -23,13 +23,13 @@
 
       :root {
         --ink: #172027;
-        --paper: #f7f3e9;
-        --paper-deep: #ede6d7;
-        --card: #fcfaf4;
+        --paper: #ffffff;
+        --paper-deep: #f1f2f0;
+        --card: #fafaf8;
         --text: #20282e;
         --muted: #6f6a60;
-        --line: #d8d0bf;
-        --line-strong: #b9ad97;
+        --line: #d7d9d6;
+        --line-strong: #b6bab5;
         --blue: #1c4b63;
         --blue-soft: #e5eef2;
         --stamp: #b14a32;
@@ -94,8 +94,9 @@
 
       .page {
         position: relative;
-        height: 263mm;
-        padding-bottom: 12mm;
+        width: 210mm;
+        height: 297mm;
+        padding: 8mm 8mm 12mm;
         break-after: page;
       }
 
@@ -109,7 +110,7 @@
         align-items: baseline;
         border-bottom: 0.6pt solid var(--line-strong);
         padding-bottom: 3mm;
-        margin-bottom: 9mm;
+        margin-bottom: 7mm;
         font-family: 'Plex Mono', monospace;
         font-size: 7pt;
         letter-spacing: 0.14em;
@@ -133,7 +134,7 @@
         font-size: 48pt;
         line-height: 0.9;
         font-weight: 600;
-        color: #ddd3c0;
+        color: #e2e3e1;
         letter-spacing: -0.06em;
       }
 
@@ -181,6 +182,54 @@
         z-index: 3;
       }
 
+      .access {
+        margin: 0 0 3mm;
+      }
+
+      .access-shot {
+        position: relative;
+        line-height: 0;
+        border: 0.6pt solid var(--line-strong);
+        background: #fff;
+      }
+
+      .access-shot img {
+        display: block;
+        width: 190mm;
+        height: auto;
+      }
+
+      .access-marker {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        width: 4.8mm;
+        height: 4.8mm;
+        border-radius: 999px;
+        background: var(--stamp);
+        color: #fff8f2;
+        border: 0.6pt solid #fff8f2;
+        font-family: 'Plex Mono', monospace;
+        font-size: 6.6pt;
+        font-weight: 600;
+        line-height: 4.6mm;
+        text-align: center;
+        z-index: 3;
+      }
+
+      .access-caption {
+        margin: 1.8mm 0 0;
+        font-size: 8.6pt;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+
+      .access-caption b {
+        color: var(--stamp);
+        font-family: 'Plex Mono', monospace;
+        font-size: 8pt;
+        margin-right: 0.6mm;
+      }
+
       .flowmap {
         display: grid;
         grid-template-columns: 1fr 7mm 1fr 7mm 1fr;
@@ -198,7 +247,7 @@
 
       .flowcard img {
         display: block;
-        width: 100%;
+        width: 190mm;
         height: 27mm;
         object-fit: cover;
         object-position: left top;
@@ -278,25 +327,25 @@
       }
 
       .figure.setup {
-        width: 116mm;
+        width: 130mm;
         margin-left: auto;
         margin-right: auto;
       }
 
       .figure.dialog {
-        width: 112mm;
+        width: 122mm;
         margin-left: auto;
         margin-right: auto;
       }
 
       .figure.full {
-        width: 170mm;
+        width: 190mm;
         margin-left: auto;
         margin-right: auto;
       }
 
       .figure.print {
-        width: 170mm;
+        width: 190mm;
         margin-left: auto;
         margin-right: auto;
       }
@@ -389,9 +438,9 @@
 
       .foot {
         position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        left: 8mm;
+        right: 8mm;
+        bottom: 6mm;
         display: flex;
         justify-content: space-between;
         align-items: baseline;
@@ -457,7 +506,7 @@
         font-family: 'Plex Mono', monospace;
         font-size: 92pt;
         line-height: 0.72;
-        color: #e3dac8;
+        color: #e6e7e5;
         letter-spacing: -0.09em;
       }
 
@@ -656,26 +705,26 @@
       <div class="path">
         <div class="path-row">
           <span class="n">01</span><span class="t">Set up the company</span
-          ><span class="p">page 3</span>
+          ><span class="p">page 2</span>
         </div>
         <div class="path-row">
           <span class="n">02</span><span class="t">Add a customer and a supplier</span
-          ><span class="p">page 4</span>
+          ><span class="p">page 3</span>
         </div>
         <div class="path-row">
-          <span class="n">03</span><span class="t">Add an item</span><span class="p">page 5</span>
+          <span class="n">03</span><span class="t">Add an item</span><span class="p">page 4</span>
         </div>
         <div class="path-row">
           <span class="n">04</span><span class="t">Post a purchase bill</span
-          ><span class="p">page 6</span>
+          ><span class="p">page 5</span>
         </div>
         <div class="path-row">
           <span class="n">05</span><span class="t">Post a sales invoice</span
-          ><span class="p">page 7</span>
+          ><span class="p">page 6</span>
         </div>
         <div class="path-row">
           <span class="n">06</span><span class="t">Print, check and back up</span
-          ><span class="p">page 8</span>
+          ><span class="p">page 7</span>
         </div>
       </div>
 
@@ -701,93 +750,6 @@
       <div class="foot">
         <span>Crown Books · 10-minute quick start</span>
         <span class="right">Full guide: docs/guides/crown-books-user-guide.pdf</span>
-      </div>
-    </section>
-
-    <!-- ============================================================ FLOW -->
-    <section class="page">
-      <header class="runhead">
-        <span class="step">Overview · the flow</span><span>Masters → vouchers → proof</span>
-      </header>
-
-      <div class="step-head">
-        <div class="big-num">00</div>
-        <div>
-          <h1>The same six screens, every cycle.</h1>
-          <p class="lede">
-            Create the master, post the document, print it, then prove the books. The next six pages
-            take each screen in order and mark the exact buttons.
-          </p>
-        </div>
-      </div>
-
-      <div class="flowmap">
-        <div class="flowcard">
-          <img src="assets/screens/quick-full-parties.png" alt="Parties list with New party" />
-          <div class="meta">
-            <span class="n">01</span><strong>Parties</strong><span>New party</span>
-          </div>
-        </div>
-        <div class="flowarrow">→</div>
-        <div class="flowcard">
-          <img src="assets/screens/quick-full-items.png" alt="Items list with New item" />
-          <div class="meta">
-            <span class="n">02</span><strong>Items</strong><span>New item</span>
-          </div>
-        </div>
-        <div class="flowarrow">→</div>
-        <div class="flowcard">
-          <img src="assets/screens/quick-full-purchases.png" alt="Purchases list with New bill" />
-          <div class="meta">
-            <span class="n">03</span><strong>Purchases</strong><span>New bill</span>
-          </div>
-        </div>
-
-        <div class="flowcard">
-          <img src="assets/screens/quick-full-sales.png" alt="Sales list with New invoice" />
-          <div class="meta">
-            <span class="n">04</span><strong>Sales</strong><span>New invoice</span>
-          </div>
-        </div>
-        <div class="flowarrow">→</div>
-        <div class="flowcard">
-          <img class="contain" src="assets/screens/15-invoice-print.png" alt="Printed invoice" />
-          <div class="meta">
-            <span class="n">05</span><strong>Print</strong><span>Save as PDF</span>
-          </div>
-        </div>
-        <div class="flowarrow">→</div>
-        <div class="flowcard">
-          <img src="assets/screens/quick-full-backup.png" alt="Backup screen" />
-          <div class="meta">
-            <span class="n">06</span><strong>Backup</strong><span>Create backup</span>
-          </div>
-        </div>
-      </div>
-
-      <p class="flow-note">
-        The thumbnails are the map. The steps that follow carry a large screenshot with numbered
-        callouts. Each number on the picture is the same number in the instruction list, so there is
-        nothing to guess.
-      </p>
-
-      <div class="flow-explain">
-        <div>
-          <h3>Masters first</h3>
-          <p>A party and an item must exist before a voucher can use them.</p>
-        </div>
-        <div>
-          <h3>Vouchers next</h3>
-          <p>Each bill or invoice writes both sides of the entry and moves stock.</p>
-        </div>
-        <div>
-          <h3>Proof last</h3>
-          <p>The print, trial balance and backup all read the same posted rows.</p>
-        </div>
-      </div>
-
-      <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">2 / 8</span>
       </div>
     </section>
 
@@ -841,7 +803,7 @@
       </p>
 
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">3 / 8</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">2 / 7</span>
       </div>
     </section>
 
@@ -863,6 +825,22 @@
         </div>
       </div>
 
+      <div class="access">
+        <div class="access-shot">
+          <img
+            src="assets/screens/quick-access-parties.png"
+            alt="Sidebar Parties and New party button"
+          />
+          <span class="access-marker" style="left: 7%; top: 52%">1</span>
+          <span class="access-marker" style="left: 96%; top: 50%">2</span>
+        </div>
+        <p class="access-caption">
+          <b>1</b> In the sidebar, click <strong>Parties</strong>, then
+          <strong>All Parties</strong>. <b>2</b> Click <strong>New party</strong>. Then fill the
+          form below.
+        </p>
+      </div>
+
       <figure class="figure dialog" data-shot="03-party-form">
         <div class="shot"><img src="assets/screens/03-party-form.png" alt="New party form" /></div>
         <figcaption>
@@ -873,24 +851,24 @@
 
       <ol class="steps">
         <li>Enter <strong>Name</strong>, <strong>Phone</strong> and <strong>Email</strong>.</li>
-        <li>Enter <strong>GSTIN</strong> and the two-digit <strong>State code</strong>.</li>
+        <li>
+          Enter <strong>GSTIN</strong> and the two-digit <strong>State code</strong>. The state code
+          decides CGST + SGST or IGST.
+        </li>
         <li>Set <strong>Credit days</strong>, usually 30. Credit limit is optional.</li>
         <li>
           Leave <strong>Opening balance</strong> at zero for a new business, or enter the old
           balance with the correct Dr / Cr side.
         </li>
-        <li>Tick <strong>Customer</strong>, <strong>Supplier</strong>, or both.</li>
+        <li>
+          Tick <strong>Customer</strong>, <strong>Supplier</strong>, or both. This cannot change
+          after saving.
+        </li>
         <li>Click <strong>Add party</strong>.</li>
       </ol>
 
-      <div class="callout">
-        <span class="label">Why the state code matters</span>
-        The customer’s state decides CGST + SGST or IGST on a sale. A Karnataka customer uses 29; a
-        Maharashtra customer uses 27. The role cannot be changed after saving.
-      </div>
-
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">4 / 8</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">3 / 7</span>
       </div>
     </section>
 
@@ -910,6 +888,21 @@
         </div>
       </div>
 
+      <div class="access">
+        <div class="access-shot">
+          <img
+            src="assets/screens/quick-access-items.png"
+            alt="Sidebar Items and New item button"
+          />
+          <span class="access-marker" style="left: 7%; top: 52%">1</span>
+          <span class="access-marker" style="left: 96%; top: 50%">2</span>
+        </div>
+        <p class="access-caption">
+          <b>1</b> In the sidebar, click <strong>Items</strong>, then <strong>Items</strong>.
+          <b>2</b> Click <strong>New item</strong>. Then fill the form below.
+        </p>
+      </div>
+
       <figure class="figure dialog" data-shot="05-item-form">
         <div class="shot"><img src="assets/screens/05-item-form.png" alt="New item form" /></div>
         <figcaption>
@@ -925,20 +918,13 @@
         <li>Enter <strong>Sale price</strong> and <strong>Purchase price</strong>.</li>
         <li>
           Enter <strong>Opening qty</strong> and <strong>Opening rate</strong>, or leave both at
-          zero.
+          zero if you will enter old purchase bills.
         </li>
         <li>Click <strong>Add item</strong>.</li>
       </ol>
 
-      <div class="callout tip">
-        <span class="label">Opening stock or purchase history, not both</span>
-        If you enter opening quantity for goods, do not also enter old purchase bills for the same
-        goods. The stock and cost would be counted twice. For this first run, leave opening quantity
-        at zero.
-      </div>
-
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">5 / 8</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">4 / 7</span>
       </div>
     </section>
 
@@ -957,6 +943,21 @@
             supplier.
           </p>
         </div>
+      </div>
+
+      <div class="access">
+        <div class="access-shot">
+          <img
+            src="assets/screens/quick-access-purchases.png"
+            alt="Sidebar Purchases and New bill button"
+          />
+          <span class="access-marker" style="left: 7%; top: 52%">1</span>
+          <span class="access-marker" style="left: 96%; top: 50%">2</span>
+        </div>
+        <p class="access-caption">
+          <b>1</b> In the sidebar, click <strong>Purchases</strong>. <b>2</b> Click
+          <strong>New bill</strong>. Then fill the form below.
+        </p>
       </div>
 
       <figure class="figure full" data-shot="09-purchase-entry">
@@ -982,17 +983,13 @@
           <strong>GST %</strong>.
         </li>
         <li>Check the <strong>Total</strong> against the paper bill.</li>
-        <li>Click <strong>Post bill</strong>.</li>
+        <li>
+          Click <strong>Post bill</strong>. This records the payable; it does not pay the supplier.
+        </li>
       </ol>
 
-      <div class="callout tip">
-        <span class="label">The bill is not the payment</span>
-        Posting the bill creates the supplier payable and brings stock in. When money leaves, record
-        a payment separately. Full guide: section 5.5.
-      </div>
-
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">6 / 8</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">5 / 7</span>
       </div>
     </section>
 
@@ -1013,6 +1010,21 @@
         </div>
       </div>
 
+      <div class="access">
+        <div class="access-shot">
+          <img
+            src="assets/screens/quick-access-sales.png"
+            alt="Sidebar Sales and New invoice button"
+          />
+          <span class="access-marker" style="left: 7%; top: 52%">1</span>
+          <span class="access-marker" style="left: 96%; top: 50%">2</span>
+        </div>
+        <p class="access-caption">
+          <b>1</b> In the sidebar, click <strong>Sales</strong>. <b>2</b> Click
+          <strong>New invoice</strong>. Then fill the form below.
+        </p>
+      </div>
+
       <figure class="figure full" data-shot="13-sales-entry">
         <div class="shot">
           <img src="assets/screens/13-sales-entry.png" alt="New sales invoice" />
@@ -1031,7 +1043,8 @@
         </li>
         <li>
           Set <strong>Place of supply</strong> to the customer’s state. Same state = CGST + SGST;
-          different state = IGST.
+          different state = IGST. The default is your company’s state, so change it for an
+          out-of-state customer.
         </li>
         <li>
           Click <strong>Add line</strong>, choose the item, then enter <strong>Qty</strong> and
@@ -1041,14 +1054,8 @@
         <li>Click <strong>Post invoice</strong>.</li>
       </ol>
 
-      <div class="callout">
-        <span class="label">The most common GST mistake</span>
-        The place of supply defaults to your company’s state. Change it to the customer’s state
-        before posting an out-of-state sale, or the invoice will charge CGST + SGST instead of IGST.
-      </div>
-
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">7 / 8</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">6 / 7</span>
       </div>
     </section>
 
@@ -1128,7 +1135,7 @@
       </div>
 
       <div class="foot">
-        <span>Crown Books · 10-minute quick start</span><span class="right">8 / 8</span>
+        <span>Crown Books · 10-minute quick start</span><span class="right">7 / 7</span>
       </div>
     </section>
 
