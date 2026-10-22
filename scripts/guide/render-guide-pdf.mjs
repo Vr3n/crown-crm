@@ -9,8 +9,9 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const root = resolve(import.meta.dirname, '../..')
-const html = resolve(root, 'docs/guides/crown-books-user-guide.html')
-const pdf = resolve(root, 'docs/guides/crown-books-user-guide.pdf')
+const quick = process.argv.includes('--quick')
+const html = resolve(root, process.argv[2] ?? 'docs/guides/crown-books-user-guide.html')
+const pdf = resolve(root, process.argv[3] ?? 'docs/guides/crown-books-user-guide.pdf')
 
 if (!existsSync(html)) throw new Error(`Guide HTML not found: ${html}`)
 
@@ -42,14 +43,16 @@ await page.pdf({
   format: 'A4',
   printBackground: true,
   preferCSSPageSize: false,
-  displayHeaderFooter: true,
+  displayHeaderFooter: !quick,
   headerTemplate: '<span></span>',
   footerTemplate: `
     <div style="width:100%; padding:0 16mm; font-family: Arial, sans-serif; font-size:7pt; color:#8a8170; display:flex; align-items:baseline; justify-content:space-between;">
       <span>Crown Books · User Guide · Edition 1.0</span>
       <span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
     </div>`,
-  margin: { top: '20mm', right: '16mm', bottom: '18mm', left: '16mm' },
+  margin: quick
+    ? { top: '16mm', right: '16mm', bottom: '16mm', left: '16mm' }
+    : { top: '20mm', right: '16mm', bottom: '18mm', left: '16mm' },
   scale: 1
 })
 
