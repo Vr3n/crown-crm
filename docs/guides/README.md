@@ -3,7 +3,7 @@
 The PDF is written for the people who use the application, not for developers.
 
 - **Full guide:** [`crown-books-user-guide.pdf`](crown-books-user-guide.pdf)
-- **Two-page quick start:** [`crown-books-10-minute-quick-start.pdf`](crown-books-10-minute-quick-start.pdf)
+- **Seven-page quick start:** [`crown-books-10-minute-quick-start.pdf`](crown-books-10-minute-quick-start.pdf)
 - **Source:** [`crown-books-user-guide.html`](crown-books-user-guide.html)
 - **Quick-start source:** [`crown-books-10-minute-quick-start.html`](crown-books-10-minute-quick-start.html)
 - **Screenshots:** [`assets/screens/`](assets/screens/)
@@ -34,7 +34,7 @@ The screenshots are produced from the real Electron build.
 npx electron-vite build
 node scripts/guide/capture-guide.mjs
 node scripts/guide/render-guide-pdf.mjs
-node scripts/guide/render-guide-pdf.mjs docs/guides/crown-books-10-minute-quick-start.html docs/guides/crown-books-10-minute-quick-start.pdf --quick
+node scripts/guide/render-quick-start.mjs
 ```
 
 `capture-guide.mjs` creates a throwaway company, posts a month of purchases, sales, receipts,

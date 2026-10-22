@@ -22,21 +22,22 @@
       }
 
       :root {
-        --ink: #131c23;
-        --paper: #f4f0e6;
-        --card: #fbf9f3;
-        --text: #1b2228;
-        --muted: #68645b;
-        --line: #d7cfbd;
-        --line-strong: #b8ad97;
-        --blue: #16465f;
-        --blue-soft: #e3ebf0;
-        --stamp: #a8432c;
-        --stamp-soft: #f4e4de;
+        --ink: #172027;
+        --paper: #f7f3e9;
+        --paper-deep: #ede6d7;
+        --card: #fcfaf4;
+        --text: #20282e;
+        --muted: #6f6a60;
+        --line: #d8d0bf;
+        --line-strong: #b9ad97;
+        --blue: #1c4b63;
+        --blue-soft: #e5eef2;
+        --stamp: #b14a32;
+        --stamp-soft: #f5e6df;
         --green: #2f6b4e;
-        --green-soft: #e3efe8;
-        --ochre: #9a6b18;
-        --ochre-soft: #f4ecd9;
+        --green-soft: #e5efe9;
+        --ochre: #96691b;
+        --ochre-soft: #f5edd9;
       }
 
       * {
@@ -55,261 +56,200 @@
 
       body {
         font-family: 'Plex Sans', 'Segoe UI', Arial, sans-serif;
-        font-size: 9.2pt;
-        line-height: 1.38;
-        letter-spacing: -0.003em;
+        font-size: 10.5pt;
+        line-height: 1.65;
+        letter-spacing: -0.004em;
       }
 
       p {
-        margin: 0 0 2.4mm;
+        margin: 0 0 4mm;
       }
 
       h1,
       h2,
       h3 {
         margin: 0;
-        line-height: 1.12;
-        letter-spacing: -0.025em;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        text-wrap: balance;
       }
 
       h1 {
-        font-size: 21pt;
-        font-weight: 650;
+        font-size: 31pt;
+        font-weight: 620;
+        max-width: 18ch;
       }
 
       h2 {
-        font-size: 12pt;
-        font-weight: 650;
+        font-size: 13pt;
+        font-weight: 640;
+        letter-spacing: -0.015em;
       }
 
       h3 {
-        font-size: 10pt;
+        font-size: 9pt;
         font-weight: 650;
+        letter-spacing: 0.01em;
       }
 
-      .sheet {
+      .page {
+        position: relative;
+        height: 263mm;
+        padding-bottom: 12mm;
         break-after: page;
-        min-height: 263mm;
       }
 
-      .sheet:last-child {
+      .page:last-child {
         break-after: auto;
       }
 
-      .top {
-        border-bottom: 1.2mm solid var(--ink);
-        padding-bottom: 3mm;
-        margin-bottom: 3mm;
+      .runhead {
         display: flex;
         justify-content: space-between;
-        align-items: flex-end;
-        gap: 8mm;
-      }
-
-      .brandline {
-        display: flex;
-        align-items: center;
-        gap: 3mm;
-        margin-bottom: 2mm;
-      }
-
-      .mark {
-        width: 8mm;
-        height: 8mm;
-        background: var(--stamp);
-        color: #fff8f2;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 6.5pt;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-      }
-
-      .brand {
-        font-size: 8pt;
-        font-weight: 650;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-      }
-
-      .edition {
-        font-size: 7pt;
-        color: var(--muted);
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        margin-top: 0.6mm;
-      }
-
-      .top h1 {
-        max-width: 26ch;
-      }
-
-      .top .meta {
-        text-align: right;
+        align-items: baseline;
+        border-bottom: 0.6pt solid var(--line-strong);
+        padding-bottom: 3mm;
+        margin-bottom: 9mm;
         font-family: 'Plex Mono', monospace;
-        font-size: 7.5pt;
+        font-size: 7pt;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
         color: var(--muted);
-        line-height: 1.5;
-        white-space: nowrap;
       }
 
-      .lead {
-        font-size: 9.8pt;
-        line-height: 1.4;
-        color: #343b40;
-        max-width: 66ch;
-        margin-bottom: 2.5mm;
+      .runhead .step {
+        color: var(--stamp);
       }
 
-      .need {
-        border-left: 1mm solid var(--blue);
-        background: var(--blue-soft);
-        padding: 2mm 3mm;
-        font-size: 7.8pt;
-        margin-bottom: 3mm;
-      }
-
-      .need strong {
-        color: var(--blue);
-      }
-
-      .step {
+      .step-head {
         display: grid;
-        grid-template-columns: 7mm 1fr;
-        gap: 3mm;
-        margin-bottom: 2.2mm;
+        grid-template-columns: 25mm 1fr;
+        gap: 6mm;
+        margin-bottom: 7mm;
+      }
+
+      .big-num {
+        font-family: 'Plex Mono', monospace;
+        font-size: 48pt;
+        line-height: 0.9;
+        font-weight: 600;
+        color: #ddd3c0;
+        letter-spacing: -0.06em;
+      }
+
+      .lede {
+        font-size: 12pt;
+        line-height: 1.5;
+        color: #3d464c;
+        max-width: 56ch;
+        margin-top: 3mm;
+      }
+
+      .figure {
+        margin: 4mm 0 3mm;
+        text-align: center;
+      }
+
+      .figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 0.6pt solid var(--line-strong);
+        background: #fff;
+      }
+
+      .figure.setup {
+        width: 116mm;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .figure.dialog {
+        width: 112mm;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .figure.full {
+        width: 170mm;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .figure.print {
+        width: 170mm;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .figure.trial {
+        width: 146mm;
+        margin: 3mm auto 0;
+      }
+
+      figcaption {
+        font-size: 8pt;
+        line-height: 1.45;
+        color: var(--muted);
+        margin-top: 2.2mm;
+        text-align: left;
+      }
+
+      .steps {
+        list-style: none;
+        counter-reset: step;
+        padding: 0;
+        margin: 6mm 0 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 9mm;
+        row-gap: 2.5mm;
+      }
+
+      .steps > li {
+        counter-increment: step;
+        position: relative;
+        padding-left: 8mm;
+        font-size: 9.8pt;
+        line-height: 1.5;
         break-inside: avoid;
       }
 
-      .step .num {
-        width: 6mm;
-        height: 6mm;
+      .steps > li::before {
+        content: counter(step);
+        position: absolute;
+        left: 0;
+        top: 0.7mm;
+        width: 5.2mm;
+        height: 5.2mm;
         border-radius: 999px;
         background: var(--ink);
         color: var(--paper);
         font-family: 'Plex Mono', monospace;
-        font-size: 7pt;
+        font-size: 6.8pt;
         font-weight: 600;
-        line-height: 5.9mm;
+        line-height: 5.1mm;
         text-align: center;
       }
 
-      .step h2 {
-        margin-bottom: 1mm;
-      }
-
-      .step .where {
-        font-family: 'Plex Mono', monospace;
-        font-size: 7.2pt;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        margin-bottom: 1.4mm;
-      }
-
-      ol,
-      ul {
-        margin: 0;
-        padding-left: 4.4mm;
-      }
-
-      li {
-        margin-bottom: 0.8mm;
-      }
-
-      .compact {
-        columns: 2;
-        column-gap: 6mm;
-      }
-
-      .compact li {
-        break-inside: avoid;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 7.6pt;
-        line-height: 1.3;
-        margin: 1.4mm 0 2mm;
-      }
-
-      th {
-        text-align: left;
-        font-size: 6.8pt;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--muted);
-        background: #ebe5d7;
-        border-bottom: 0.7pt solid var(--line-strong);
-        padding: 0.9mm 1.5mm;
-      }
-
-      td {
-        border-bottom: 0.4pt solid var(--line);
-        padding: 0.9mm 1.5mm;
-        vertical-align: top;
-      }
-
-      .flow {
-        display: flex;
-        gap: 1.6mm;
-        margin: 2mm 0 1mm;
-      }
-
-      .flow-box {
-        flex: 1;
-        border: 0.5pt solid var(--line-strong);
-        background: var(--card);
-        padding: 1.8mm;
-        min-height: 14mm;
-      }
-
-      .flow-box .k {
-        font-family: 'Plex Mono', monospace;
-        font-size: 6.2pt;
-        color: var(--stamp);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .flow-box strong {
-        display: block;
-        font-size: 8.1pt;
-        margin: 0.4mm 0;
-      }
-
-      .flow-box span {
-        font-size: 6.9pt;
-        color: var(--muted);
-        line-height: 1.25;
-      }
-
-      .arrow {
-        display: flex;
-        align-items: center;
-        color: var(--line-strong);
-        font-size: 12pt;
-      }
-
       .callout {
-        padding: 1.8mm 2.8mm;
-        border-left: 1mm solid var(--stamp);
+        border-left: 1.2mm solid var(--stamp);
         background: var(--stamp-soft);
-        font-size: 7.8pt;
-        margin: 2mm 0;
+        padding: 3.5mm 4.5mm;
+        margin-top: 5.5mm;
+        font-size: 9pt;
+        line-height: 1.55;
         break-inside: avoid;
       }
 
       .callout .label {
         display: block;
-        font-size: 6.6pt;
+        font-size: 6.8pt;
         font-weight: 700;
-        letter-spacing: 0.14em;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
         color: var(--stamp);
-        margin-bottom: 0.8mm;
+        margin-bottom: 1.2mm;
       }
 
       .callout.tip {
@@ -328,378 +268,651 @@
         color: var(--ochre);
       }
 
-      .page2 h1 {
-        font-size: 23pt;
-        max-width: 24ch;
-      }
-
-      .cols {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 6mm;
-        margin-top: 3mm;
-      }
-
-      .col h2 {
-        font-size: 12pt;
-        margin-bottom: 1mm;
-      }
-
-      .col .where {
+      .foot {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-top: 0.5pt solid var(--line);
+        padding-top: 3mm;
         font-family: 'Plex Mono', monospace;
         font-size: 7pt;
+        letter-spacing: 0.04em;
         color: var(--muted);
-        text-transform: uppercase;
+      }
+
+      .foot .right {
+        text-align: right;
+      }
+
+      /* ---------------------------------------------------------------- cover */
+      .cover {
+        padding-top: 4mm;
+      }
+
+      .cover-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .brandline {
+        display: flex;
+        align-items: center;
+        gap: 3.2mm;
+      }
+
+      .mark {
+        width: 9mm;
+        height: 9mm;
+        background: var(--stamp);
+        color: #fff8f2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Plex Mono', monospace;
+        font-size: 6.5pt;
+        font-weight: 700;
         letter-spacing: 0.05em;
+      }
+
+      .brand {
+        font-size: 8pt;
+        font-weight: 650;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .brand-sub {
+        font-size: 7pt;
+        color: var(--muted);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 0.5mm;
+      }
+
+      .ten {
+        font-family: 'Plex Mono', monospace;
+        font-size: 92pt;
+        line-height: 0.72;
+        color: #e3dac8;
+        letter-spacing: -0.09em;
+      }
+
+      .cover-kicker {
+        margin-top: 18mm;
+        font-family: 'Plex Mono', monospace;
+        font-size: 7.2pt;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--stamp);
+      }
+
+      .cover h1 {
+        margin-top: 3mm;
+        font-size: 38pt;
+        line-height: 1.02;
+        max-width: 15ch;
+        letter-spacing: -0.04em;
+      }
+
+      .cover .lede {
+        margin-top: 5mm;
+        max-width: 55ch;
+      }
+
+      .path {
+        margin-top: 12mm;
+        border-top: 0.7pt solid var(--line-strong);
+      }
+
+      .path-row {
+        display: grid;
+        grid-template-columns: 16mm 1fr 18mm;
+        gap: 3mm;
+        align-items: baseline;
+        border-bottom: 0.4pt solid var(--line);
+        padding: 3.2mm 0;
+      }
+
+      .path-row .n {
+        font-family: 'Plex Mono', monospace;
+        font-size: 7.5pt;
+        color: var(--stamp);
+        letter-spacing: 0.05em;
+      }
+
+      .path-row .t {
+        font-size: 11.5pt;
+        font-weight: 600;
+        letter-spacing: -0.012em;
+      }
+
+      .path-row .p {
+        font-family: 'Plex Mono', monospace;
+        font-size: 7.5pt;
+        color: var(--muted);
+        text-align: right;
+      }
+
+      .need {
+        margin-top: 9mm;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8mm;
+        font-size: 9pt;
+        line-height: 1.6;
+      }
+
+      .need h3 {
+        font-size: 6.8pt;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
         margin-bottom: 2mm;
       }
 
-      .shot {
-        border: 0.5pt solid var(--line-strong);
-        background: #fff;
-        margin: 2mm 0 1.5mm;
-      }
-
-      .shot img {
-        display: block;
-        width: 100%;
-        height: auto;
-      }
-
-      .cap {
-        font-size: 7.2pt;
-        color: var(--muted);
-        margin-bottom: 2.4mm;
-      }
-
-      .finish {
-        margin-top: 5mm;
-        border-top: 1mm solid var(--ink);
-        padding-top: 3mm;
-        display: grid;
-        grid-template-columns: 1.15fr 0.85fr;
-        gap: 6mm;
-      }
-
-      .finish h2 {
-        font-size: 12pt;
-        margin-bottom: 1.4mm;
-      }
-
-      .check {
-        list-style: none;
-        padding: 0;
+      .need ul {
         margin: 0;
+        padding-left: 4.4mm;
       }
 
-      .check li {
-        position: relative;
-        padding-left: 5.4mm;
+      .need li {
         margin-bottom: 1.2mm;
       }
 
-      .check li::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0.5mm;
-        width: 2.8mm;
-        height: 2.8mm;
+      /* ----------------------------------------------------------- finish page */
+      .finish-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 7mm;
+        margin-top: 8mm;
+      }
+
+      .finish-grid h3 {
+        font-size: 6.8pt;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 2mm;
+      }
+
+      .finish-grid p {
+        font-size: 9pt;
+        line-height: 1.55;
+        margin-bottom: 2mm;
+      }
+
+      .finish-grid .n {
+        font-family: 'Plex Mono', monospace;
+        font-size: 15pt;
+        color: var(--stamp);
+        line-height: 1;
+        margin-bottom: 2.5mm;
+      }
+
+      .next {
+        margin-top: 10mm;
+        border-top: 0.7pt solid var(--line-strong);
+        padding-top: 4mm;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10mm;
+        font-size: 9pt;
+        line-height: 1.55;
+      }
+
+      .proof {
+        width: 146mm;
+        margin: 5mm auto 0;
         border: 0.6pt solid var(--line-strong);
         background: var(--card);
       }
 
+      .proof-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        border-bottom: 0.4pt solid var(--line);
+        padding: 2.4mm 3mm;
+        font-size: 9pt;
+        font-weight: 600;
+      }
+
+      .proof-ok {
+        padding: 2.4mm 3mm;
+        background: var(--green-soft);
+        color: var(--green);
+        font-size: 9pt;
+      }
+
+      .next strong {
+        display: block;
+        margin-bottom: 1mm;
+      }
+
       .mono {
         font-family: 'Plex Mono', monospace;
+        font-size: 0.92em;
       }
 
       .small {
-        font-size: 7.5pt;
+        font-size: 8.5pt;
+        line-height: 1.5;
         color: var(--muted);
       }
 
-      .page-foot {
-        margin-top: 4mm;
-        border-top: 0.5pt solid var(--line);
-        padding-top: 2mm;
-        font-size: 7pt;
-        color: var(--muted);
-        display: flex;
-        justify-content: space-between;
+      .page-intro {
+        max-width: 62ch;
+        font-size: 10.5pt;
+        line-height: 1.6;
+        margin-bottom: 5mm;
       }
     </style>
   </head>
   <body>
-    <!-- ============================================================ PAGE 1 -->
-    <section class="sheet">
-      <header class="top">
-        <div>
-          <div class="brandline">
-            <div class="mark">CB</div>
-            <div>
-              <div class="brand">Crown Books</div>
-              <div class="edition">10-minute quick start</div>
-            </div>
+    <!-- ============================================================ COVER -->
+    <section class="page cover">
+      <div class="cover-top">
+        <div class="brandline">
+          <div class="mark">CB</div>
+          <div>
+            <div class="brand">Crown Books</div>
+            <div class="brand-sub">Quick start · Edition 1.0</div>
           </div>
-          <h1>From empty books to your first invoice</h1>
         </div>
-        <div class="meta">
-          Edition 1.0<br />
-          October 2026<br />
-          Page 1 of 2
-        </div>
-      </header>
+        <div class="ten">10</div>
+      </div>
 
-      <p class="lead">
-        Do these six things in order. You will create the company, add one customer, add one item,
-        post one purchase and one sale, then check that the books balance. Stop after step 6;
-        everything else can wait.
+      <div class="cover-kicker">For billing and accounts staff</div>
+      <h1>Ten minutes to your first invoice.</h1>
+      <p class="lede">
+        Six short steps. One customer, one supplier, one item, one purchase, one sale, then a check
+        that the books balance. Stop there. Everything else can wait.
       </p>
 
+      <div class="path">
+        <div class="path-row">
+          <span class="n">01</span><span class="t">Set up the company</span
+          ><span class="p">page 2</span>
+        </div>
+        <div class="path-row">
+          <span class="n">02</span><span class="t">Add a customer and a supplier</span
+          ><span class="p">page 3</span>
+        </div>
+        <div class="path-row">
+          <span class="n">03</span><span class="t">Add an item</span><span class="p">page 4</span>
+        </div>
+        <div class="path-row">
+          <span class="n">04</span><span class="t">Post a purchase bill</span
+          ><span class="p">page 5</span>
+        </div>
+        <div class="path-row">
+          <span class="n">05</span><span class="t">Post a sales invoice</span
+          ><span class="p">page 6</span>
+        </div>
+        <div class="path-row">
+          <span class="n">06</span><span class="t">Print, check and back up</span
+          ><span class="p">page 7</span>
+        </div>
+      </div>
+
       <div class="need">
-        <strong>Have this ready:</strong> business name and GSTIN, owner name and email, a password
-        of at least 8 characters, one customer, one supplier, one item with its HSN and GST rate,
-        and the date your books should begin.
-      </div>
-
-      <div class="step">
-        <div class="num">1</div>
         <div>
-          <h2>Set up the company</h2>
-          <div class="where">First launch · “First run setup”</div>
-          <table>
-            <tr>
-              <th style="width: 28%">Field</th>
-              <th>What to enter</th>
-            </tr>
-            <tr>
-              <td><strong>Business name</strong></td>
-              <td>The name printed on invoices.</td>
-            </tr>
-            <tr>
-              <td><strong>Owner name, phone</strong></td>
-              <td>The first user; the phone is optional.</td>
-            </tr>
-            <tr>
-              <td><strong>Owner email</strong></td>
-              <td>Your sign-in name.</td>
-            </tr>
-            <tr>
-              <td><strong>Password</strong></td>
-              <td>At least 8 characters. There is no email reset in this edition.</td>
-            </tr>
-            <tr>
-              <td><strong>State, GSTIN</strong></td>
-              <td>State code is two digits (27 for Maharashtra). GSTIN is 15 characters.</td>
-            </tr>
-            <tr>
-              <td><strong>Books begin</strong></td>
-              <td>
-                The first day this app records transactions, not the financial year. Starting fresh?
-                Use 1 April or today.
-              </td>
-            </tr>
-          </table>
-          <p class="small">
-            Click <strong>Create company and sign in</strong>. You can change the company details
-            later in Admin → Company.
-          </p>
+          <h3>Have this ready</h3>
+          <ul>
+            <li>Business name, address, state and GSTIN.</li>
+            <li>Owner name, email and a password of at least 8 characters.</li>
+            <li>The date your books should begin.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>One of each</h3>
+          <ul>
+            <li>One customer and one supplier, with GSTIN if registered.</li>
+            <li>One item with HSN, unit, GST rate and price.</li>
+            <li>One purchase bill to practise with.</li>
+          </ul>
         </div>
       </div>
 
-      <div class="step">
-        <div class="num">2</div>
-        <div>
-          <h2>Learn the one pattern every voucher follows</h2>
-          <div class="where">Sales, purchases, receipts and payments</div>
-          <div class="flow">
-            <div class="flow-box">
-              <span class="k">01</span><strong>Header</strong
-              ><span>Party, date, due date, reference, place of supply.</span>
-            </div>
-            <div class="arrow">→</div>
-            <div class="flow-box">
-              <span class="k">02</span><strong>Lines</strong
-              ><span>Item, quantity, rate, discount, GST.</span>
-            </div>
-            <div class="arrow">→</div>
-            <div class="flow-box">
-              <span class="k">03</span><strong>Totals</strong
-              ><span>Taxable value, tax, round off, total.</span>
-            </div>
-            <div class="arrow">→</div>
-            <div class="flow-box">
-              <span class="k">04</span><strong>Post</strong
-              ><span>The number is assigned and the books change.</span>
-            </div>
-          </div>
-          <div class="callout">
-            <span class="label">The one rule</span>
-            Nothing is saved until you press <strong>Post</strong>. Closing the screen or pressing
-            <strong>Cancel</strong> discards the entry.
-          </div>
-        </div>
-      </div>
-
-      <div class="step">
-        <div class="num">3</div>
-        <div>
-          <h2>Add one customer and one supplier</h2>
-          <div class="where">Parties → All Parties → New party</div>
-          <p>
-            Enter <strong>Name</strong>, <strong>Phone</strong>, <strong>GSTIN</strong> and
-            <strong>State code</strong>. Set <strong>Credit days</strong> (30 is common). Leave
-            <strong>Opening balance</strong> at zero for a new business. Tick
-            <strong>Customer</strong>, <strong>Supplier</strong>, or both. Click
-            <strong>Add party</strong>.
-          </p>
-          <p class="small">
-            The role cannot be changed after saving. A customer with a Karnataka GSTIN uses state
-            29; a Maharashtra customer uses 27. This decides CGST + SGST or IGST on the sale.
-          </p>
-        </div>
-      </div>
-
-      <div class="step">
-        <div class="num">4</div>
-        <div>
-          <h2>Add one item</h2>
-          <div class="where">Items → Items → New item</div>
-          <p>
-            Enter <strong>Name</strong>, <strong>SKU</strong>, <strong>HSN / SAC</strong>, choose a
-            <strong>Unit</strong> and <strong>GST rate</strong>. Enter the
-            <strong>Sale price</strong> and <strong>Purchase price</strong>. Tick
-            <strong>Service item (no stock)</strong> only for a service. Leave opening quantity at
-            zero for now. Click <strong>Add item</strong>.
-          </p>
-        </div>
-      </div>
-
-      <div class="page-foot">
+      <div class="foot">
         <span>Crown Books · 10-minute quick start</span>
-        <span>Continue on page 2: one purchase, one sale, one check.</span>
+        <span class="right">Full guide: docs/guides/crown-books-user-guide.pdf</span>
       </div>
     </section>
 
-    <!-- ============================================================ PAGE 2 -->
-    <section class="sheet page2">
-      <header class="top">
-        <div>
-          <div class="brandline">
-            <div class="mark">CB</div>
-            <div>
-              <div class="brand">Crown Books</div>
-              <div class="edition">10-minute quick start</div>
-            </div>
-          </div>
-          <h1>One purchase, one sale, one check</h1>
-        </div>
-        <div class="meta">
-          Edition 1.0<br />
-          October 2026<br />
-          Page 2 of 2
-        </div>
+    <!-- ============================================================ STEP 1 -->
+    <section class="page">
+      <header class="runhead">
+        <span class="step">Step 1 of 6 · Setup</span><span>Crown Books quick start</span>
       </header>
 
-      <div class="cols">
-        <section class="col">
-          <h2>5. Post a purchase bill</h2>
-          <div class="where">Books → Purchases → New bill</div>
-          <div class="shot">
-            <img src="assets/screens/09-purchase-entry.png" alt="New purchase bill" />
-          </div>
-          <div class="cap">
-            A purchase bill with two lines. The total is calculated before posting.
-          </div>
-          <ol>
-            <li>Choose the <strong>supplier</strong>.</li>
-            <li>Check the <strong>Date</strong> and <strong>Due date</strong>.</li>
-            <li>Enter the supplier’s bill number in <strong>Reference</strong>.</li>
-            <li><strong>Place of supply</strong> is the supplier’s state.</li>
-            <li>
-              <strong>Add line</strong>, choose the item, then enter <strong>Qty</strong>,
-              <strong>Rate</strong>, <strong>Disc %</strong> and <strong>GST %</strong>.
-            </li>
-            <li>Check the <strong>Total</strong> against the paper bill.</li>
-            <li>Click <strong>Post bill</strong>.</li>
-          </ol>
-          <div class="callout tip">
-            <span class="label">Tip</span>
-            Posting the bill does not pay it. It records what you owe the supplier.
-          </div>
-        </section>
-
-        <section class="col">
-          <h2>6. Post a sales invoice</h2>
-          <div class="where">Books → Sales → New invoice</div>
-          <div class="shot">
-            <img src="assets/screens/13-sales-entry.png" alt="New sales invoice" />
-          </div>
-          <div class="cap">
-            A sales invoice for a Maharashtra customer, so the tax is CGST + SGST.
-          </div>
-          <ol>
-            <li>Choose the <strong>customer</strong>.</li>
-            <li>Check the <strong>Date</strong> and <strong>Due date</strong>.</li>
-            <li>Enter the customer’s purchase order in <strong>Reference</strong>.</li>
-            <li>
-              <strong>Place of supply</strong> is the customer’s state. Different state means IGST.
-            </li>
-            <li>
-              <strong>Add line</strong>, choose the item, then enter <strong>Qty</strong> and
-              <strong>Rate</strong>.
-            </li>
-            <li>Check the tax split and <strong>Total</strong>.</li>
-            <li>Click <strong>Post invoice</strong>.</li>
-            <li>
-              Open the invoice and click <strong>Print</strong>, or choose
-              <strong>Save as PDF</strong>.
-            </li>
-          </ol>
-          <div class="callout">
-            <span class="label">The most common GST mistake</span>
-            The place of supply defaults to your company’s state. Change it to the customer’s state
-            before posting an out-of-state sale.
-          </div>
-        </section>
-      </div>
-
-      <div class="finish">
+      <div class="step-head">
+        <div class="big-num">01</div>
         <div>
-          <h2>Finish in 60 seconds</h2>
-          <ul class="check">
-            <li>
-              Open <strong>Reports → Trial Balance</strong>. It must say “Debits equal credits.”
-            </li>
-            <li>
-              Open the sale and click <strong>Print</strong>. If the paper looks right, the invoice
-              is right.
-            </li>
-            <li>
-              Open <strong>Admin → Backup</strong> and click <strong>Create backup</strong>. Do this
-              before you stop for the day.
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h2>If something looks wrong</h2>
-          <ul class="check">
-            <li>
-              Wrong party, date, item or amount? Cancel the voucher with a reason and enter it
-              again. Never edit a posted voucher.
-            </li>
-            <li>Wrong GST? Check the place of supply and the GST rate on the line.</li>
-            <li>
-              Stock looks double? Do not enter opening stock and purchase history for the same
-              goods.
-            </li>
-          </ul>
+          <h1>Set up the company.</h1>
+          <p class="lede">
+            This happens once. It creates the company file and the owner account. You can change the
+            company details later in Admin → Company.
+          </p>
         </div>
       </div>
 
-      <div class="page-foot">
-        <span>Crown Books · 10-minute quick start</span>
-        <span>Full guide: docs/guides/crown-books-user-guide.pdf</span>
+      <figure class="figure setup">
+        <img src="assets/screens/quick-setup.png" alt="First-run company setup form" />
+        <figcaption>
+          <strong>Figure 1.</strong> The first-run form. The left marketing panel is removed here so
+          the fields are easier to read.
+        </figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li><strong>Business name.</strong> The name printed on invoices.</li>
+        <li><strong>Owner name and phone.</strong> The phone is optional.</li>
+        <li><strong>Owner email.</strong> This becomes your sign-in name.</li>
+        <li>
+          <strong>Password.</strong> At least 8 characters. There is no email reset in this edition.
+        </li>
+        <li>
+          <strong>State and GSTIN.</strong> State is two digits (27 for Maharashtra); GSTIN is 15
+          characters.
+        </li>
+        <li>
+          <strong>Books begin.</strong> The first day this ledger records transactions, not the
+          financial year.
+        </li>
+        <li>Click <strong>Create company and sign in</strong>.</li>
+      </ol>
+
+      <p class="small" style="margin-top: 4mm">
+        Migrating? Use the day after the last entry in the old system. Opening balances are as at
+        the day before.
+      </p>
+
+      <div class="foot">
+        <span>Crown Books · 10-minute quick start</span><span class="right">2 / 7</span>
+      </div>
+    </section>
+
+    <!-- ============================================================ STEP 2 -->
+    <section class="page">
+      <header class="runhead">
+        <span class="step">Step 2 of 6 · Parties</span><span>Crown Books quick start</span>
+      </header>
+
+      <div class="step-head">
+        <div class="big-num">02</div>
+        <div>
+          <h1>Add a customer and a supplier.</h1>
+          <p class="lede">
+            One record per business. The same business can be both. The role is chosen once, when
+            the party is created.
+          </p>
+        </div>
+      </div>
+
+      <figure class="figure dialog">
+        <img src="assets/screens/03-party-form.png" alt="New party form" />
+        <figcaption>
+          <strong>Figure 2.</strong> A party that is both a customer and a supplier. Opening balance
+          stays at zero for a new business.
+        </figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li>Open <strong>Parties → All Parties</strong> and click <strong>New party</strong>.</li>
+        <li>Enter <strong>Name</strong>, <strong>Phone</strong> and <strong>Email</strong>.</li>
+        <li>Enter <strong>GSTIN</strong> and the two-digit <strong>State code</strong>.</li>
+        <li>Set <strong>Credit days</strong>, usually 30. Credit limit is optional.</li>
+        <li>
+          Leave <strong>Opening balance</strong> at zero, or enter the old balance with the correct
+          Dr / Cr side.
+        </li>
+        <li>
+          Tick <strong>Customer</strong>, <strong>Supplier</strong>, or both. Click
+          <strong>Add party</strong>.
+        </li>
+      </ol>
+
+      <div class="callout">
+        <span class="label">Why the state code matters</span>
+        The customer’s state decides CGST + SGST or IGST on a sale. A Karnataka customer uses 29; a
+        Maharashtra customer uses 27. The role cannot be changed after saving.
+      </div>
+
+      <div class="foot">
+        <span>Crown Books · 10-minute quick start</span><span class="right">3 / 7</span>
+      </div>
+    </section>
+
+    <!-- ============================================================ STEP 3 -->
+    <section class="page">
+      <header class="runhead">
+        <span class="step">Step 3 of 6 · Items</span><span>Crown Books quick start</span>
+      </header>
+
+      <div class="step-head">
+        <div class="big-num">03</div>
+        <div>
+          <h1>Add an item.</h1>
+          <p class="lede">
+            An item is what you buy or sell. A goods item holds stock; a service item does not.
+          </p>
+        </div>
+      </div>
+
+      <figure class="figure dialog">
+        <img src="assets/screens/05-item-form.png" alt="New item form" />
+        <figcaption>
+          <strong>Figure 3.</strong> A goods item with opening stock. Leave opening quantity at zero
+          if you are going to enter old purchase bills instead.
+        </figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li>Open <strong>Items → Items</strong> and click <strong>New item</strong>.</li>
+        <li>Enter <strong>Name</strong> and <strong>SKU</strong>.</li>
+        <li>Enter <strong>HSN / SAC</strong> and choose a <strong>Unit</strong>.</li>
+        <li>Choose the <strong>GST rate</strong>: 0, 5, 12, 18 or 28 percent.</li>
+        <li>Tick <strong>Service item (no stock)</strong> only for services.</li>
+        <li>
+          Enter <strong>Sale price</strong> and <strong>Purchase price</strong>. Click
+          <strong>Add item</strong>.
+        </li>
+      </ol>
+
+      <div class="callout tip">
+        <span class="label">Opening stock or purchase history, not both</span>
+        If you enter opening quantity for goods, do not also enter old purchase bills for the same
+        goods. The stock and cost would be counted twice. For this first run, leave opening quantity
+        at zero.
+      </div>
+
+      <div class="foot">
+        <span>Crown Books · 10-minute quick start</span><span class="right">4 / 7</span>
+      </div>
+    </section>
+
+    <!-- ============================================================ STEP 4 -->
+    <section class="page">
+      <header class="runhead">
+        <span class="step">Step 4 of 6 · Buying</span><span>Crown Books quick start</span>
+      </header>
+
+      <div class="step-head">
+        <div class="big-num">04</div>
+        <div>
+          <h1>Post a purchase bill.</h1>
+          <p class="lede">
+            This records what you bought and what you owe the supplier. It does not pay the
+            supplier.
+          </p>
+        </div>
+      </div>
+
+      <figure class="figure full">
+        <img src="assets/screens/09-purchase-entry.png" alt="New purchase bill" />
+        <figcaption>
+          <strong>Figure 4.</strong> A purchase bill with two lines. The total is calculated before
+          posting.
+        </figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li>Open <strong>Books → Purchases</strong> and click <strong>New bill</strong>.</li>
+        <li>Choose the <strong>supplier</strong>.</li>
+        <li>Check the <strong>Date</strong> and <strong>Due date</strong>.</li>
+        <li>Enter the supplier’s bill number in <strong>Reference</strong>.</li>
+        <li><strong>Place of supply</strong> is the supplier’s state.</li>
+        <li>
+          <strong>Add line</strong>, choose the item, then enter <strong>Qty</strong>,
+          <strong>Rate</strong>, <strong>Disc %</strong> and <strong>GST %</strong>.
+        </li>
+        <li>Check the <strong>Total</strong> against the paper bill.</li>
+        <li>Click <strong>Post bill</strong>.</li>
+      </ol>
+
+      <div class="callout tip">
+        <span class="label">The bill is not the payment</span>
+        Posting the bill creates the supplier payable and brings stock in. When money leaves, record
+        a payment separately. Full guide: section 5.5.
+      </div>
+
+      <div class="foot">
+        <span>Crown Books · 10-minute quick start</span><span class="right">5 / 7</span>
+      </div>
+    </section>
+
+    <!-- ============================================================ STEP 5 -->
+    <section class="page">
+      <header class="runhead">
+        <span class="step">Step 5 of 6 · Selling</span><span>Crown Books quick start</span>
+      </header>
+
+      <div class="step-head">
+        <div class="big-num">05</div>
+        <div>
+          <h1>Post a sales invoice.</h1>
+          <p class="lede">
+            This records what the customer owes you. Every sale is against a customer; a cash sale
+            is an invoice followed by a receipt.
+          </p>
+        </div>
+      </div>
+
+      <figure class="figure full">
+        <img src="assets/screens/13-sales-entry.png" alt="New sales invoice" />
+        <figcaption>
+          <strong>Figure 5.</strong> A sale to a Maharashtra customer, so the tax is CGST + SGST.
+        </figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li>Open <strong>Books → Sales</strong> and click <strong>New invoice</strong>.</li>
+        <li>Choose the <strong>customer</strong>.</li>
+        <li>Check the <strong>Date</strong> and <strong>Due date</strong>.</li>
+        <li>Enter the customer’s purchase order in <strong>Reference</strong>.</li>
+        <li><strong>Place of supply</strong> is the customer’s state.</li>
+        <li>
+          <strong>Add line</strong>, choose the item, then enter <strong>Qty</strong> and
+          <strong>Rate</strong>.
+        </li>
+        <li>Check the tax split and <strong>Total</strong>.</li>
+        <li>Click <strong>Post invoice</strong>.</li>
+      </ol>
+
+      <div class="callout">
+        <span class="label">The most common GST mistake</span>
+        The place of supply defaults to your company’s state. Change it to the customer’s state
+        before posting an out-of-state sale, or the invoice will charge CGST + SGST instead of IGST.
+      </div>
+
+      <div class="foot">
+        <span>Crown Books · 10-minute quick start</span><span class="right">6 / 7</span>
+      </div>
+    </section>
+
+    <!-- ============================================================ STEP 6 -->
+    <section class="page">
+      <header class="runhead">
+        <span class="step">Step 6 of 6 · Finish</span><span>Crown Books quick start</span>
+      </header>
+
+      <div class="step-head">
+        <div class="big-num">06</div>
+        <div>
+          <h1>Print it, prove it, back it up.</h1>
+          <p class="lede">
+            Three checks. If the paper looks right and the trial balance balances, the first cycle
+            is complete.
+          </p>
+        </div>
+      </div>
+
+      <figure class="figure print">
+        <img src="assets/screens/15-invoice-print.png" alt="Printed sales invoice" />
+        <figcaption>
+          <strong>Figure 6.</strong> Open the invoice from Sales, click <strong>Print</strong>, then
+          choose a printer or <strong>Save as PDF</strong>.
+        </figcaption>
+      </figure>
+
+      <div class="finish-grid">
+        <div>
+          <div class="n">01</div>
+          <h3>Print</h3>
+          <p>
+            Open the sale, click <strong>Print</strong>, and check the customer, GSTIN, lines, tax
+            and total.
+          </p>
+        </div>
+        <div>
+          <div class="n">02</div>
+          <h3>Prove</h3>
+          <p>
+            Open <strong>Reports → Trial Balance</strong>. The green line must say “Debits equal
+            credits.”
+          </p>
+        </div>
+        <div>
+          <div class="n">03</div>
+          <h3>Protect</h3>
+          <p>
+            Open <strong>Admin → Backup</strong> and click <strong>Create backup</strong> before you
+            stop.
+          </p>
+        </div>
+      </div>
+
+      <div class="proof">
+        <div class="proof-row">
+          <span>Trial balance</span><span class="mono">debits = credits</span>
+        </div>
+        <div class="proof-ok">Debits equal credits.</div>
+      </div>
+      <p class="small" style="margin-top: 2mm">
+        The trial balance ends with this line. If it is missing, stop and ask your accountant.
+      </p>
+
+      <div class="next">
+        <div>
+          <strong>If something is wrong</strong>
+          Cancel the voucher with a reason and enter it again. Posted vouchers are never edited, and
+          the cancelled number is kept in the day book.
+        </div>
+        <div>
+          <strong>What comes next</strong>
+          Receipts, payments, payables, receivables, ageing, journals and the full reports are in
+          the 52-page user guide. Start with chapters 5 and 6.
+        </div>
+      </div>
+
+      <div class="foot">
+        <span>Crown Books · 10-minute quick start</span><span class="right">7 / 7</span>
       </div>
     </section>
   </body>
