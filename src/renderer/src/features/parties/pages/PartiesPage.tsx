@@ -8,23 +8,13 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { formatMinor, minorToMajor } from '@/lib/money'
+import { formatMinor } from '@/lib/money'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { errorMessage } from '../../../../../shared/contracts/errors'
-import type { CreatePartyInput, PartyRole, PartyRow } from '../../../../../shared/contracts/masters'
+import type { PartyRole, PartyRow } from '../../../../../shared/contracts/masters'
+import { PartyDialog } from '../components/party-dialog'
 
-const LABEL = 'text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TH =
   'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TD = 'h-9 border-b border-border px-3 align-middle'
@@ -34,204 +24,6 @@ const ROLES: { value: PartyRole; label: string }[] = [
   { value: 'CUSTOMER', label: 'Customers' },
   { value: 'SUPPLIER', label: 'Suppliers' }
 ]
-
-interface PartyForm {
-  name: string
-  phone: string
-  email: string
-  gstin: string
-  stateCode: string
-  billingAddress: string
-  isCustomer: boolean
-  isSupplier: boolean
-  creditDays: string
-  creditLimit: string
-  openingBalance: string
-  openingDate: string
-}
-
-type TextKey = Exclude<keyof PartyForm, 'isCustomer' | 'isSupplier'>
-
-const today = (): string => new Date().toISOString().slice(0, 10)
-
-const blankForm = (): PartyForm => ({
-  name: '',
-  phone: '',
-  email: '',
-  gstin: '',
-  stateCode: '',
-  billingAddress: '',
-  isCustomer: true,
-  isSupplier: false,
-  creditDays: '0',
-  creditLimit: '0',
-  openingBalance: '0',
-  openingDate: today()
-})
-
-const toForm = (party: PartyRow): PartyForm => ({
-  name: party.name,
-  phone: party.phone ?? '',
-  email: party.email ?? '',
-  gstin: party.gstin ?? '',
-  stateCode: party.stateCode ?? '',
-  billingAddress: '',
-  isCustomer: party.isCustomer,
-  isSupplier: party.isSupplier,
-  creditDays: String(party.creditDays),
-  creditLimit: minorToMajor(party.creditLimitMinor, 'INR'),
-  openingBalance: minorToMajor(party.openingBalanceMinor, 'INR'),
-  openingDate: ''
-})
-
-/** Rupees typed by the user to integer paise. Blank or invalid counts as zero. */
-function toMinor(value: string): number {
-  const cleaned = value.replace(/[₹,\s]/g, '')
-  if (!cleaned || cleaned === '-' || cleaned === '.') return 0
-  const parsed = Number(cleaned)
-  return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0
-}
-
-function validate(form: PartyForm): Record<string, string> {
-  const errors: Record<string, string> = {}
-  if (!form.name.trim()) errors.name = 'Party name is required'
-  if (!form.isCustomer && !form.isSupplier) errors.role = 'Choose customer, supplier, or both'
-  if (form.stateCode && !/^\d{2}$/.test(form.stateCode)) errors.stateCode = 'Two digits, e.g. 27'
-  if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Invalid email'
-  const days = Number(form.creditDays)
-  if (!Number.isInteger(days) || days < 0 || days > 365) errors.creditDays = '0 to 365'
-  if (toMinor(form.creditLimit) < 0) errors.creditLimit = 'Cannot be negative'
-  return errors
-}
-
-const FIELDS: {
-  id: string
-  label: string
-  name: TextKey
-  className?: string
-  hint?: string
-  type?: string
-  inputMode?: 'tel' | 'email' | 'numeric' | 'decimal'
-  maxLength?: number
-  filter?: 'digits' | 'upper'
-  autoFocus?: boolean
-  mono?: boolean
-}[] = [
-  { id: 'party-name', label: 'Name', name: 'name', className: 'sm:col-span-2', autoFocus: true },
-  { id: 'party-phone', label: 'Phone', name: 'phone', inputMode: 'tel' },
-  { id: 'party-email', label: 'Email', name: 'email', type: 'email' },
-  { id: 'party-gstin', label: 'GSTIN', name: 'gstin', filter: 'upper', maxLength: 15, mono: true },
-  {
-    id: 'party-state',
-    label: 'State code',
-    name: 'stateCode',
-    filter: 'digits',
-    inputMode: 'numeric',
-    maxLength: 2,
-    mono: true
-  },
-  {
-    id: 'party-address',
-    label: 'Billing address',
-    name: 'billingAddress',
-    className: 'sm:col-span-2'
-  },
-  {
-    id: 'party-credit-days',
-    label: 'Credit days',
-    name: 'creditDays',
-    filter: 'digits',
-    inputMode: 'numeric',
-    mono: true
-  },
-  {
-    id: 'party-credit-limit',
-    label: 'Credit limit (INR)',
-    name: 'creditLimit',
-    inputMode: 'decimal',
-    mono: true
-  },
-  {
-    id: 'party-opening',
-    label: 'Opening balance (INR)',
-    name: 'openingBalance',
-    inputMode: 'decimal',
-    hint: 'Positive is Dr (they owe you), negative is Cr.',
-    mono: true
-  },
-  { id: 'party-opening-date', label: 'Opening date', name: 'openingDate', type: 'date', mono: true }
-]
-
-function TextField({
-  id,
-  label,
-  value,
-  onChange,
-  error,
-  hint,
-  type = 'text',
-  inputMode,
-  maxLength,
-  filter,
-  autoFocus,
-  mono,
-  disabled,
-  className
-}: {
-  id: string
-  label: string
-  value: string
-  onChange: (value: string) => void
-  error?: string
-  hint?: string
-  type?: string
-  inputMode?: 'tel' | 'email' | 'numeric' | 'decimal'
-  maxLength?: number
-  filter?: 'digits' | 'upper'
-  autoFocus?: boolean
-  mono?: boolean
-  disabled?: boolean
-  className?: string
-}): React.JSX.Element {
-  return (
-    <div className={`flex min-w-0 flex-col gap-1.5 ${className ?? ''}`}>
-      <Label htmlFor={id} className={LABEL}>
-        {label}
-      </Label>
-      <Input
-        id={id}
-        type={type}
-        inputMode={inputMode}
-        maxLength={maxLength}
-        autoFocus={autoFocus}
-        disabled={disabled}
-        value={value}
-        onChange={(event) => {
-          const raw = event.target.value
-          onChange(
-            filter === 'digits'
-              ? raw.replace(/\D/g, '')
-              : filter === 'upper'
-                ? raw.toUpperCase()
-                : raw
-          )
-        }}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        className={`${mono ? 'font-mono tabular-nums' : ''} ${inputMode === 'decimal' ? 'text-right' : ''}`}
-      />
-      {error ? (
-        <p id={`${id}-error`} role="alert" className="text-[0.75rem] text-destructive">
-          {error}
-        </p>
-      ) : hint ? (
-        <p id={`${id}-hint`} className="text-[0.75rem] text-muted-foreground">
-          {hint}
-        </p>
-      ) : null}
-    </div>
-  )
-}
 
 function Balance({ minor }: { minor: number }): React.JSX.Element {
   if (minor === 0)
@@ -258,8 +50,6 @@ export function PartiesPage(): React.JSX.Element {
   const [includeInactive, setIncludeInactive] = useState(false)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<PartyRow | null>(null)
-  const [form, setForm] = useState<PartyForm>(blankForm)
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [target, setTarget] = useState<PartyRow | null>(null)
 
   const list = useQuery({
@@ -269,20 +59,6 @@ export function PartiesPage(): React.JSX.Element {
   })
   const rows = list.data ?? []
   const filtered = query.trim().length > 0 || role !== 'BOTH'
-
-  const save = useMutation({
-    mutationFn: (input: CreatePartyInput & { id?: number }) =>
-      input.id
-        ? window.api.parties.update({ ...input, id: input.id })
-        : window.api.parties.create(input),
-    onSuccess: () => {
-      toast.success(editing ? 'Party updated' : 'Party added')
-      void queryClient.invalidateQueries({ queryKey: ['parties'] })
-      void queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setOpen(false)
-    },
-    onError: (err) => toast.error(errorMessage(err, 'Could not save the party'))
-  })
 
   const deactivate = useMutation({
     mutationFn: (id: number) => window.api.parties.deactivate(id),
@@ -296,40 +72,7 @@ export function PartiesPage(): React.JSX.Element {
 
   function show(next: PartyRow | null): void {
     setEditing(next)
-    setForm(next ? toForm(next) : blankForm())
-    setErrors({})
-    save.reset()
     setOpen(true)
-  }
-
-  function set<K extends TextKey>(key: K, value: string): void {
-    setForm((prev) => ({ ...prev, [key]: value }))
-    setErrors((prev) => ({ ...prev, [key]: '', role: '' }))
-  }
-
-  function submit(event: React.FormEvent<HTMLFormElement>): void {
-    event.preventDefault()
-    const found = validate(form)
-    setErrors(found)
-    if (Object.keys(found).length > 0) return
-    const input: CreatePartyInput & { id?: number } = {
-      name: form.name.trim(),
-      phone: form.phone.trim() || null,
-      email: form.email.trim() || null,
-      gstin: form.gstin.trim().toUpperCase() || null,
-      stateCode: form.stateCode.trim() || null,
-      isCustomer: form.isCustomer,
-      isSupplier: form.isSupplier,
-      creditDays: Number(form.creditDays),
-      creditLimitMinor: toMinor(form.creditLimit),
-      openingBalanceMinor: toMinor(form.openingBalance),
-      openingBalanceDate: form.openingDate || null
-    }
-    // The list row has no address, so keep a stored one unless a new one is typed.
-    if (!editing || form.billingAddress.trim())
-      input.billingAddress = form.billingAddress.trim() || null
-    if (editing) input.id = editing.id
-    save.mutate(input)
   }
 
   return (
@@ -520,105 +263,14 @@ export function PartiesPage(): React.JSX.Element {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[620px]">
-          <DialogHeader>
-            <DialogTitle>{editing ? 'Edit party' : 'New party'}</DialogTitle>
-            <DialogDescription>
-              One record per business. Opening balances post once, before the first voucher.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {FIELDS.map((field) => {
-                const locked =
-                  editing !== null && ['openingBalance', 'openingDate'].includes(field.name)
-                return (
-                  <TextField
-                    key={field.id}
-                    {...field}
-                    value={form[field.name]}
-                    onChange={(value) => set(field.name, value)}
-                    error={errors[field.name]}
-                    disabled={locked}
-                    hint={
-                      field.name === 'billingAddress' && editing
-                        ? 'A saved address is kept unless you type a replacement.'
-                        : locked
-                          ? 'Opening balances are fixed when the party is created.'
-                          : field.hint
-                    }
-                  />
-                )
-              })}
-            </div>
-
-            <fieldset className="flex flex-col gap-1.5">
-              <legend className={LABEL}>Role</legend>
-              <div className="flex items-center gap-5">
-                <label
-                  htmlFor="party-customer"
-                  className="flex items-center gap-1.5 text-[0.9375rem]"
-                >
-                  <Checkbox
-                    id="party-customer"
-                    checked={form.isCustomer}
-                    disabled={editing !== null}
-                    onCheckedChange={(checked) =>
-                      setForm((p) => ({ ...p, isCustomer: checked === true }))
-                    }
-                  />
-                  Customer
-                </label>
-                <label
-                  htmlFor="party-supplier"
-                  className="flex items-center gap-1.5 text-[0.9375rem]"
-                >
-                  <Checkbox
-                    id="party-supplier"
-                    checked={form.isSupplier}
-                    disabled={editing !== null}
-                    onCheckedChange={(checked) =>
-                      setForm((p) => ({ ...p, isSupplier: checked === true }))
-                    }
-                  />
-                  Supplier
-                </label>
-              </div>
-              {editing ? (
-                <p className="text-[0.75rem] text-muted-foreground">
-                  Roles and ledger accounts are set when the party is created.
-                </p>
-              ) : null}
-              {errors.role ? (
-                <p role="alert" className="text-[0.75rem] text-destructive">
-                  {errors.role}
-                </p>
-              ) : null}
-            </fieldset>
-
-            {save.isError ? (
-              <p
-                role="alert"
-                className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[0.875rem] text-destructive"
-              >
-                {errorMessage(save.error, 'Could not save the party.')}
-              </p>
-            ) : null}
-
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline" size="sm">
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button type="submit" size="sm" disabled={save.isPending}>
-                {save.isPending ? 'Saving...' : editing ? 'Save changes' : 'Add party'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {open ? (
+        <PartyDialog
+          open={open}
+          onOpenChange={setOpen}
+          party={editing}
+          onSaved={() => setOpen(false)}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={target !== null}

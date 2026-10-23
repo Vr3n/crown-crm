@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { Building2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { FormLegend } from '@/components/ui/field'
+import { FieldHelp, type FieldHelpContent } from '@/components/ui/field-help'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FIELD_HELP } from '@/lib/form-help'
 import {
   Select,
   SelectContent,
@@ -152,6 +156,8 @@ function TextField({
   onChange,
   error,
   hint,
+  help,
+  required,
   type = 'text',
   inputMode,
   maxLength,
@@ -164,6 +170,8 @@ function TextField({
   onChange: (value: string) => void
   error?: string
   hint?: string
+  help?: FieldHelpContent
+  required?: boolean
   type?: string
   inputMode?: 'tel' | 'email' | 'numeric'
   maxLength?: number
@@ -172,14 +180,26 @@ function TextField({
 }): React.JSX.Element {
   return (
     <div className={`flex min-w-0 flex-col gap-1.5 ${className ?? ''}`}>
-      <Label htmlFor={id} className={LABEL}>
-        {label}
-      </Label>
+      <div className="flex items-center gap-1.5">
+        <Label htmlFor={id} className={LABEL}>
+          {label}
+          {required ? (
+            <>
+              <span aria-hidden className="ml-0.5 text-stamp">
+                *
+              </span>
+              <span className="sr-only"> (required)</span>
+            </>
+          ) : null}
+        </Label>
+        {help ? <FieldHelp label={label} content={help} /> : null}
+      </div>
       <Input
         id={id}
         type={type}
         inputMode={inputMode}
         maxLength={maxLength}
+        required={required}
         value={value}
         onChange={(event) => {
           const raw = event.target.value
@@ -192,6 +212,7 @@ function TextField({
           )
         }}
         aria-invalid={Boolean(error)}
+        aria-required={required}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
         className={filter === 'upper' || inputMode === 'numeric' ? 'font-mono' : undefined}
       />
@@ -255,6 +276,7 @@ function CompanyEditor({ profile }: { profile: CompanyProfile }): React.JSX.Elem
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
+      <FormLegend />
       <Section title="Identity" hint="Printed on every document">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {IDENTITY_FIELDS.map((field) => (
@@ -295,6 +317,8 @@ function CompanyEditor({ profile }: { profile: CompanyProfile }): React.JSX.Elem
             value={form.booksBeginDate}
             onChange={(value) => set('booksBeginDate', value)}
             error={errors.booksBeginDate}
+            help={FIELD_HELP.company.booksBegin}
+            required
           />
         </div>
       </Section>
@@ -494,6 +518,23 @@ export function CompanyPage(): React.JSX.Element {
         </div>
       ) : profile.data ? (
         <>
+          <Section
+            title="Voucher numbering"
+            hint={profile.data.numberingSetupAt ? 'Configured' : 'Not set up yet'}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="max-w-[60ch] text-[0.875rem] leading-relaxed text-muted-foreground">
+                Set the series, prefix, width and starting number used by every document. The next
+                number is previewed before you save.
+              </p>
+              <Link
+                to="/settings/numbering"
+                className="flex h-8 items-center gap-1.5 bg-primary px-3 text-[0.875rem] font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Open numbering
+              </Link>
+            </div>
+          </Section>
           <CompanyEditor key={profile.data.id} profile={profile.data} />
           <OpeningBalances defaultDate={profile.data.booksBeginDate} />
         </>
