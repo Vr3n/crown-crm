@@ -72,6 +72,11 @@ application function that calls `requirePermission` or `requireAnyPermission`.
 A direct IPC call from the renderer is rejected with the typed
 `PERMISSION_DENIED` error.
 
+The Chart of Accounts navigation item and route require `company.view`. Its
+create/deactivate controls additionally require `settings.manage`, so read-only
+roles can still inspect the ledger without seeing mutation buttons. A Billing
+Clerk has neither permission and therefore cannot open the page.
+
 ### Privilege escalation guards
 
 A non-super actor:

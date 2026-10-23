@@ -97,7 +97,13 @@ export const NAV_GROUPS: NavGroup[] = [
     id: 'masters',
     label: 'Masters',
     items: [
-      { to: '/masters/accounts', label: 'Chart of Accounts', icon: ListTree, phase: 'P1' },
+      {
+        to: '/masters/accounts',
+        label: 'Chart of Accounts',
+        icon: ListTree,
+        phase: 'P1',
+        requires: 'company.view'
+      },
       {
         to: '/masters/tax-rates',
         label: 'Tax Rates',

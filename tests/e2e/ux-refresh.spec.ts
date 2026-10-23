@@ -326,6 +326,24 @@ test('a billing clerk gets a narrower session and cannot cancel vouchers', async
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByText('What this version does')).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Users and Roles' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Chart of Accounts' })).toHaveCount(0)
+
+  await goto('#/masters/accounts')
+  await expect(main.getByRole('heading', { name: 'Chart of Accounts' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Chart of Accounts' })).toHaveCount(0)
+
+  const accountsDenial = await page.evaluate(async () => {
+    const api = (window as unknown as { api: Record<string, never> }).api as unknown as {
+      accounts: { list: () => Promise<unknown> }
+    }
+    try {
+      await api.accounts.list()
+      return 'allowed'
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error)
+    }
+  })
+  expect(accountsDenial).toContain('company.view')
 
   await goto(`#/vouchers/${saleId}`)
   await expect(main.getByText('Audit trail')).toBeVisible()
