@@ -45,6 +45,14 @@ export function assertValidBusinessDate(value: string, field = 'date'): void {
   }
 }
 
+/** Adds a whole number of calendar days to a YYYY-MM-DD business date. */
+export function addDaysIso(dateOnly: string, days: number): string {
+  assertValidBusinessDate(dateOnly)
+  const [y, m, d] = dateOnly.split('-').map(Number)
+  const date = new Date(Date.UTC(y, m - 1, d + days, 12, 0, 0))
+  return date.toISOString().slice(0, 10)
+}
+
 /** Today's Company-local wall date as YYYY-MM-DD. */
 export function todayInOrgTz(timezone: string, now: Date = new Date()): string {
   const tz = resolveTimezone(timezone)

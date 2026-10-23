@@ -65,7 +65,7 @@ describe('runMigrations', () => {
     }
   })
 
-  it('records the baseline, numbering and reset migrations once', () => {
+  it('records every migration once', () => {
     runMigrations()
     const rows = getDb()
       .prepare('SELECT version, name FROM schema_migrations ORDER BY version')
@@ -73,7 +73,8 @@ describe('runMigrations', () => {
     expect(rows).toEqual([
       { version: 0, name: 'accounting_core' },
       { version: 1, name: 'voucher_numbering' },
-      { version: 2, name: 'numbering_reset_period' }
+      { version: 2, name: 'numbering_reset_period' },
+      { version: 3, name: 'unit_active' }
     ])
   })
 
@@ -83,8 +84,21 @@ describe('runMigrations', () => {
     const row = getDb().prepare('SELECT COUNT(*) AS n FROM schema_migrations').get() as {
       n: number
     }
-    expect(row.n).toBe(3)
+    expect(row.n).toBe(4)
     expect(tableNames().has('vouchers')).toBe(true)
+  })
+
+  it('adds is_active to units with a safe default', () => {
+    runMigrations()
+    const columns = getDb().prepare('PRAGMA table_info(units)').all() as {
+      name: string
+      dflt_value: string | null
+      notnull: number
+    }[]
+    const active = columns.find((column) => column.name === 'is_active')
+    expect(active).toBeDefined()
+    expect(active?.notnull).toBe(1)
+    expect(active?.dflt_value).toBe('1')
   })
 
   it('enforces one side per ledger line', () => {

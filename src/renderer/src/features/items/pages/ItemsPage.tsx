@@ -39,13 +39,16 @@ import { FIELD_HELP } from '@/lib/form-help'
 import { formatMinor, formatRate, minorToMajor } from '@/lib/money'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { errorMessage } from '../../../../../shared/contracts/errors'
-import type { CreateItemInput, ItemRow } from '../../../../../shared/contracts/masters'
+import type {
+  CreateItemInput,
+  ItemRow,
+  TaxRateRow
+} from '../../../../../shared/contracts/masters'
 
 const TH =
   'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TD = 'h-9 border-b border-border px-3 align-middle'
 const TAG = 'rounded-none px-1.5 py-0 text-[0.6875rem] uppercase tracking-[0.08em]'
-const GST_RATES = [0, 5, 12, 18, 28]
 
 interface ItemPayload extends Omit<CreateItemInput, 'reorderLevelE4'> {
   reorderLevelE4?: number
@@ -249,7 +252,14 @@ export function ItemsPage(): React.JSX.Element {
     queryKey: ['items', query, includeInactive],
     queryFn: () => window.api.items.list(query.trim() || undefined, includeInactive)
   })
-  const units = useQuery({ queryKey: ['units'], queryFn: () => window.api.units.list() })
+  const units = useQuery({
+    queryKey: ['units', 'active'],
+    queryFn: () => window.api.units.list({ includeInactive: false })
+  })
+  const taxRates = useQuery({
+    queryKey: ['tax-rates', 'active'],
+    queryFn: () => window.api.taxRates.list({ includeHistory: false })
+  })
   const summary = useQuery({
     queryKey: ['items', 'summary'],
     queryFn: () => window.api.summaries.items()
@@ -553,6 +563,7 @@ export function ItemsPage(): React.JSX.Element {
           onOpenChange={setOpen}
           item={editing}
           units={units.data ?? []}
+          taxRates={taxRates.data ?? []}
           onSaved={() => setOpen(false)}
         />
       ) : null}
@@ -587,16 +598,34 @@ function ItemDialog({
   onOpenChange,
   item,
   units,
+  taxRates,
   onSaved
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   item: ItemRow | null
   units: { id: number; name: string; symbol: string }[]
+  taxRates: TaxRateRow[]
   onSaved: () => void
 }): React.JSX.Element {
   const queryClient = useQueryClient()
   const editing = item !== null
+
+  // Item lines store GST only, so a rate with cess is not selectable here. A
+  // stored legacy rate (for example 12%) stays visible while editing.
+  const rateOptions = (() => {
+    const byBps = new Map<number, string>()
+    for (const rate of taxRates) {
+      if (rate.cessRateBps > 0) continue
+      byBps.set(rate.gstRateBps, rate.description ?? `GST ${formatRate(rate.gstRateBps)}`)
+    }
+    if (item && !byBps.has(item.gstRateBps)) {
+      byBps.set(item.gstRateBps, `${formatRate(item.gstRateBps)} (legacy)`)
+    }
+    return [...byBps.entries()]
+      .map(([bps, label]) => ({ bps, label }))
+      .sort((a, b) => a.bps - b.bps)
+  })()
 
   const save = useMutation({
     mutationFn: (input: ItemSave) =>
@@ -777,9 +806,9 @@ function ItemDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {GST_RATES.map((rate) => (
-                        <SelectItem key={rate} value={String(rate * 100)}>
-                          {rate}%
+                      {rateOptions.map((rate) => (
+                        <SelectItem key={rate.bps} value={String(rate.bps)}>
+                          {rate.label}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -23,12 +23,20 @@ import type {
   CreateAccountInput,
   CreateItemInput,
   CreatePartyInput,
+  CreateTaxRateInput,
   CreateUnitInput,
   ItemRow,
   PartyListInput,
   PartyRow,
+  RetireTaxRateInput,
+  ReviseTaxRateInput,
+  TaxRateListInput,
+  TaxRateRow,
+  UnitListInput,
+  UnitRow,
   UpdateItemInput,
-  UpdatePartyInput
+  UpdatePartyInput,
+  UpdateUnitInput
 } from '../shared/contracts/masters'
 import type {
   ListVouchersInput,
@@ -88,8 +96,16 @@ declare global {
         deactivate: (id: number) => Promise<void>
       }
       units: {
-        list: () => Promise<{ id: number; name: string; symbol: string }[]>
-        create: (input: CreateUnitInput) => Promise<void>
+        list: (input: UnitListInput) => Promise<UnitRow[]>
+        create: (input: CreateUnitInput) => Promise<UnitRow>
+        update: (input: UpdateUnitInput) => Promise<UnitRow>
+        deactivate: (id: number) => Promise<UnitRow>
+      }
+      taxRates: {
+        list: (input: TaxRateListInput) => Promise<TaxRateRow[]>
+        create: (input: CreateTaxRateInput) => Promise<TaxRateRow>
+        revise: (input: ReviseTaxRateInput) => Promise<TaxRateRow>
+        retire: (input: RetireTaxRateInput) => Promise<TaxRateRow>
       }
       godowns: {
         list: () => Promise<{ id: number; name: string }[]>

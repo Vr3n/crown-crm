@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   BUSINESS_DATE_REGEX,
   DEFAULT_TIMEZONE,
+  addDaysIso,
   assertValidBusinessDate,
   businessDateToUtc,
   excelDateForDateOnly,
@@ -34,6 +35,19 @@ describe('dates domain primitives (#110)', () => {
     it('accepts leap days', () => {
       expect(() => assertValidBusinessDate('2024-02-29')).not.toThrow()
       expect(() => assertValidBusinessDate('2023-02-29')).toThrow()
+    })
+  })
+
+  describe('addDaysIso', () => {
+    it('crosses month, year and leap-day boundaries', () => {
+      expect(addDaysIso('2026-10-31', 1)).toBe('2026-11-01')
+      expect(addDaysIso('2026-01-01', -1)).toBe('2025-12-31')
+      expect(addDaysIso('2024-02-28', 1)).toBe('2024-02-29')
+      expect(addDaysIso('2024-03-01', -1)).toBe('2024-02-29')
+    })
+
+    it('rejects malformed dates', () => {
+      expect(() => addDaysIso('31-10-2026', 1)).toThrow()
     })
   })
 

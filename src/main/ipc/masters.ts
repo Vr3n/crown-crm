@@ -3,14 +3,20 @@ import {
   createAccountInputSchema,
   createItemInputSchema,
   createPartyInputSchema,
+  createTaxRateInputSchema,
   createUnitInputSchema,
   listAccountsInputSchema,
   itemIdSchema,
   itemListInputSchema,
   partyIdSchema,
   partyListInputSchema,
+  retireTaxRateInputSchema,
+  reviseTaxRateInputSchema,
+  taxRateListInputSchema,
+  unitListInputSchema,
   updateItemInputSchema,
-  updatePartyInputSchema
+  updatePartyInputSchema,
+  updateUnitInputSchema
 } from '../../shared/contracts/masters'
 import { masters } from '../application/masters'
 import { handle } from './handle'
@@ -42,7 +48,23 @@ export function registerMastersIpc(): void {
   handle(IPC_CHANNELS.ACCOUNTS_DEACTIVATE, partyIdSchema, (input) =>
     masters.deactivateAccount(input.id)
   )
-  handle(IPC_CHANNELS.UNITS_LIST, () => masters.listUnits())
+  handle(IPC_CHANNELS.UNITS_LIST, unitListInputSchema, (input) => masters.listUnits(input))
   handle(IPC_CHANNELS.UNITS_CREATE, createUnitInputSchema, (input) => masters.createUnit(input))
+  handle(IPC_CHANNELS.UNITS_UPDATE, updateUnitInputSchema, (input) => masters.updateUnit(input))
+  handle(IPC_CHANNELS.UNITS_DEACTIVATE, partyIdSchema, (input) =>
+    masters.deactivateUnit(input.id)
+  )
+  handle(IPC_CHANNELS.TAX_RATES_LIST, taxRateListInputSchema, (input) =>
+    masters.listTaxRates(input)
+  )
+  handle(IPC_CHANNELS.TAX_RATES_CREATE, createTaxRateInputSchema, (input) =>
+    masters.createTaxRate(input)
+  )
+  handle(IPC_CHANNELS.TAX_RATES_REVISE, reviseTaxRateInputSchema, (input) =>
+    masters.reviseTaxRate(input)
+  )
+  handle(IPC_CHANNELS.TAX_RATES_RETIRE, retireTaxRateInputSchema, (input) =>
+    masters.retireTaxRate(input)
+  )
   handle(IPC_CHANNELS.GODOWNS_LIST, () => masters.listGodowns())
 }
