@@ -15,6 +15,7 @@ import type { NumberingRow, UpdateNumberingInput } from '../shared/contracts/num
 import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contracts/summaries'
 import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
+import type { ExportResult, ExportTableInput } from '../shared/contracts/export'
 import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
 import type {
   AccountRow,
@@ -137,6 +138,7 @@ declare global {
         list: () => Promise<{ name: string; sizeBytes: number; createdAt: string }[]>
       }
       exportPdf: (filename: string) => Promise<{ saved: boolean; filePath?: string }>
+      exportXlsx: (input: ExportTableInput) => Promise<ExportResult>
     }
   }
 }

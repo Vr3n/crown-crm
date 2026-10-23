@@ -1,7 +1,9 @@
 import { BrowserWindow, dialog } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { z } from 'zod'
+import { exportTableSchema, type ExportResult } from '../../shared/contracts/export'
 import { IPC_CHANNELS } from '../../shared/contracts/ipc.channels'
+import { buildXlsx } from '../export/xlsx'
 import { handle } from './handle'
 
 const exportPdfInputSchema = z.object({
@@ -42,5 +44,25 @@ export function registerExportIpc(): void {
 
     await writeFile(target.filePath, pdf)
     return { saved: true as const, filePath: target.filePath }
+  })
+
+  /**
+   * Builds a spreadsheet in the main process. The renderer never imports
+   * ExcelJS and never receives filesystem paths it did not ask to save to.
+   */
+  handle(IPC_CHANNELS.EXPORT_XLSX, exportTableSchema, async (input): Promise<ExportResult> => {
+    const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    if (!window) return { saved: false }
+
+    const target = await dialog.showSaveDialog(window, {
+      title: 'Save spreadsheet',
+      defaultPath: `${safeFilename(input.filename)}.xlsx`,
+      filters: [{ name: 'Excel workbook', extensions: ['xlsx'] }]
+    })
+    if (target.canceled || !target.filePath) return { saved: false }
+
+    const workbook = await buildXlsx(input)
+    await writeFile(target.filePath, workbook)
+    return { saved: true, filePath: target.filePath }
   })
 }

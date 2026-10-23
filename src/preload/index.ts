@@ -38,6 +38,7 @@ import type {
   VoucherListRow
 } from '../shared/contracts/vouchers'
 import type { IpcResult } from '../shared/contracts/errors'
+import type { ExportResult, ExportTableInput } from '../shared/contracts/export'
 import type {
   AgeingRow,
   BalanceSheetReport,
@@ -185,7 +186,9 @@ const api = {
   },
 
   exportPdf: (filename: string): Promise<{ saved: boolean; filePath?: string }> =>
-    call(IPC_CHANNELS.EXPORT_PDF, { filename })
+    call(IPC_CHANNELS.EXPORT_PDF, { filename }),
+  exportXlsx: (input: ExportTableInput): Promise<ExportResult> =>
+    call(IPC_CHANNELS.EXPORT_XLSX, input)
 }
 
 export type Api = typeof api

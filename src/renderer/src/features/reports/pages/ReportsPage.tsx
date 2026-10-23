@@ -12,6 +12,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Download,
+  FileSpreadsheet,
   FileText,
   IndianRupee,
   Landmark,
@@ -598,6 +599,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
         money(row.totalMinor)
       ])}
       numeric={[3, 4, 5, 6]}
+      dateColumns={[0]}
       footer={[
         'Total',
         '',
@@ -615,6 +617,7 @@ function Table({
   head,
   rows,
   numeric = [],
+  dateColumns = [],
   footer,
   empty,
   emptyTitle,
@@ -626,6 +629,7 @@ function Table({
   head: string[]
   rows: string[][]
   numeric?: number[]
+  dateColumns?: number[]
   footer?: string[]
   empty: boolean
   emptyTitle: string
@@ -640,6 +644,23 @@ function Table({
 
   function saveCsv(): void {
     downloadCsv(safeFilename(exportName), head, footer ? [...rows, footer] : rows)
+  }
+
+  async function saveXlsx(): Promise<void> {
+    try {
+      const result = await window.api.exportXlsx({
+        filename: safeFilename(exportName),
+        sheetName: exportName,
+        head,
+        rows,
+        numeric,
+        dateColumns,
+        footer
+      })
+      if (result.saved) toast.success('Spreadsheet saved')
+    } catch {
+      toast.error('Could not create the spreadsheet')
+    }
   }
 
   async function savePdf(): Promise<void> {
@@ -661,6 +682,10 @@ function Table({
           <Button variant="ghost" size="xs" onClick={saveCsv}>
             <Download className="size-3.5" strokeWidth={2} />
             CSV
+          </Button>
+          <Button variant="ghost" size="xs" onClick={() => void saveXlsx()}>
+            <FileSpreadsheet className="size-3.5" strokeWidth={2} />
+            XLSX
           </Button>
           <Button variant="ghost" size="xs" onClick={() => void savePdf()}>
             <Printer className="size-3.5" strokeWidth={2} />

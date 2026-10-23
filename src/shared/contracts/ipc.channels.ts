@@ -56,6 +56,7 @@ export const IPC_CHANNELS = {
 
   // Export
   EXPORT_PDF: 'export:pdf',
+  EXPORT_XLSX: 'export:xlsx',
 
   // Voucher numbering and first run
   NUMBERING_LIST: 'numbering:list',
