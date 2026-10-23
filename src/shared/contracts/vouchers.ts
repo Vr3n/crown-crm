@@ -128,6 +128,15 @@ export interface VoucherLineRow {
   totalMinor: number
 }
 
+export interface VoucherAuditEntry {
+  id: number
+  action: string
+  actorUserId: number | null
+  actorName: string | null
+  actorEmail: string | null
+  createdAt: string
+}
+
 export interface VoucherDetail {
   id: number
   type: VoucherType
@@ -141,8 +150,12 @@ export interface VoucherDetail {
   referenceNo: string | null
   status: 'DRAFT' | 'POSTED' | 'CANCELLED'
   createdAt: string
+  createdByName: string | null
+  postedByName: string | null
   cancelledAt: string | null
+  cancelledByName: string | null
   cancelReason: string | null
+  audit: VoucherAuditEntry[]
   taxableMinor: number
   cgstMinor: number
   sgstMinor: number

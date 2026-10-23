@@ -255,3 +255,92 @@ test('the dashboard reflects the records and shows the trends', async () => {
   await expect(page.getByText('Assets', { exact: true })).toBeVisible()
   await expect(page.getByText('Balance by group')).toBeVisible()
 })
+
+test('a billing clerk gets a narrower session and cannot cancel vouchers', async () => {
+  const main = page.getByRole('main')
+
+  await goto('#/settings/users')
+  await expect(main.getByRole('heading', { name: 'Users and Roles' })).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Roles' }).click()
+  await page.getByRole('button', { name: 'New role' }).click()
+  await page.locator('#name').fill('Store Manager')
+  await page.getByText('View items and masters').click()
+  await page.getByRole('button', { name: 'Create role' }).click()
+  await expect(page.getByText('Store Manager').first()).toBeVisible()
+  const storeRole = page.getByRole('row', { name: /Store Manager/ })
+  await storeRole.getByRole('button', { name: 'Delete' }).click()
+  await page.getByRole('button', { name: 'Delete role' }).click()
+  await expect(page.getByText('Store Manager')).toHaveCount(0)
+
+  await page.getByRole('tab', { name: 'People' }).click()
+  await page.getByRole('button', { name: 'New person' }).click()
+  await page.getByLabel('Full name').fill('Asha Rao')
+  await page.getByLabel('Email').fill('asha@acme.in')
+  await page.locator('#password').fill('billing-pass')
+  await expect(page.getByRole('combobox', { name: 'Role' })).toContainText('Billing Clerk')
+  await page.getByRole('button', { name: 'Add person' }).click()
+  await expect(page.getByText('Asha Rao').first()).toBeVisible()
+
+  const saleId = await page.evaluate(async () => {
+    const api = (window as unknown as { api: Record<string, never> }).api as unknown as {
+      parties: {
+        list: (input: Record<string, unknown>) => Promise<{ id: number }[]>
+      }
+      items: {
+        list: (query?: string) => Promise<{ id: number }[]>
+      }
+      vouchers: {
+        post: (input: Record<string, unknown>) => Promise<{ id: number }>
+      }
+    }
+    const parties = await api.parties.list({ query: 'Sharma' })
+    const items = await api.items.list('SSD')
+    const sale = await api.vouchers.post({
+      requestId: `e2e-billing-cancel-${Date.now()}`,
+      type: 'SALES',
+      date: new Date().toISOString().slice(0, 10),
+      partyId: parties[0]?.id,
+      lines: [
+        {
+          itemId: items[0]?.id,
+          description: 'SSD 256GB',
+          qtyE4: 10_000,
+          rateMinor: 400_000,
+          rateIncludesTax: false,
+          discountBps: 0,
+          gstRateBps: 1800
+        }
+      ]
+    })
+    return sale.id
+  })
+  expect(saleId).toBeGreaterThan(0)
+
+  await page.getByRole('button', { name: 'Account menu' }).click()
+  await page.getByRole('menuitem', { name: 'Sign out' }).click()
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+
+  await page.getByLabel('Email').fill('asha@acme.in')
+  await page.getByLabel('Password').fill('billing-pass')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await expect(page.getByText('What this version does')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Users and Roles' })).toHaveCount(0)
+
+  await goto(`#/vouchers/${saleId}`)
+  await expect(main.getByText('Audit trail')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Cancel voucher' })).toHaveCount(0)
+
+  const denial = await page.evaluate(async (id) => {
+    const api = (window as unknown as { api: Record<string, never> }).api as unknown as {
+      vouchers: { cancel: (voucherId: number, reason: string) => Promise<void> }
+    }
+    try {
+      await api.vouchers.cancel(id, 'Not allowed')
+      return 'allowed'
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error)
+    }
+  }, saleId)
+  expect(denial).toContain('voucher.cancel')
+})

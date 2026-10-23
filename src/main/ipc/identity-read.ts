@@ -1,13 +1,13 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { getDrizzle } from '../db/connection'
-import { companies, companyUsers, users, roles, rolePermissions, permissions } from '../db/schema'
+import { companies } from '../db/schema'
 import { currentCompanyId } from '../auth/session'
 import { IPC_CHANNELS } from '../../shared/contracts/ipc.channels'
 import { handle } from './handle'
 
 /**
- * Identity IPC handlers for reading/updating company, staff, and roles.
- * Returns data in the renderer's expected shapes.
+ * Company profile read model. Staff and role lists live in `access.ts` so the
+ * application layer can gate them and keep the SQL out of IPC handlers.
  */
 
 interface CompanyRow {
@@ -33,28 +33,6 @@ interface CompanyRow {
   status: string
   numbering_setup_at: string | null
   onboarding_completed_at: string | null
-}
-interface UserRow {
-  id: number
-  full_name: string
-  email: string
-  status: string
-}
-
-interface RoleRow {
-  id: number
-  name: string
-  description: string | null
-  is_system_role: boolean
-  is_super: boolean
-}
-
-interface StaffRow {
-  id: number
-  user_id: number
-  role_id: number
-  status: string
-  joined_at: string
 }
 
 export function registerIdentityReadIpc(): void {
@@ -87,103 +65,5 @@ export function registerIdentityReadIpc(): void {
       numberingSetupAt: row.numbering_setup_at,
       onboardingCompletedAt: row.onboarding_completed_at
     }
-  })
-  handle(IPC_CHANNELS.IDENTITY_STAFF, () => {
-    const companyId = currentCompanyId()
-
-    const staffRows = getDrizzle()
-      .select()
-      .from(companyUsers)
-      .where(eq(companyUsers.company_id, companyId))
-      .all() as StaffRow[]
-
-    if (staffRows.length === 0) return []
-
-    const userIds = staffRows.map((s) => s.user_id)
-    const userRows = getDrizzle()
-      .select()
-      .from(users)
-      .where(
-        sql`${users.id} IN (${sql.join(
-          userIds.map((id) => sql`${id}`),
-          sql`, `
-        )})`
-      )
-      .all() as UserRow[]
-    const userMap = new Map(userRows.map((u) => [u.id, u]))
-
-    const roleIds = [...new Set(staffRows.map((s) => s.role_id))]
-    const roleRows = getDrizzle()
-      .select()
-      .from(roles)
-      .where(
-        sql`${roles.id} IN (${sql.join(
-          roleIds.map((id) => sql`${id}`),
-          sql`, `
-        )})`
-      )
-      .all() as RoleRow[]
-    const roleMap = new Map(roleRows.map((r) => [r.id, r]))
-
-    return staffRows.map((s) => {
-      const user = userMap.get(s.user_id)
-      const role = roleMap.get(s.role_id)
-      return {
-        id: String(s.id),
-        userId: s.user_id,
-        fullName: user?.full_name ?? 'Unknown',
-        email: user?.email ?? '',
-        roleId: String(s.role_id),
-        roleName: role?.name ?? 'Unknown',
-        isSuper: role?.is_super ?? false,
-        isSystemRole: role?.is_system_role ?? false,
-        status: s.status as 'ACTIVE' | 'INVITED' | 'DISABLED',
-        joinedAt: s.joined_at
-      }
-    })
-  })
-
-  handle(IPC_CHANNELS.IDENTITY_ROLES, () => {
-    const companyId = currentCompanyId()
-
-    const roleRows = getDrizzle()
-      .select()
-      .from(roles)
-      .where(eq(roles.company_id, companyId))
-      .all() as RoleRow[]
-
-    return roleRows.map((r) => {
-      // Get permission codes for this role
-      let permissionCodes: string[] = []
-      if (r.is_super) {
-        const allPerms = getDrizzle().select({ code: permissions.code }).from(permissions).all()
-        permissionCodes = allPerms.map((p) => p.code)
-      } else {
-        const perms = getDrizzle()
-          .select({ code: permissions.code })
-          .from(permissions)
-          .innerJoin(rolePermissions, eq(rolePermissions.permission_id, permissions.id))
-          .where(eq(rolePermissions.role_id, r.id))
-          .all()
-        permissionCodes = perms.map((p) => p.code)
-      }
-
-      // Count staff with this role
-      const staffCount = getDrizzle()
-        .select({ n: sql<number>`count(*)` })
-        .from(companyUsers)
-        .where(and(eq(companyUsers.company_id, companyId), eq(companyUsers.role_id, r.id)))
-        .get()
-
-      return {
-        id: String(r.id),
-        name: r.name,
-        description: r.description,
-        isSystemRole: r.is_system_role,
-        isSuper: r.is_super,
-        permissionCodes,
-        memberCount: staffCount?.n ?? 0
-      }
-    })
   })
 }

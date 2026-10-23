@@ -36,6 +36,7 @@ import { CompanyPage } from '@/features/company/pages/CompanyPage'
 import { NumberingPage } from '@/features/numbering/pages/NumberingPage'
 import { UnitsPage } from '@/features/settings/pages/UnitsPage'
 import { TaxRatesPage } from '@/features/settings/pages/TaxRatesPage'
+import { UsersRolesPage } from '@/features/settings/pages/UsersRolesPage'
 import { SetupTourPage } from '@/features/onboarding/pages/SetupTourPage'
 import { SetupNumberingPage } from '@/features/onboarding/pages/SetupNumberingPage'
 import { VoucherListPage } from '@/features/vouchers/pages/VoucherListPage'
@@ -288,6 +289,14 @@ export function AppRoutes(): React.JSX.Element {
           element={
             <Protected code="settings.manage">
               <NumberingPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="settings/users"
+          element={
+            <Protected code="user.view">
+              <UsersRolesPage />
             </Protected>
           }
         />

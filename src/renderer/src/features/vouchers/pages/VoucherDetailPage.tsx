@@ -16,6 +16,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { formatMinor } from '@/lib/money'
+import { can, useSession } from '@/context/session-context'
 import type { VoucherType } from '../../../../../shared/contracts/vouchers'
 
 const BACK: Partial<Record<VoucherType, string>> = {
@@ -38,6 +39,13 @@ const TITLES: Partial<Record<VoucherType, string>> = {
   PAYMENT: 'Payment',
   JOURNAL: 'Journal entry',
   CONTRA: 'Contra entry'
+}
+
+const AUDIT_ACTIONS: Record<string, string> = {
+  CREATE: 'Created',
+  POST: 'Posted',
+  CANCEL: 'Cancelled',
+  UPDATE: 'Updated'
 }
 
 function displayDate(value: string | null): string {
@@ -78,6 +86,8 @@ function TotalRow({ label, value }: { label: string; value: number }): React.JSX
 
 export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
   const queryClient = useQueryClient()
+  const session = useSession()
+  const mayCancel = can(session.permissions, session.isSuper, 'voucher.cancel')
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState('')
 
@@ -138,7 +148,7 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
             <Printer className="size-3.5" />
             Print
           </Button>
-          {data.status === 'POSTED' ? (
+          {data.status === 'POSTED' && mayCancel ? (
             <Button
               type="button"
               variant="outline"
@@ -323,20 +333,61 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
         ) : null}
 
         <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border px-5 py-2.5 text-[0.75rem] text-muted-foreground print:hidden">
-          <span>Created {displayDateTime(data.createdAt)}</span>
-          {data.cancelledAt ? <span>Cancelled {displayDateTime(data.cancelledAt)}</span> : null}
+          <span>
+            Created {displayDateTime(data.createdAt)}
+            {data.createdByName ? ` by ${data.createdByName}` : ''}
+          </span>
+          {data.postedByName && data.postedByName !== data.createdByName ? (
+            <span>Posted by {data.postedByName}</span>
+          ) : null}
+          {data.cancelledAt ? (
+            <span>
+              Cancelled {displayDateTime(data.cancelledAt)}
+              {data.cancelledByName ? ` by ${data.cancelledByName}` : ''}
+            </span>
+          ) : null}
           {data.cancelReason ? (
             <span>
               Reason <span className="text-foreground">{data.cancelReason}</span>
             </span>
           ) : null}
         </div>
+
+        {data.audit.length > 0 ? (
+          <div className="border-t border-border px-5 py-3 print:hidden">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Audit trail
+            </p>
+            <ul className="mt-1 divide-y divide-border">
+              {data.audit.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="flex flex-wrap items-baseline justify-between gap-2 py-1.5 text-[0.75rem]"
+                >
+                  <span>
+                    <span className="font-medium text-foreground">
+                      {AUDIT_ACTIONS[entry.action] ?? entry.action}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {entry.actorName ? ` by ${entry.actorName}` : ' by system'}
+                      {entry.actorEmail ? ` (${entry.actorEmail})` : ''}
+                    </span>
+                  </span>
+                  <span className="font-mono text-muted-foreground">
+                    {displayDateTime(entry.createdAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       {cancelled ? (
         <div className="border-l-2 border-destructive bg-destructive-soft px-3 py-2 text-[0.8125rem] print:hidden">
           <p className="font-medium text-destructive">
             {data.cancelledAt ? `Cancelled ${displayDateTime(data.cancelledAt)}` : 'Cancelled voucher'}
+            {data.cancelledByName ? ` by ${data.cancelledByName}` : ''}
           </p>
           {data.cancelReason ? (
             <p className="mt-0.5 text-muted-foreground">Reason: {data.cancelReason}</p>

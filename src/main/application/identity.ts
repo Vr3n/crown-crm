@@ -4,6 +4,8 @@ import { hashPassword, verifyPassword } from '../auth/password'
 import { requirePermission, currentCompanyId, setSession, getSession } from '../auth/session'
 import { companyRepo, userRepo, roleRepo, staffRepo, appMetaRepo } from '../repositories/identity'
 import { numberingRepo } from '../repositories/numbering'
+import { auditRepo } from '../repositories/audit'
+import { assertCanAssignRole } from '../auth/access-guards'
 import type {
   AuthStatus,
   CreateStaffMemberInput,
@@ -36,6 +38,7 @@ export function getAuthStatus(): AuthStatus {
 export function createStaffMember(input: CreateStaffMemberInput): CreatedStaffMember {
   requirePermission(PERMISSIONS.USER_CREATE)
   const companyId = currentCompanyId()
+  const actor = getSession()
 
   const fullName = input.fullName.trim()
   const email = input.email.trim().toLowerCase()
@@ -48,8 +51,16 @@ export function createStaffMember(input: CreateStaffMemberInput): CreatedStaffMe
     throw new ValidationError('A user with this email already exists in this company')
   }
 
-  const role = roleRepo.findByName(companyId, input.roleName)
-  if (!role) throw new NotFoundError(`Role "${input.roleName}" not found`)
+  const role =
+    input.roleId !== undefined
+      ? roleRepo.findById(companyId, input.roleId)
+      : roleRepo.findByName(companyId, input.roleName ?? '')
+  if (!role) {
+    throw new NotFoundError(
+      input.roleId !== undefined ? 'Role not found' : `Role "${input.roleName ?? ''}" not found`
+    )
+  }
+  assertCanAssignRole(role, roleRepo.findPermissionCodes(role.id))
 
   return withTransaction(() => {
     const user = userRepo.create({
@@ -57,7 +68,15 @@ export function createStaffMember(input: CreateStaffMemberInput): CreatedStaffMe
       email,
       passwordHash: hashPassword(input.password)
     })
-    staffRepo.create({ companyId, userId: user.id, roleId: role.id })
+    const staff = staffRepo.create({ companyId, userId: user.id, roleId: role.id })
+    auditRepo.record({
+      companyId,
+      entity: 'USER',
+      entityId: user.id,
+      action: 'CREATE',
+      after: { fullName, email, roleId: role.id, staffId: staff.id },
+      actorUserId: actor?.userId ?? null
+    })
     return { userId: user.id }
   })
 }

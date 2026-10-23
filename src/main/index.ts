@@ -8,6 +8,7 @@ import { seedPermissions } from './db/seed'
 import { logger } from './lib/logger'
 import { registerIdentityIpc } from './ipc/identity'
 import { registerIdentityReadIpc } from './ipc/identity-read'
+import { registerAccessIpc } from './ipc/access'
 import { registerDashboardIpc } from './ipc/dashboard'
 import { registerExportIpc } from './ipc/export'
 import { registerNumberingIpc } from './ipc/numbering'
@@ -101,6 +102,7 @@ app.whenReady().then(async () => {
 
   registerIdentityIpc()
   registerIdentityReadIpc()
+  registerAccessIpc()
   registerMastersIpc()
   registerSearchIpc()
   registerVouchersIpc()

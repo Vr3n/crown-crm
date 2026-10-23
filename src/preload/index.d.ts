@@ -17,7 +17,15 @@ import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { ExportResult, ExportTableInput } from '../shared/contracts/export'
 import type { SearchInput, SearchOutput } from '../shared/contracts/search'
-import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
+import type {
+  CreateRoleInput,
+  PermissionOutput,
+  ResetStaffPasswordInput,
+  RoleOutput,
+  StaffMemberOutput,
+  UpdateRoleInput,
+  UpdateStaffInput
+} from '../shared/contracts/access'
 import type {
   AccountRow,
   CreateAccountInput,
@@ -74,6 +82,12 @@ declare global {
         updateCompany: (input: UpdateCompanyInput) => Promise<CompanyProfile>
         staff: () => Promise<StaffMemberOutput[]>
         roles: () => Promise<RoleOutput[]>
+        permissions: () => Promise<PermissionOutput[]>
+        updateStaff: (input: UpdateStaffInput) => Promise<StaffMemberOutput>
+        resetStaffPassword: (input: ResetStaffPasswordInput) => Promise<void>
+        createRole: (input: CreateRoleInput) => Promise<RoleOutput>
+        updateRole: (input: UpdateRoleInput) => Promise<RoleOutput>
+        deleteRole: (id: number) => Promise<boolean>
       }
       parties: {
         list: (input: PartyListInput) => Promise<PartyRow[]>
