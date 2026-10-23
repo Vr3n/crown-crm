@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Boxes, CircleSlash, Package, Plus, Search } from 'lucide-react'
@@ -477,7 +478,12 @@ export function ItemsPage(): React.JSX.Element {
                   <tr key={item.id} className="hover:bg-muted/40">
                     <td className={TD}>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[0.9375rem] font-medium">{item.name}</span>
+                        <Link
+                          to={`/items/${item.id}`}
+                          className="text-[0.9375rem] font-medium hover:text-primary hover:underline"
+                        >
+                          {item.name}
+                        </Link>
                         {item.isService ? (
                           <Badge variant="outline" className={TAG}>
                             Service

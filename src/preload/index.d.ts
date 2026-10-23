@@ -43,6 +43,7 @@ import type {
   ReceivableRow,
   RegisterRow,
   StatementRow,
+  StockMovementRow,
   StockRow,
   TrialBalanceRow
 } from '../shared/contracts/reports'
@@ -126,6 +127,7 @@ declare global {
         statement: (partyId: number, from: string, to: string) => Promise<StatementRow[]>
         register: (type: 'SALES' | 'PURCHASE', from: string, to: string) => Promise<RegisterRow[]>
         stock: () => Promise<StockRow[]>
+        stockMovements: (itemId: number, from: string, to: string) => Promise<StockMovementRow[]>
       }
       license: {
         status: () => Promise<LicenseStatus>

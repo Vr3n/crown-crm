@@ -45,6 +45,7 @@ import type {
   ReceivableRow,
   RegisterRow,
   StatementRow,
+  StockMovementRow,
   StockRow,
   TrialBalanceRow
 } from '../shared/contracts/reports'
@@ -168,9 +169,10 @@ const api = {
       call(IPC_CHANNELS.REPORTS_STATEMENT, { partyId, from, to }),
     register: (type: 'SALES' | 'PURCHASE', from: string, to: string): Promise<RegisterRow[]> =>
       call(IPC_CHANNELS.REPORTS_REGISTER, { type, from, to }),
-    stock: (): Promise<StockRow[]> => call(IPC_CHANNELS.REPORTS_STOCK)
+    stock: (): Promise<StockRow[]> => call(IPC_CHANNELS.REPORTS_STOCK),
+    stockMovements: (itemId: number, from: string, to: string): Promise<StockMovementRow[]> =>
+      call(IPC_CHANNELS.REPORTS_STOCK_MOVEMENTS, { itemId, from, to })
   },
-
   license: {
     status: (): Promise<LicenseStatus> => call(IPC_CHANNELS.LICENSE_STATUS)
   },

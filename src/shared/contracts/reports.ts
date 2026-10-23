@@ -39,6 +39,19 @@ export interface StockRow {
   valueMinor: number
 }
 
+export interface StockMovementRow {
+  id: number
+  voucherId: number
+  date: string
+  number: string
+  type: string
+  partyName: string | null
+  qtyInE4: number
+  qtyOutE4: number
+  unitCostMinor: number
+  narration: string | null
+}
+
 export interface ReceivableRow {
   partyId: number
   partyName: string

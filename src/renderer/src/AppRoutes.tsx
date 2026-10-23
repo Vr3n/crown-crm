@@ -31,7 +31,9 @@ import { StockPage } from '@/features/stock/pages/StockPage'
 import { BackupPage } from '@/features/backup/pages/BackupPage'
 import { JournalsPage } from '@/features/journals/pages/JournalsPage'
 import { PartiesPage } from '@/features/parties/pages/PartiesPage'
+import { PartyDetailPage } from '@/features/parties/pages/PartyDetailPage'
 import { ItemsPage } from '@/features/items/pages/ItemsPage'
+import { ItemDetailPage } from '@/features/items/pages/ItemDetailPage'
 import { AccountsPage } from '@/features/accounts/pages/AccountsPage'
 import { CompanyPage } from '@/features/company/pages/CompanyPage'
 import { NumberingPage } from '@/features/numbering/pages/NumberingPage'
@@ -260,9 +262,13 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="stock" element={<StockPage />} />
         <Route path="journals" element={<JournalsPage />} />
         <Route path="parties" element={<PartiesPage />} />
+        <Route path="parties/:id" element={<PartyDetailPage />} />
         <Route path="customers" element={<PartiesPage />} />
+        <Route path="customers/:id" element={<PartyDetailPage />} />
         <Route path="suppliers" element={<PartiesPage />} />
+        <Route path="suppliers/:id" element={<PartyDetailPage />} />
         <Route path="items" element={<ItemsPage />} />
+        <Route path="items/:id" element={<ItemDetailPage />} />
         <Route path="masters/accounts" element={<AccountsPage />} />
         <Route path="day-book" element={<VoucherListPage title="Day Book" />} />
         <Route path="sales" element={<VoucherListPage type="SALES" title="Sales" />} />

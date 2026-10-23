@@ -135,6 +135,22 @@ test('parties, items and stock show contextual headings and metrics', async () =
   await expect(main.getByText('Units on hand')).toBeVisible()
 })
 
+test('party and item names open their full-page detail views', async () => {
+  const main = page.getByRole('main')
+
+  await goto('#/customers')
+  await page.getByRole('link', { name: 'Sharma Traders' }).click()
+  await expect(main.getByRole('heading', { name: 'Sharma Traders', exact: true })).toBeVisible()
+  await expect(main.getByText('Balance', { exact: true })).toBeVisible()
+  await expect(main.getByRole('button', { name: 'Documents' })).toBeVisible()
+
+  await goto('#/items')
+  await page.getByRole('link', { name: 'SSD 256GB' }).click()
+  await expect(main.getByRole('heading', { name: 'SSD 256GB', exact: true })).toBeVisible()
+  await expect(main.getByText('On hand', { exact: true })).toBeVisible()
+  await expect(main.getByText('Stock position')).toBeVisible()
+})
+
 test('the purchase bill exposes the supplier picker and posts', async () => {
   const supplierId = await page.evaluate(async () => {
     const api = (window as unknown as { api: Record<string, never> }).api as unknown as {

@@ -69,6 +69,15 @@ the items page can show reorder status without a second call.
 - **All reports** — a KPI strip computed from the report data (receivable and
   overdue, debit and credit, income and net profit, assets and equity, taxable
   value and GST), and CSV plus PDF export on every report table.
+- **Party detail** (`/parties/:id`, `/customers/:id`, `/suppliers/:id`) — a
+  full page, not a drawer: balance, billed, open and overdue KPIs, recent
+  activity by month, the agreed terms, then Ledger and Documents tabs. The
+  ledger shows a bold running balance; documents link to their voucher.
+- **Item detail** (`/items/:id`) — on hand, stock value, reorder level and
+  margin KPIs, a stock-position meter, and stock movements with a running
+  balance. Movements come from the new `reports:stock-movements` read model.
+
+Party and item names in their lists are links to these pages.
 
 ## Export
 
@@ -84,8 +93,6 @@ the items page can show reorder status without a second call.
 
 ## Still open
 
-- Full-page detail views for parties and items (the chosen option over a
-  drawer), with ledger and stock-movement tabs.
 - Global command palette and quick create.
 - Tax Rates and Users/Roles stay deferred, as agreed.
 - XLSX export.
@@ -94,5 +101,5 @@ the items page can show reorder status without a second call.
 
 - `npx vitest run` — 242 tests, including the summary read models and the CSV
   writer.
-- `npx playwright test --workers=1` — 16 Electron flows, including contextual
-  headings, KPI presence and report export buttons.
+- `npx playwright test --workers=1` — 17 Electron flows, including contextual
+  headings, KPI presence, report export buttons and both detail pages.

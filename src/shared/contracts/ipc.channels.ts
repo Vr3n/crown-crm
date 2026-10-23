@@ -72,7 +72,7 @@ export const IPC_CHANNELS = {
   REPORTS_STATEMENT: 'reports:statement',
   REPORTS_REGISTER: 'reports:register',
   REPORTS_STOCK: 'reports:stock',
-
+  REPORTS_STOCK_MOVEMENTS: 'reports:stock-movements',
   // Licensing
   LICENSE_STATUS: 'license:status',
 

@@ -15,6 +15,8 @@ const asOfSchema = z.object({
 
 const statementSchema = rangeSchema.extend({ partyId: z.number().int().positive() })
 
+const stockMovementSchema = rangeSchema.extend({ itemId: z.number().int().positive() })
+
 const registerSchema = rangeSchema.extend({ type: z.enum(['SALES', 'PURCHASE']) })
 
 export function registerReportsIpc(): void {
@@ -39,4 +41,7 @@ export function registerReportsIpc(): void {
     reports.register(input.type, input.from, input.to)
   )
   handle(IPC_CHANNELS.REPORTS_STOCK, () => reports.stockSummary())
+  handle(IPC_CHANNELS.REPORTS_STOCK_MOVEMENTS, stockMovementSchema, (input) =>
+    reports.stockMovements(input.itemId, input.from, input.to)
+  )
 }

@@ -154,6 +154,11 @@ export const reports = {
   stockSummary() {
     requirePermission(PERMISSIONS.REPORT_VIEW)
     return reportRepo.stockSummary(currentCompanyId())
+  },
+
+  stockMovements(itemId: number, from: string, to: string) {
+    requirePermission(PERMISSIONS.REPORT_VIEW)
+    return reportRepo.stockMovements(currentCompanyId(), itemId, from, to)
   }
 }
 

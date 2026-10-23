@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
@@ -423,7 +423,20 @@ export function PartiesPage(): React.JSX.Element {
                       <div className="flex items-center gap-2.5">
                         <Monogram name={party.name} />
                         <div className="min-w-0">
-                          <div className="truncate text-[0.9375rem] font-medium">{party.name}</div>
+                          <div className="truncate text-[0.9375rem] font-medium">
+                            <Link
+                              to={`${
+                                scope === 'CUSTOMER'
+                                  ? '/customers'
+                                  : scope === 'SUPPLIER'
+                                    ? '/suppliers'
+                                    : '/parties'
+                              }/${party.id}`}
+                              className="hover:text-primary hover:underline"
+                            >
+                              {party.name}
+                            </Link>
+                          </div>
                           {party.gstin ? (
                             <div className="font-mono text-[0.6875rem] text-muted-foreground">
                               {party.gstin}
