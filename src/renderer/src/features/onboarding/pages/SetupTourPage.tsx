@@ -39,7 +39,10 @@ export function SetupTourPage(): React.JSX.Element {
 
   const finish = useMutation({
     mutationFn: () => window.api.numbering.completeOnboarding(),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      queryClient.setQueryData<Record<string, unknown> | null>(['company', 'profile'], (old) =>
+        old ? { ...old, onboardingCompletedAt: result.onboardingCompletedAt } : old
+      )
       void queryClient.invalidateQueries({ queryKey: ['company', 'profile'] })
       navigate('/', { replace: true })
     },

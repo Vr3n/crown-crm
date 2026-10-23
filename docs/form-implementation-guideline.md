@@ -39,12 +39,23 @@ Rules:
 
 ## 3. State with TanStack Form
 
-One form instance per surface. Validation runs on blur and on submit; never on every keystroke for expensive rules.
+One form instance per surface. Validation runs on blur, then re-validates on
+change once the field is touched or the form has been submitted. Expensive
+rules stay on submit.
+
+The shared primitives are:
+
+- `Field` for the label row, required marker, help affordance and the single
+  hint/error line.
+- `FormTextField` for a TanStack Form field, including the live re-check.
+- `FieldHelp` for the keyboard reachable explanation.
+- `FormLegend` for the "Required fields" legend.
+- `focusFirstError` to reveal and focus the first invalid field on submit.
 
 ```ts
 const form = useForm({
   defaultValues,
-  validators: { onSubmit: voucherSchema, onBlur: stepSchema },
+  validators: { onSubmit: voucherSchema },
   onSubmit: async ({ value }) => postVoucher(value)
 })
 ```
@@ -56,6 +67,7 @@ Rules:
 3. Server errors map back to fields by `error.path`. A general error goes to a banner above the footer.
 4. Do not disable the primary button because of an invalid field the user cannot see. On click, reveal the first error and focus it.
 5. A submit in flight disables the button and shows progress inside it. It does not replace the form with a spinner.
+6. Help text is optional context, never the only place a rule is stated. Errors are never shown in a tooltip.
 
 ## 4. Voucher entry specifics
 

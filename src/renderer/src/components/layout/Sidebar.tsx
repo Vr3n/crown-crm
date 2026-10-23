@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { NavLink } from 'react-router-dom'
-import { BookOpen, ChevronsLeft, ChevronsRight, LogOut } from 'lucide-react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { ArrowDown, ArrowUp, BookOpen, ChevronsLeft, ChevronsRight, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { initials } from '@/lib/validation'
 import { can, useSession } from '@/context/session-context'
 import { visibleGroups, type NavItem } from '@/lib/navigation'
+import { scrollEdge } from '@/lib/scroll-edge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 const SIDEBAR_KEY = 'crownbooks:sidebar-collapsed'
@@ -15,14 +16,54 @@ const SIDEBAR_KEY = 'crownbooks:sidebar-collapsed'
  */
 export function Sidebar(): React.JSX.Element {
   const session = useSession()
+  const location = useLocation()
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
     return window.localStorage.getItem(SIDEBAR_KEY) === 'true'
   })
+  const [scroll, setScroll] = useState({ canScroll: false, atBottom: false })
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_KEY, String(collapsed))
   }, [collapsed])
+
+  useEffect(() => {
+    const main = document.querySelector('main')
+    if (!main) return
+
+    const update = (): void => {
+      setScroll(
+        scrollEdge({
+          scrollTop: main.scrollTop,
+          scrollHeight: main.scrollHeight,
+          clientHeight: main.clientHeight
+        })
+      )
+    }
+
+    update()
+    main.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    const observer =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null
+    observer?.observe(main)
+
+    return () => {
+      main.removeEventListener('scroll', update)
+      window.removeEventListener('resize', update)
+      observer?.disconnect()
+    }
+  }, [location.pathname])
+
+  function scrollToEdge(): void {
+    const main = document.querySelector('main')
+    if (!main) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    main.scrollTo({
+      top: scroll.atBottom ? 0 : main.scrollHeight,
+      behavior: reduce ? 'auto' : 'smooth'
+    })
+  }
 
   const groups = visibleGroups(session.permissions, session.isSuper, can)
 
@@ -70,6 +111,30 @@ export function Sidebar(): React.JSX.Element {
           </div>
         ))}
       </nav>
+
+      {scroll.canScroll ? (
+        <div className="px-2 pb-1">
+          <button
+            type="button"
+            onClick={scrollToEdge}
+            aria-label={scroll.atBottom ? 'Scroll to top' : 'Scroll to bottom'}
+            title={scroll.atBottom ? 'Back to top' : 'Scroll to bottom'}
+            className={cn(
+              'flex w-full items-center gap-2 border border-sidebar-border bg-sidebar-accent/60 px-2 py-1.5 text-[0.75rem] text-sidebar-foreground/70 transition-colors hover:border-sidebar-ring hover:text-sidebar-foreground',
+              collapsed && 'justify-center px-0'
+            )}
+          >
+            {scroll.atBottom ? (
+              <ArrowUp className="size-3.5" strokeWidth={1.75} />
+            ) : (
+              <ArrowDown className="size-3.5" strokeWidth={1.75} />
+            )}
+            {!collapsed ? (
+              <span>{scroll.atBottom ? 'Back to top' : 'Scroll to bottom'}</span>
+            ) : null}
+          </button>
+        </div>
+      ) : null}
 
       <div className="border-t border-sidebar-border p-2">
         <div
