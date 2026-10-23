@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Search, Sun, Moon, LogOut, UserRound, Command } from 'lucide-react'
-import { toast } from 'sonner'
 import { useSession } from '@/context/session-context'
 import { useTheme } from '@/lib/theme'
 import { titleForPath } from '@/lib/navigation'
+import { GlobalSearch } from '@/features/search/components/global-search'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -38,6 +38,18 @@ export function Topbar(): React.JSX.Element {
   const session = useSession()
   const { theme, setTheme } = useTheme()
   const [signOutOpen, setSignOutOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent): void {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setSearchOpen((open) => !open)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card px-5">
@@ -51,11 +63,10 @@ export function Topbar(): React.JSX.Element {
 
       <button
         type="button"
-        onClick={() =>
-          toast.info('Search arrives with the first vouchers', {
-            description: 'Party, item and voucher search lands in Phase 2.'
-          })
-        }
+        onClick={() => setSearchOpen(true)}
+        aria-label="Search parties, items, vouchers and accounts"
+        aria-haspopup="dialog"
+        aria-expanded={searchOpen}
         className="ml-4 flex h-8 min-w-0 flex-1 items-center gap-2 border border-border bg-background px-2.5 text-[0.875rem] text-muted-foreground transition-colors hover:border-rule-strong hover:text-foreground"
       >
         <Search className="size-3.5" strokeWidth={1.75} />
@@ -123,6 +134,8 @@ export function Topbar(): React.JSX.Element {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
       <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
         <AlertDialogContent>

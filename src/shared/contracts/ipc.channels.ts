@@ -46,6 +46,9 @@ export const IPC_CHANNELS = {
   VOUCHERS_OUTSTANDING: 'vouchers:outstanding',
   VOUCHERS_POST_OPENING: 'vouchers:postOpening',
 
+  // Global search
+  SEARCH_QUERY: 'search:query',
+
   // Dashboard
   DASHBOARD_SUMMARY: 'dashboard:summary',
 

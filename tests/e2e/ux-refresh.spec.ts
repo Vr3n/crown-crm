@@ -112,6 +112,18 @@ test('an item is captured with required state and help', async () => {
   await expect(page.getByText('SSD 256GB').first()).toBeVisible()
 })
 
+test('global search opens with the keyboard and lands on a party', async () => {
+  await goto('#/')
+  await page.keyboard.press('Control+K')
+  const input = page.getByPlaceholder('Search parties, items, vouchers and accounts')
+  await expect(input).toBeVisible()
+  await input.fill('Sharma')
+  await page.getByRole('option', { name: /Sharma Traders/ }).first().click()
+  await expect(
+    page.getByRole('main').getByRole('heading', { name: 'Sharma Traders', exact: true })
+  ).toBeVisible()
+})
+
 test('parties, items and stock show contextual headings and metrics', async () => {
   const main = page.getByRole('main')
 

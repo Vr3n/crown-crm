@@ -31,12 +31,14 @@ function CommandDialog({
   children,
   className,
   showCloseButton = false,
+  shouldFilter,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
   title?: string
   description?: string
   className?: string
   showCloseButton?: boolean
+  shouldFilter?: boolean
 }) {
   return (
     <Dialog {...props}>
@@ -48,7 +50,10 @@ function CommandDialog({
         className={cn('top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0', className)}
         showCloseButton={showCloseButton}
       >
-        <Command className="[&_[cmdk-input-wrapper]]:border-0 [&_[cmdk-input]]:px-0 [&_[cmdk-item]]:px-2">
+        <Command
+          shouldFilter={shouldFilter}
+          className="[&_[cmdk-input-wrapper]]:border-0 [&_[cmdk-input]]:px-0 [&_[cmdk-item]]:px-2"
+        >
           {children}
         </Command>
       </DialogContent>

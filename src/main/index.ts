@@ -13,6 +13,7 @@ import { registerExportIpc } from './ipc/export'
 import { registerNumberingIpc } from './ipc/numbering'
 import { registerSummariesIpc } from './ipc/summaries'
 import { registerMastersIpc } from './ipc/masters'
+import { registerSearchIpc } from './ipc/search'
 import { registerVouchersIpc } from './ipc/vouchers'
 import { registerReportsIpc } from './ipc/reports'
 import { registerBackupIpc } from './ipc/backup'
@@ -101,6 +102,7 @@ app.whenReady().then(async () => {
   registerIdentityIpc()
   registerIdentityReadIpc()
   registerMastersIpc()
+  registerSearchIpc()
   registerVouchersIpc()
   registerReportsIpc()
   registerBackupIpc()

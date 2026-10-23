@@ -39,6 +39,7 @@ import type {
 } from '../shared/contracts/vouchers'
 import type { IpcResult } from '../shared/contracts/errors'
 import type { ExportResult, ExportTableInput } from '../shared/contracts/export'
+import type { SearchInput, SearchOutput } from '../shared/contracts/search'
 import type {
   AgeingRow,
   BalanceSheetReport,
@@ -137,6 +138,11 @@ const api = {
 
   dashboard: {
     summary: (): Promise<DashboardSummary> => call(IPC_CHANNELS.DASHBOARD_SUMMARY)
+  },
+
+  search: {
+    query: (input: SearchInput): Promise<SearchOutput> =>
+      call(IPC_CHANNELS.SEARCH_QUERY, input)
   },
 
   summaries: {

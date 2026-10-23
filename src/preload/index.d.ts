@@ -16,6 +16,7 @@ import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contra
 import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { ExportResult, ExportTableInput } from '../shared/contracts/export'
+import type { SearchInput, SearchOutput } from '../shared/contracts/search'
 import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
 import type {
   AccountRow,
@@ -103,6 +104,9 @@ declare global {
       }
       dashboard: {
         summary: () => Promise<DashboardSummary>
+      }
+      search: {
+        query: (input: SearchInput) => Promise<SearchOutput>
       }
       summaries: {
         parties: () => Promise<PartySummary>

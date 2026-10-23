@@ -32,6 +32,12 @@ export function requirePermission(code: PermissionCode): void {
   }
 }
 
+/** Non-throwing companion used when a screen composes several permission-gated reads. */
+export function hasPermission(code: PermissionCode): boolean {
+  const session = requireSession()
+  return session.isSuper || session.permissions.includes(code)
+}
+
 /** The active company id, for stamping onto org-scoped records. */
 export function currentCompanyId(): number {
   return requireSession().companyId

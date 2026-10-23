@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ListTree, Plus, Search, Landmark, TrendingUp, Wallet, ArrowDownLeft } from 'lucide-react'
@@ -34,6 +35,7 @@ import { KpiCard } from '@/components/ui/kpi-card'
 import { ChartCard } from '@/components/ui/chart-card'
 import { RankedBarsChart } from '@/components/charts/list-charts'
 import { formatMinor } from '@/lib/money'
+import { cn } from '@/lib/utils'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type {
   AccountGroupRow,
@@ -174,6 +176,8 @@ function Balance({ minor }: { minor: number }): React.JSX.Element {
 
 export function AccountsPage(): React.JSX.Element {
   const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
+  const highlightedId = Number(searchParams.get('account') ?? 0)
   const [search, setSearch] = useState('')
   const [group, setGroup] = useState('ALL')
   const [includeInactive, setIncludeInactive] = useState(false)
@@ -205,6 +209,13 @@ export function AccountsPage(): React.JSX.Element {
     else acc.push({ name: row.groupName, rows: [row] })
     return acc
   }, [])
+
+  useEffect(() => {
+    if (!highlightedId || !list.data) return
+    document
+      .getElementById(`account-${highlightedId}`)
+      ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [highlightedId, list.data])
 
   const deactivate = useMutation({
     mutationFn: (id: number) => window.api.accounts.deactivate(id),
@@ -365,7 +376,14 @@ export function AccountsPage(): React.JSX.Element {
                     </th>
                   </tr>
                   {section.rows.map((account) => (
-                    <tr key={account.id} className="hover:bg-muted/40">
+                    <tr
+                      key={account.id}
+                      id={`account-${account.id}`}
+                      className={cn(
+                        'hover:bg-muted/40',
+                        account.id === highlightedId && 'bg-accent-soft'
+                      )}
+                    >
                       <td className={TD}>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[0.9375rem]">{account.name}</span>
