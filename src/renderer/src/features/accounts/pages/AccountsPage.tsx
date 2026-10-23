@@ -31,6 +31,7 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { FIELD_HELP } from '@/lib/form-help'
+import { can, useSession } from '@/context/session-context'
 import { KpiCard } from '@/components/ui/kpi-card'
 import { ChartCard } from '@/components/ui/chart-card'
 import { RankedBarsChart } from '@/components/charts/list-charts'
@@ -176,6 +177,8 @@ function Balance({ minor }: { minor: number }): React.JSX.Element {
 
 export function AccountsPage(): React.JSX.Element {
   const queryClient = useQueryClient()
+  const session = useSession()
+  const mayManage = can(session.permissions, session.isSuper, 'settings.manage')
   const [searchParams] = useSearchParams()
   const highlightedId = Number(searchParams.get('account') ?? 0)
   const [search, setSearch] = useState('')
@@ -233,10 +236,12 @@ export function AccountsPage(): React.JSX.Element {
         title="Chart of Accounts"
         description={`${rows.length} accounts in ${groups.data?.length ?? 0} groups`}
         actions={
-          <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="size-3.5" strokeWidth={2} />
-            New account
-          </Button>
+          mayManage ? (
+            <Button size="sm" onClick={() => setOpen(true)}>
+              <Plus className="size-3.5" strokeWidth={2} />
+              New account
+            </Button>
+          ) : undefined
         }
       />
 
@@ -317,12 +322,12 @@ export function AccountsPage(): React.JSX.Element {
               >
                 Clear filters
               </Button>
-            ) : (
+            ) : mayManage ? (
               <Button size="sm" onClick={() => setOpen(true)}>
                 <Plus className="size-3.5" strokeWidth={2} />
                 New account
               </Button>
-            )
+            ) : undefined
           }
         />
       ) : (
@@ -414,7 +419,7 @@ export function AccountsPage(): React.JSX.Element {
                           <span className="text-[0.6875rem] uppercase tracking-[0.08em] text-muted-foreground">
                             Reserved
                           </span>
-                        ) : account.isActive ? (
+                        ) : account.isActive && mayManage ? (
                           <Button
                             variant="ghost"
                             size="xs"

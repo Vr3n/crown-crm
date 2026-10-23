@@ -247,7 +247,14 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="suppliers/:id" element={<PartyDetailPage />} />
         <Route path="items" element={<ItemsPage />} />
         <Route path="items/:id" element={<ItemDetailPage />} />
-        <Route path="masters/accounts" element={<AccountsPage />} />
+        <Route
+          path="masters/accounts"
+          element={
+            <Protected code="company.view">
+              <AccountsPage />
+            </Protected>
+          }
+        />
         <Route
           path="masters/units"
           element={
