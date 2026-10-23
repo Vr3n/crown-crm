@@ -138,6 +138,7 @@ export function PartyDialog({
 
   const form = useForm({
     defaultValues: party ? partyToForm(party) : blankPartyForm(),
+    canSubmitWhenInvalid: true,
     validators: { onSubmit: partyFormSchema },
     onSubmitInvalid: ({ formApi }) => focusFirstError(formApi),
     onSubmit: ({ value }) => {

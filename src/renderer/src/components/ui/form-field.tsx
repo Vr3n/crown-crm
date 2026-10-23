@@ -19,6 +19,8 @@ export interface FormFieldApi<T = string> {
   handleChange: (value: T) => void
   handleBlur: () => void
   validate: (cause: 'change' | 'blur' | 'submit') => unknown
+  /** TanStack keeps a blur error until the next blur; clear it on edit. */
+  setErrorMap?: (map: { onBlur?: undefined; onChange?: undefined }) => void
 }
 
 type Filter = 'digits' | 'upper' | 'decimal'
@@ -82,6 +84,8 @@ export function FormTextField({
     const next = applyFilter(raw, filter)
     field.handleChange(next)
     afterChange?.(next)
+    // A blur error would otherwise outlive the fix; drop it and re-check live.
+    field.setErrorMap?.({ onBlur: undefined, onChange: undefined })
     if (evaluated) void field.validate('change')
   }
 
