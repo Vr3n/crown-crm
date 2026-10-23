@@ -10,6 +10,8 @@ ROOT = Path(__file__).resolve().parents[2]
 PDF = ROOT / "docs" / "guides" / "crown-books-user-guide.pdf"
 OUT = Path.home() / "AppData" / "Local" / "Temp" / "opencode" / "guide-pdf"
 OUT.mkdir(parents=True, exist_ok=True)
+for old in OUT.glob("*.png"):
+    old.unlink()
 
 doc = pymupdf.open(PDF)
 zoom = 1.1
