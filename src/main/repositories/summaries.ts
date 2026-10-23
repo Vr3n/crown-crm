@@ -5,8 +5,10 @@ import type {
   AgeingBucketMinor,
   ItemSummary,
   PartyBalance,
-  PartySummary
+  PartySummary,
+  VoucherSummary
 } from '../../shared/contracts/summaries'
+import type { VoucherType } from '../../shared/contracts/vouchers'
 
 const AGEING_BUCKETS: AgeingBucketMinor['bucket'][] = ['Not due', '1-30', '31-60', '61-90', '90+']
 
@@ -162,6 +164,81 @@ export const summaryRepo = {
       lowStockCount,
       outOfStockCount,
       topItems: topItems.slice(0, 8)
+    }
+  },
+
+  vouchers(
+    companyId: number,
+    type: VoucherType | undefined,
+    from: string,
+    to: string
+  ): VoucherSummary {
+    const db = getDb()
+    const typeClause = type ? 'AND v.voucher_type = ?' : ''
+    const params: (string | number)[] = [companyId, from, to]
+    if (type) params.push(type)
+
+    const aggregate = db
+      .prepare(
+        `SELECT COUNT(*) AS count, COALESCE(SUM(v.total_minor), 0) AS total
+         FROM vouchers v
+         WHERE v.company_id = ? AND v.voucher_date BETWEEN ? AND ? AND v.status = 'POSTED'
+         ${typeClause}`
+      )
+      .get(...params) as { count: number; total: number }
+
+    const monthly = db
+      .prepare(
+        `SELECT substr(v.voucher_date, 1, 7) AS month, COALESCE(SUM(v.total_minor), 0) AS total
+         FROM vouchers v
+         WHERE v.company_id = ? AND v.voucher_date BETWEEN ? AND ? AND v.status = 'POSTED'
+         ${typeClause}
+         GROUP BY month ORDER BY month`
+      )
+      .all(...params) as { month: string; total: number }[]
+
+    const topParties = db
+      .prepare(
+        `SELECT p.id, p.name, COALESCE(SUM(v.total_minor), 0) AS total
+         FROM vouchers v
+         JOIN parties p ON p.id = v.party_id
+         WHERE v.company_id = ? AND v.voucher_date BETWEEN ? AND ? AND v.status = 'POSTED'
+         ${typeClause}
+         GROUP BY p.id ORDER BY total DESC LIMIT 6`
+      )
+      .all(...params) as { id: number; name: string; total: number }[]
+
+    let outstandingMinor = 0
+    if (type === 'SALES' || type === 'PURCHASE') {
+      const row = db
+        .prepare(
+          `SELECT COALESCE(SUM(
+             v.total_minor - COALESCE((SELECT SUM(a.amount_minor) FROM bill_allocations a WHERE a.to_voucher_id = v.id), 0)
+           ), 0) AS open
+           FROM vouchers v
+           WHERE v.company_id = ? AND v.voucher_type = ? AND v.status = 'POSTED'`
+        )
+        .get(companyId, type) as { open: number }
+      outstandingMinor = row.open
+    }
+
+    return {
+      count: aggregate.count,
+      totalMinor: aggregate.total,
+      averageMinor: aggregate.count > 0 ? Math.round(aggregate.total / aggregate.count) : 0,
+      outstandingMinor,
+      monthly: monthly.map((row) => ({
+        month: row.month,
+        label: new Date(`${row.month}-01T00:00:00`).toLocaleDateString('en-IN', {
+          month: 'short'
+        }),
+        totalMinor: row.total
+      })),
+      topParties: topParties.map((party) => ({
+        id: party.id,
+        name: party.name,
+        totalMinor: party.total
+      }))
     }
   }
 }

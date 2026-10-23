@@ -9,6 +9,7 @@ import { logger } from './lib/logger'
 import { registerIdentityIpc } from './ipc/identity'
 import { registerIdentityReadIpc } from './ipc/identity-read'
 import { registerDashboardIpc } from './ipc/dashboard'
+import { registerExportIpc } from './ipc/export'
 import { registerNumberingIpc } from './ipc/numbering'
 import { registerSummariesIpc } from './ipc/summaries'
 import { registerMastersIpc } from './ipc/masters'
@@ -106,6 +107,7 @@ app.whenReady().then(async () => {
   registerDashboardIpc()
   registerNumberingIpc()
   registerSummariesIpc()
+  registerExportIpc()
   registerLicenseIpc()
 
   createWindow()

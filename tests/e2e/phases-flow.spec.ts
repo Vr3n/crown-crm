@@ -221,7 +221,7 @@ test('P5 and P6: stock, registers, profit and loss, balance sheet', async () => 
   await shot('purchase-register')
 
   await go('#/reports/profit-loss')
-  await expect(page.getByText('Net profit')).toBeVisible()
+  await expect(page.getByText('Net profit').first()).toBeVisible()
   await shot('profit-and-loss')
 
   await go('#/reports/balance-sheet')

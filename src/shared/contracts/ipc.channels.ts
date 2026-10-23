@@ -52,6 +52,10 @@ export const IPC_CHANNELS = {
   // Page summaries
   PARTIES_SUMMARY: 'parties:summary',
   ITEMS_SUMMARY: 'items:summary',
+  VOUCHERS_SUMMARY: 'vouchers:summary',
+
+  // Export
+  EXPORT_PDF: 'export:pdf',
 
   // Voucher numbering and first run
   NUMBERING_LIST: 'numbering:list',

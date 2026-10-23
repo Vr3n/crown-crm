@@ -46,3 +46,25 @@ export interface ItemSummary {
   outOfStockCount: number
   topItems: TopItem[]
 }
+
+export interface VoucherMonthlyPoint {
+  month: string
+  label: string
+  totalMinor: number
+}
+
+export interface VoucherPartyTotal {
+  id: number
+  name: string
+  totalMinor: number
+}
+
+/** Transaction list page read model for one period. */
+export interface VoucherSummary {
+  count: number
+  totalMinor: number
+  averageMinor: number
+  outstandingMinor: number
+  monthly: VoucherMonthlyPoint[]
+  topParties: VoucherPartyTotal[]
+}

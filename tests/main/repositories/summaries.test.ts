@@ -126,6 +126,79 @@ describe('party summary', () => {
   })
 })
 
+describe('voucher summary', () => {
+  it('totals a period and splits by type and party', () => {
+    const companyId = company()
+    const customer = party(companyId, 'Sharma Traders', true, false)
+    const supplier = party(companyId, 'TechConnect', false, true)
+    const item = itemRepo.create(
+      companyId,
+      {
+        name: 'SSD 256GB',
+        sku: null,
+        hsnSac: '8523',
+        uomId: null,
+        gstRateBps: 1800,
+        isService: false,
+        salePriceMinor: 500000,
+        purchasePriceMinor: 300000,
+        openingQtyE4: 0,
+        openingRateMinor: 0,
+        reorderLevelE4: 0
+      },
+      null
+    ).id
+
+    postVoucher({
+      requestId: 'req-vc-pur',
+      type: 'PURCHASE',
+      date: today(),
+      dueDate: today(),
+      partyId: supplier,
+      lines: [
+        {
+          itemId: item,
+          description: 'SSD',
+          qtyE4: 10_000,
+          rateMinor: 300000,
+          rateIncludesTax: false,
+          discountBps: 0,
+          gstRateBps: 1800
+        }
+      ]
+    })
+    postVoucher({
+      requestId: 'req-vc-sale',
+      type: 'SALES',
+      date: today(),
+      dueDate: today(),
+      partyId: customer,
+      lines: [
+        {
+          itemId: item,
+          description: 'SSD',
+          qtyE4: 1_000,
+          rateMinor: 500000,
+          rateIncludesTax: false,
+          discountBps: 0,
+          gstRateBps: 1800
+        }
+      ]
+    })
+
+    const all = summaryRepo.vouchers(companyId, undefined, daysAgo(5), today())
+    expect(all.count).toBe(2)
+    expect(all.totalMinor).toBeGreaterThan(0)
+    expect(all.averageMinor).toBe(Math.round(all.totalMinor / 2))
+    expect(all.monthly.length).toBe(1)
+    expect(all.topParties.length).toBe(2)
+
+    const sales = summaryRepo.vouchers(companyId, 'SALES', daysAgo(5), today())
+    expect(sales.count).toBe(1)
+    expect(sales.outstandingMinor).toBe(sales.totalMinor)
+  })
+})
+
 describe('item summary', () => {
   it('values stock and flags low and out of stock', () => {
     const companyId = company()

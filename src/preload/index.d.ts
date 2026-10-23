@@ -12,7 +12,8 @@ import type {
 } from '../shared/contracts/identity'
 import type { DashboardSummary } from '../shared/contracts/dashboard'
 import type { NumberingRow, UpdateNumberingInput } from '../shared/contracts/numbering'
-import type { ItemSummary, PartySummary } from '../shared/contracts/summaries'
+import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contracts/summaries'
+import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
 import type {
@@ -104,6 +105,11 @@ declare global {
       summaries: {
         parties: () => Promise<PartySummary>
         items: () => Promise<ItemSummary>
+        vouchers: (input: {
+          type?: VoucherType
+          from: string
+          to: string
+        }) => Promise<VoucherSummary>
       }
       numbering: {
         list: () => Promise<NumberingRow[]>
@@ -128,6 +134,7 @@ declare global {
         create: () => Promise<{ name: string; sizeBytes: number; createdAt: string }>
         list: () => Promise<{ name: string; sizeBytes: number; createdAt: string }[]>
       }
+      exportPdf: (filename: string) => Promise<{ saved: boolean; filePath?: string }>
     }
   }
 }

@@ -13,7 +13,8 @@ import type {
 } from '../shared/contracts/identity'
 import type { DashboardSummary } from '../shared/contracts/dashboard'
 import type { NumberingRow, UpdateNumberingInput } from '../shared/contracts/numbering'
-import type { ItemSummary, PartySummary } from '../shared/contracts/summaries'
+import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contracts/summaries'
+import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
 import type {
@@ -138,7 +139,9 @@ const api = {
 
   summaries: {
     parties: (): Promise<PartySummary> => call(IPC_CHANNELS.PARTIES_SUMMARY),
-    items: (): Promise<ItemSummary> => call(IPC_CHANNELS.ITEMS_SUMMARY)
+    items: (): Promise<ItemSummary> => call(IPC_CHANNELS.ITEMS_SUMMARY),
+    vouchers: (input: { type?: VoucherType; from: string; to: string }): Promise<VoucherSummary> =>
+      call(IPC_CHANNELS.VOUCHERS_SUMMARY, input)
   },
 
   numbering: {
@@ -177,7 +180,10 @@ const api = {
       call(IPC_CHANNELS.BACKUP_CREATE),
     list: (): Promise<{ name: string; sizeBytes: number; createdAt: string }[]> =>
       call(IPC_CHANNELS.BACKUP_LIST)
-  }
+  },
+
+  exportPdf: (filename: string): Promise<{ saved: boolean; filePath?: string }> =>
+    call(IPC_CHANNELS.EXPORT_PDF, { filename })
 }
 
 export type Api = typeof api

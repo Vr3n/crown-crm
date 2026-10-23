@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { barX, defineChart } from '@tanstack/charts'
+import { barX, barY, defineChart } from '@tanstack/charts'
 import { Chart } from '@tanstack/charts/react'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
@@ -61,5 +61,48 @@ export function RankedBarsChart({
       ariaLabel={ariaLabel}
       className="text-foreground"
     />
+  )
+}
+
+export interface MonthlyPoint {
+  label: string
+  totalMinor: number
+}
+
+/** Vertical bars for a monthly trend within a period. */
+export function MonthlyBarsChart({
+  points,
+  color = 'oklch(0.55 0.07 235)',
+  ariaLabel
+}: {
+  points: MonthlyPoint[]
+  color?: string
+  ariaLabel: string
+}): React.JSX.Element {
+  const data = useMemo(
+    () => points.map((point) => ({ label: point.label, value: point.totalMinor / 100 })),
+    [points]
+  )
+
+  const definition = useMemo(
+    () =>
+      defineChart({
+        marks: [barY(data, { x: 'label', y: 'value', inset: 2, radius: 1, fill: color })],
+        scales: {
+          x: { scale: () => scaleBand<string>().padding(0.3) },
+          y: {
+            scale: scaleLinear,
+            nice: true,
+            grid: true,
+            axis: { ticks: { format: axisFormat } }
+          }
+        },
+        tooltip
+      }),
+    [data, color]
+  )
+
+  return (
+    <Chart definition={definition} height={220} ariaLabel={ariaLabel} className="text-foreground" />
   )
 }
