@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Ban, Printer } from 'lucide-react'
 import { toast } from 'sonner'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { StatusPill } from '@/components/ui/status-pill'
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,9 @@ const BACK: Partial<Record<VoucherType, string>> = {
   CREDIT_NOTE: '/sales',
   DEBIT_NOTE: '/purchases',
   RECEIPT: '/receipts',
-  PAYMENT: '/payments'
+  PAYMENT: '/payments',
+  JOURNAL: '/journals',
+  CONTRA: '/journals'
 }
 
 const TITLES: Partial<Record<VoucherType, string>> = {
@@ -33,7 +35,9 @@ const TITLES: Partial<Record<VoucherType, string>> = {
   CREDIT_NOTE: 'Credit note',
   DEBIT_NOTE: 'Debit note',
   RECEIPT: 'Receipt',
-  PAYMENT: 'Payment'
+  PAYMENT: 'Payment',
+  JOURNAL: 'Journal entry',
+  CONTRA: 'Contra entry'
 }
 
 function displayDate(value: string | null): string {
@@ -45,16 +49,22 @@ function displayDate(value: string | null): string {
   })
 }
 
-function formatQty(qtyE4: number): string {
-  return (qtyE4 / 10_000).toLocaleString('en-IN', { maximumFractionDigits: 4 })
+function displayDateTime(value: string | null): string {
+  if (!value) return '—'
+  const normalized = /[zZ]|[+-]\d{2}:\d{2}$/.test(value) ? value : `${value.replace(' ', 'T')}Z`
+  const date = new Date(normalized)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
-function badgeVariant(
-  status: 'DRAFT' | 'POSTED' | 'CANCELLED'
-): 'success' | 'destructive' | 'secondary' {
-  if (status === 'POSTED') return 'success'
-  if (status === 'CANCELLED') return 'destructive'
-  return 'secondary'
+function formatQty(qtyE4: number): string {
+  return (qtyE4 / 10_000).toLocaleString('en-IN', { maximumFractionDigits: 4 })
 }
 
 function TotalRow({ label, value }: { label: string; value: number }): React.JSX.Element {
@@ -172,8 +182,29 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
             </p>
           </div>
           <div className="text-right">
-            <Badge variant={badgeVariant(data.status)}>{data.status}</Badge>
-            <p className="mt-2 text-[0.9375rem] font-medium">{data.partyName ?? 'No party'}</p>
+            <StatusPill
+              tone={
+                data.status === 'POSTED'
+                  ? 'success'
+                  : data.status === 'CANCELLED'
+                    ? 'destructive'
+                    : 'neutral'
+              }
+            >
+              {data.status}
+            </StatusPill>
+            {data.partyId ? (
+              <p className="mt-2 text-[0.9375rem] font-medium">
+                <Link
+                  to={`/parties/${data.partyId}`}
+                  className="hover:text-primary hover:underline"
+                >
+                  {data.partyName ?? 'No party'}
+                </Link>
+              </p>
+            ) : (
+              <p className="mt-2 text-[0.9375rem] font-medium">{data.partyName ?? 'No party'}</p>
+            )}
             {data.partyGstin ? (
               <p className="font-mono text-[0.75rem] text-muted-foreground">
                 GSTIN {data.partyGstin}
@@ -290,12 +321,30 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
             </ul>
           </div>
         ) : null}
+
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border px-5 py-2.5 text-[0.75rem] text-muted-foreground print:hidden">
+          <span>Created {displayDateTime(data.createdAt)}</span>
+          {data.cancelledAt ? <span>Cancelled {displayDateTime(data.cancelledAt)}</span> : null}
+          {data.cancelReason ? (
+            <span>
+              Reason <span className="text-foreground">{data.cancelReason}</span>
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {cancelled ? (
-        <p className="text-[0.75rem] text-muted-foreground">
-          This voucher is cancelled. Its number is not reused.
-        </p>
+        <div className="border-l-2 border-destructive bg-destructive-soft px-3 py-2 text-[0.8125rem] print:hidden">
+          <p className="font-medium text-destructive">
+            {data.cancelledAt ? `Cancelled ${displayDateTime(data.cancelledAt)}` : 'Cancelled voucher'}
+          </p>
+          {data.cancelReason ? (
+            <p className="mt-0.5 text-muted-foreground">Reason: {data.cancelReason}</p>
+          ) : null}
+          <p className="mt-0.5 text-muted-foreground">
+            This voucher stays in the books and its number is not reused.
+          </p>
+        </div>
       ) : null}
 
       <Dialog

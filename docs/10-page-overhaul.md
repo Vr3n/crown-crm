@@ -80,8 +80,27 @@ the items page can show reorder status without a second call.
   balance-by-group chart above the grouped account list.
 - **Backup** — last-backup age, copy count, total size and a fresh/stale health
   KPI above the backup files.
+- **Company** — a read-only identity card (monogram, GSTIN, state, financial
+  year, books-begin date, numbering status) above the editor, plus a live
+  saved/unsaved indicator next to the save action. The summary always shows the
+  saved profile, so it never claims edits that have not been committed.
+- **Journals and Contra** — posted-journal, posted-contra and adjusted-value
+  KPIs, then one combined history table with a sticky header, status pill,
+  voucher links and right-aligned money. The balance guard and first-error
+  focus are unchanged.
+- **Voucher detail** — status is a text pill rather than a colour-only badge;
+  the party links to its detail page, and created/cancelled timestamps plus the
+  cancellation reason are read from the voucher row. Cancelled vouchers get a
+  short explanatory banner, while print and cancel keep their existing
+  behaviour.
 
 Party and item names in their lists are links to these pages.
+
+## Voucher audit fields
+
+`VoucherDetail` now carries `createdAt`, `cancelledAt` and `cancelReason` from
+the existing `vouchers` columns. No migration was needed; the repository simply
+stops hiding audit data that the schema already stores.
 
 ## Export
 
@@ -97,13 +116,18 @@ Party and item names in their lists are links to these pages.
 
 ## Still open
 
-- Global command palette and quick create.
-- Tax Rates and Users/Roles stay deferred, as agreed.
-- XLSX export.
+The post-refresh backlog is tracked as separate issues so each one can land on
+its own branch:
+
+- #8 XLSX export (CSV and PDF already ship).
+- #9 Global search and command palette.
+- #10 Units and Tax Rates masters.
+- #11 Users and roles.
 
 ## Verification
 
-- `npx vitest run` — 242 tests, including the summary read models and the CSV
-  writer.
+- `npx vitest run` — 243 tests, including the summary read models, the CSV
+  writer and voucher cancellation audit fields.
 - `npx playwright test --workers=1` — 17 Electron flows, including contextual
-  headings, KPI presence, report export buttons and both detail pages.
+  headings, KPI presence, report export buttons, both detail pages and the
+  journals/contra history.

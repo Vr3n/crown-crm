@@ -140,6 +140,9 @@ export interface VoucherDetail {
   narration: string | null
   referenceNo: string | null
   status: 'DRAFT' | 'POSTED' | 'CANCELLED'
+  createdAt: string
+  cancelledAt: string | null
+  cancelReason: string | null
   taxableMinor: number
   cgstMinor: number
   sgstMinor: number

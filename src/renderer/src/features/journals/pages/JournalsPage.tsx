@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { NotebookPen } from 'lucide-react'
+import { ArrowLeftRight, BookOpen, IndianRupee, NotebookPen } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
+import { Button } from '@/components/ui/button'
+import { KpiCard } from '@/components/ui/kpi-card'
+import { StatusPill } from '@/components/ui/status-pill'
 import { Field, FieldError, FormLegend } from '@/components/ui/field'
 import type { FieldHelpContent } from '@/components/ui/field-help'
 import { formatMinor } from '@/lib/money'
@@ -189,6 +193,17 @@ export function JournalsPage(): React.JSX.Element {
     queryFn: () => window.api.vouchers.list({ type: 'CONTRA', limit: 50, offset: 0 })
   })
 
+  const journalRows = journals.data ?? []
+  const contraRows = contras.data ?? []
+  const history = [...journalRows, ...contraRows].sort(
+    (a, b) => b.date.localeCompare(a.date) || b.id - a.id
+  )
+  const postedJournals = journalRows.filter((row) => row.status === 'POSTED').length
+  const postedContras = contraRows.filter((row) => row.status === 'POSTED').length
+  const adjustedMinor = history
+    .filter((row) => row.status === 'POSTED')
+    .reduce((sum, row) => sum + row.totalMinor, 0)
+
   const post = useMutation({
     mutationFn: async () => {
       if (mode === 'JOURNAL') {
@@ -284,68 +299,115 @@ export function JournalsPage(): React.JSX.Element {
         description="Manual adjustments and cash to bank transfers."
         actions={
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => open('CONTRA')}
-              className="h-8 border border-border bg-card px-3 text-[0.875rem] font-medium"
-            >
+            <Button variant="outline" size="sm" onClick={() => open('CONTRA')}>
+              <ArrowLeftRight className="size-3.5" />
               New contra
-            </button>
-            <button
-              type="button"
-              onClick={() => open('JOURNAL')}
-              className="h-8 bg-primary px-3 text-[0.875rem] font-medium text-primary-foreground"
-            >
+            </Button>
+            <Button size="sm" onClick={() => open('JOURNAL')}>
+              <BookOpen className="size-3.5" />
               New journal
-            </button>
+            </Button>
           </div>
         }
       />
 
-      {journals.data?.length === 0 && contras.data?.length === 0 ? (
+      <section className="grid grid-cols-2 gap-px border border-border bg-border md:grid-cols-3">
+        <KpiCard
+          label="Journals"
+          value={journalRows.length}
+          context={`${postedJournals} posted adjustments`}
+          icon={BookOpen}
+        />
+        <KpiCard
+          label="Contras"
+          value={contraRows.length}
+          context={`${postedContras} posted transfers`}
+          icon={ArrowLeftRight}
+          tone="stamp"
+        />
+        <KpiCard
+          label="Value adjusted"
+          value={formatMinor(adjustedMinor, 'INR')}
+          context="Posted entries in this view"
+          icon={IndianRupee}
+          tone="success"
+        />
+      </section>
+
+      {history.length === 0 ? (
         <EmptyState
           icon={NotebookPen}
           title="No journals yet"
           description="Use a journal for adjustments, and a contra to move cash into the bank."
         />
       ) : (
-        <div className="border border-border bg-card">
-          <table className="w-full border-collapse text-[0.875rem]">
-            <thead>
-              <tr>
-                {['Date', 'Type', 'Number', 'Narration', 'Amount'].map((head, index) => (
-                  <th
-                    key={head}
-                    className={
-                      index === 4
-                        ? 'border-b border-border px-3 py-2 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
-                        : 'border-b border-border px-3 py-2 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
-                    }
-                  >
-                    {head}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[...(journals.data ?? []), ...(contras.data ?? [])]
-                .sort((a, b) => b.date.localeCompare(a.date))
-                .map((row) => (
+        <div className="overflow-hidden border border-border bg-card">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border bg-muted/40 px-4 py-2.5">
+            <h2 className="text-[0.875rem] font-semibold">Recent entries</h2>
+            <span className="text-[0.75rem] text-muted-foreground">
+              {history.length} {history.length === 1 ? 'entry' : 'entries'} · newest first
+            </span>
+          </div>
+          <div className="max-h-[620px] overflow-auto">
+            <table className="w-full border-collapse text-[0.875rem]">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-muted/95">
+                  {['Date', 'Entry', 'Narration', 'Status', 'Amount'].map((head, index) => (
+                    <th
+                      key={head}
+                      className={`h-8 whitespace-nowrap border-b border-border px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground ${
+                        index === 4 ? 'text-right' : 'text-left'
+                      }`}
+                    >
+                      {head}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((row) => (
                   <tr
                     key={`${row.type}-${row.id}`}
-                    className="border-b border-border last:border-0"
+                    className="border-b border-border last:border-0 hover:bg-muted/30"
                   >
-                    <td className="px-3 py-2">{row.date}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{row.type}</td>
-                    <td className="px-3 py-2 font-mono text-[0.75rem]">{row.number}</td>
-                    <td className="px-3 py-2">{row.narration ?? '-'}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                    <td className="h-10 whitespace-nowrap px-3 font-mono text-[0.8125rem] text-muted-foreground">
+                      {row.date}
+                    </td>
+                    <td className="h-10 px-3">
+                      <Link
+                        to={`/vouchers/${row.id}`}
+                        className="font-mono text-[0.8125rem] font-medium hover:text-primary hover:underline"
+                      >
+                        {row.number}
+                      </Link>
+                      <StatusPill tone="neutral" className="ml-2">
+                        {row.type === 'JOURNAL' ? 'Journal' : 'Contra'}
+                      </StatusPill>
+                    </td>
+                    <td className="h-10 max-w-[360px] truncate px-3 text-muted-foreground">
+                      {row.narration ?? '—'}
+                    </td>
+                    <td className="h-10 px-3">
+                      <StatusPill
+                        tone={
+                          row.status === 'POSTED'
+                            ? 'success'
+                            : row.status === 'CANCELLED'
+                              ? 'destructive'
+                              : 'neutral'
+                        }
+                      >
+                        {row.status}
+                      </StatusPill>
+                    </td>
+                    <td className="h-10 whitespace-nowrap px-3 text-right font-mono font-semibold tabular-nums">
                       {formatMinor(row.totalMinor, 'INR')}
                     </td>
                   </tr>
                 ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

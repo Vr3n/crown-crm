@@ -143,6 +143,8 @@ test('P1: parties, items, chart of accounts and company', async () => {
 
   await go('#/settings/company')
   await page.getByLabel('Registered name').first().waitFor()
+  await expect(page.getByText('Numbering set', { exact: true })).toBeVisible()
+  await expect(page.getByText('Books begin', { exact: true })).toBeVisible()
   await shot('company-settings')
 })
 
@@ -231,6 +233,7 @@ test('P5 and P6: stock, registers, profit and loss, balance sheet', async () => 
 
 test('P2 and P8: journals, contra and backup', async () => {
   await go('#/journals')
+  await expect(page.getByText('Value adjusted', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'New contra' }).click()
   await page.locator('#contra-from').waitFor()
   await page.locator('#contra-from').selectOption({ index: 1 })
@@ -239,6 +242,11 @@ test('P2 and P8: journals, contra and backup', async () => {
   await page.getByRole('button', { name: 'Post', exact: true }).click()
   await expect(page.getByText('CTR/0001').first()).toBeVisible()
   await shot('journals-contra')
+
+  await page.getByRole('link', { name: 'CTR/0001' }).click()
+  await expect(page.getByText('Contra entry', { exact: true })).toBeVisible()
+  await expect(page.getByText('POSTED', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText(/^Created /)).toBeVisible()
 
   await go('#/settings/backup')
   await page.getByRole('button', { name: 'Create backup' }).click()
