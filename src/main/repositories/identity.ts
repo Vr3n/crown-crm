@@ -32,6 +32,8 @@ interface CompanyRow {
   round_off_mode: string
   allow_negative_stock: boolean
   status: CompanyStatus
+  numbering_setup_at: string | null
+  onboarding_completed_at: string | null
 }
 
 interface UserRow {
@@ -82,7 +84,9 @@ function mapCompany(row: CompanyRow): Company {
     costingMethod: row.costing_method as Company['costingMethod'],
     roundOffMode: row.round_off_mode as Company['roundOffMode'],
     allowNegativeStock: row.allow_negative_stock,
-    status: row.status
+    status: row.status,
+    numberingSetupAt: row.numbering_setup_at,
+    onboardingCompletedAt: row.onboarding_completed_at
   }
 }
 

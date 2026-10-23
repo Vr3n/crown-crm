@@ -10,6 +10,9 @@ import {
   vouchers
 } from '../db/schema'
 import { financialYearLabel } from '../domain/fy'
+import { formatVoucherNumber, nextSequenceValue } from '../domain/numbering'
+import { ValidationError } from '../domain/errors'
+import { numberingRepo, sequenceYear } from './numbering'
 import type {
   ListVouchersInput,
   OutstandingBill,
@@ -18,18 +21,6 @@ import type {
   VoucherListRow,
   VoucherType
 } from '../../shared/contracts/vouchers'
-
-const SERIES: Record<string, { series: string; prefix: string }> = {
-  SALES: { series: 'INV', prefix: 'INV/' },
-  PURCHASE: { series: 'PUR', prefix: 'PUR/' },
-  RECEIPT: { series: 'RCT', prefix: 'RCT/' },
-  PAYMENT: { series: 'PAY', prefix: 'PAY/' },
-  CREDIT_NOTE: { series: 'CN', prefix: 'CN/' },
-  DEBIT_NOTE: { series: 'DN', prefix: 'DN/' },
-  JOURNAL: { series: 'JV', prefix: 'JV/' },
-  CONTRA: { series: 'CTR', prefix: 'CTR/' },
-  OPENING: { series: 'OPN', prefix: 'OPN/' }
-}
 
 export interface VoucherHeaderInput {
   companyId: number
@@ -106,66 +97,79 @@ export const voucherRepo = {
   allocateNumber(
     companyId: number,
     type: VoucherType,
-    date: string
+    date: string,
+    manualNumber?: number | null
   ): { number: string; fy: string; series: string } {
-    const config = SERIES[type]
-    if (!config) throw new Error(`No series for ${type}`)
+    const setting = numberingRepo.get(companyId, type)
     const company = getDb()
       .prepare('SELECT fy_start_month FROM companies WHERE id = ?')
       .get(companyId) as { fy_start_month: number } | undefined
     const fy = financialYearLabel(date, company?.fy_start_month ?? 4)
+    const key = sequenceYear(fy, setting.restartYearly)
     const db = getDrizzle()
 
-    let sequence = db
-      .select()
-      .from(voucherSequences)
-      .where(
-        and(
-          eq(voucherSequences.company_id, companyId),
-          eq(voucherSequences.voucher_type, type),
-          eq(voucherSequences.series, config.series),
-          eq(voucherSequences.fy, fy)
-        )
-      )
-      .get()
-
-    if (!sequence) {
-      db.insert(voucherSequences)
-        .values({
-          company_id: companyId,
-          voucher_type: type,
-          series: config.series,
-          fy,
-          prefix: config.prefix,
-          padding: 4,
-          last_value: 0
-        })
-        .run()
-      sequence = db
+    const findSequence = (): typeof voucherSequences.$inferSelect | undefined =>
+      db
         .select()
         .from(voucherSequences)
         .where(
           and(
             eq(voucherSequences.company_id, companyId),
             eq(voucherSequences.voucher_type, type),
-            eq(voucherSequences.series, config.series),
-            eq(voucherSequences.fy, fy)
+            eq(voucherSequences.series, setting.series),
+            eq(voucherSequences.fy, key)
           )
         )
         .get()
+
+    let sequence = findSequence()
+
+    if (!sequence) {
+      db.insert(voucherSequences)
+        .values({
+          company_id: companyId,
+          voucher_type: type,
+          series: setting.series,
+          fy: key,
+          prefix: setting.prefix,
+          suffix: setting.suffix,
+          padding: setting.padding,
+          last_value: Math.max(0, setting.startNumber - 1)
+        })
+        .run()
+      sequence = findSequence()
     }
 
-    const next = (sequence?.last_value ?? 0) + 1
+    const lastValue = sequence?.last_value ?? 0
+    let next = nextSequenceValue(lastValue, setting.startNumber)
+
+    if (manualNumber !== undefined && manualNumber !== null) {
+      if (!setting.manualOverride) {
+        throw new ValidationError('Manual voucher numbers are turned off for this series')
+      }
+      if (!Number.isInteger(manualNumber) || manualNumber < setting.startNumber) {
+        throw new ValidationError(`Voucher number must be ${setting.startNumber} or higher`)
+      }
+      if (manualNumber <= lastValue) {
+        throw new ValidationError(`Voucher number must be greater than ${lastValue}`)
+      }
+      next = manualNumber
+    }
+
     db.update(voucherSequences)
-      .set({ last_value: next })
+      .set({
+        last_value: next,
+        prefix: setting.prefix,
+        suffix: setting.suffix,
+        padding: setting.padding
+      })
       .where(eq(voucherSequences.id, sequence!.id))
       .run()
 
-    const padded = String(next).padStart(sequence?.padding ?? 4, '0')
     return {
-      number: `${sequence?.prefix ?? config.prefix}${padded}${sequence?.suffix ?? ''}`,
+      number: formatVoucherNumber(setting.prefix, next, setting.padding, setting.suffix),
       fy,
-      series: config.series
+      series: setting.series
     }
   },
 

@@ -27,6 +27,8 @@ export interface Company {
   roundOffMode: RoundOffMode
   allowNegativeStock: boolean
   status: CompanyStatus
+  numberingSetupAt: string | null
+  onboardingCompletedAt: string | null
 }
 
 export interface User {

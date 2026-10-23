@@ -1,7 +1,29 @@
-import { Outlet, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
 import { TooltipProvider } from '@/components/ui/tooltip'
+
+function OnboardingGate({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const location = useLocation()
+  const profile = useQuery({
+    queryKey: ['company', 'profile'],
+    queryFn: () => window.api.identity.company(),
+    staleTime: 30_000
+  })
+
+  if (profile.data && !profile.data.numberingSetupAt) {
+    return <Navigate to="/setup/numbering" replace />
+  }
+  if (
+    profile.data?.numberingSetupAt &&
+    !profile.data.onboardingCompletedAt &&
+    location.pathname === '/'
+  ) {
+    return <Navigate to="/setup/tour" replace />
+  }
+  return <>{children}</>
+}
 
 /**
  * The authenticated shell: an ink navigation rail, a thin top bar, and a
@@ -17,7 +39,9 @@ export function AppLayout(): React.JSX.Element {
           <Topbar />
           <main className="min-h-0 flex-1 overflow-y-auto">
             <div key={location.pathname} className="page-in">
-              <Outlet />
+              <OnboardingGate>
+                <Outlet />
+              </OnboardingGate>
             </div>
           </main>
         </div>

@@ -49,6 +49,11 @@ export const IPC_CHANNELS = {
   // Dashboard
   DASHBOARD_SUMMARY: 'dashboard:summary',
 
+  // Voucher numbering and first run
+  NUMBERING_LIST: 'numbering:list',
+  NUMBERING_UPDATE: 'numbering:update',
+  ONBOARDING_COMPLETE: 'onboarding:complete',
+
   // Reports
   REPORTS_TRIAL_BALANCE: 'reports:trialBalance',
   REPORTS_PROFIT_LOSS: 'reports:profitLoss',
