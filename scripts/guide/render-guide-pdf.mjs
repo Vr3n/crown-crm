@@ -59,6 +59,7 @@ const chapters = await page.$$eval('.chapter', (sections) =>
 )
 console.log(`Figures: ${figures}, markers placed: ${markers}`)
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const print = (path) =>
   page.pdf({
     path,

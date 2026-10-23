@@ -34,6 +34,9 @@ import { PartiesPage } from '@/features/parties/pages/PartiesPage'
 import { ItemsPage } from '@/features/items/pages/ItemsPage'
 import { AccountsPage } from '@/features/accounts/pages/AccountsPage'
 import { CompanyPage } from '@/features/company/pages/CompanyPage'
+import { NumberingPage } from '@/features/numbering/pages/NumberingPage'
+import { SetupTourPage } from '@/features/onboarding/pages/SetupTourPage'
+import { SetupNumberingPage } from '@/features/onboarding/pages/SetupNumberingPage'
 import { VoucherListPage } from '@/features/vouchers/pages/VoucherListPage'
 import { VoucherEntryPage } from '@/features/vouchers/pages/VoucherEntryPage'
 import { ReceiptEntryPage } from '@/features/vouchers/pages/ReceiptEntryPage'
@@ -236,6 +239,22 @@ function VoucherDetailRoute(): React.JSX.Element {
 export function AppRoutes(): React.JSX.Element {
   return (
     <Routes>
+      <Route
+        path="setup/numbering"
+        element={
+          <Protected code="settings.manage">
+            <SetupNumberingPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="setup/tour"
+        element={
+          <Protected code="settings.manage">
+            <SetupTourPage />
+          </Protected>
+        }
+      />
       <Route element={<AppLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="stock" element={<StockPage />} />
@@ -262,6 +281,14 @@ export function AppRoutes(): React.JSX.Element {
           element={
             <Protected code="company.view">
               <CompanyPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="settings/numbering"
+          element={
+            <Protected code="settings.manage">
+              <NumberingPage />
             </Protected>
           }
         />

@@ -20,6 +20,7 @@ const TABLES = [
   'items',
   'tax_rates',
   'voucher_sequences',
+  'voucher_number_settings',
   'vouchers',
   'voucher_item_lines',
   'ledger_lines',
@@ -53,7 +54,7 @@ describe('runMigrations', () => {
     for (const table of TABLES) {
       expect(tables.has(table), table).toBe(true)
     }
-    expect(TABLES).toHaveLength(25)
+    expect(TABLES).toHaveLength(26)
   })
 
   it('creates no gym tables', () => {
@@ -64,12 +65,15 @@ describe('runMigrations', () => {
     }
   })
 
-  it('records the baseline migration once', () => {
+  it('records the baseline and numbering migrations once', () => {
     runMigrations()
     const rows = getDb()
       .prepare('SELECT version, name FROM schema_migrations ORDER BY version')
       .all() as { version: number; name: string }[]
-    expect(rows).toEqual([{ version: 0, name: 'accounting_core' }])
+    expect(rows).toEqual([
+      { version: 0, name: 'accounting_core' },
+      { version: 1, name: 'voucher_numbering' }
+    ])
   })
 
   it('is idempotent', () => {
@@ -78,7 +82,7 @@ describe('runMigrations', () => {
     const row = getDb().prepare('SELECT COUNT(*) AS n FROM schema_migrations').get() as {
       n: number
     }
-    expect(row.n).toBe(1)
+    expect(row.n).toBe(2)
     expect(tableNames().has('vouchers')).toBe(true)
   })
 

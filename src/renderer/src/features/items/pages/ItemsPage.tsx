@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Package, Plus, Search } from 'lucide-react'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -17,8 +19,10 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import { Field, FormLegend } from '@/components/ui/field'
+import type { FieldHelpContent } from '@/components/ui/field-help'
+import { focusFirstError, FormTextField, type FormFieldApi } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -26,12 +30,12 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { FIELD_HELP } from '@/lib/form-help'
 import { formatMinor, formatRate, minorToMajor } from '@/lib/money'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type { CreateItemInput, ItemRow } from '../../../../../shared/contracts/masters'
 
-const LABEL = 'text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TH =
   'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TD = 'h-9 border-b border-border px-3 align-middle'
@@ -62,7 +66,7 @@ interface ItemForm {
   isService: boolean
 }
 
-type TextKey = Exclude<keyof ItemForm, 'isService'>
+type ItemTextKey = Exclude<keyof ItemForm, 'isService' | 'uomId' | 'gstRateBps'>
 
 const blankForm = (): ItemForm => ({
   name: '',
@@ -118,64 +122,83 @@ function qtyText(e4: number): string {
   return (e4 / 10000).toFixed(4).replace(/\.?0+$/, '') || '0'
 }
 
-function validate(form: ItemForm): Record<string, string> {
-  const errors: Record<string, string> = {}
-  if (form.name.trim().length < 2) errors.name = 'Item name is required'
-  if (toMinor(form.salePrice) < 0) errors.salePrice = 'Cannot be negative'
-  if (toMinor(form.purchasePrice) < 0) errors.purchasePrice = 'Cannot be negative'
-  if (toE4(form.openingQty) < 0) errors.openingQty = 'Cannot be negative'
-  if (toMinor(form.openingRate) < 0) errors.openingRate = 'Cannot be negative'
-  if (toE4(form.reorderLevel) < 0) errors.reorderLevel = 'Cannot be negative'
-  return errors
+const itemFormSchema = z.object({
+  name: z.string().trim().min(2, 'Item name is required'),
+  sku: z.string(),
+  hsnSac: z.string(),
+  uomId: z.string(),
+  gstRateBps: z.string(),
+  salePrice: z.string().refine((value) => toMinor(value) >= 0, 'Cannot be negative'),
+  purchasePrice: z.string().refine((value) => toMinor(value) >= 0, 'Cannot be negative'),
+  openingQty: z.string().refine((value) => toE4(value) >= 0, 'Cannot be negative'),
+  openingRate: z.string().refine((value) => toMinor(value) >= 0, 'Cannot be negative'),
+  reorderLevel: z.string().refine((value) => toE4(value) >= 0, 'Cannot be negative'),
+  isService: z.boolean()
+})
+
+/** Field-level rule reused for live blur/change validation. */
+function itemFieldError(name: keyof ItemForm, value: string | boolean): string | undefined {
+  const result = itemFormSchema.shape[name].safeParse(value)
+  if (result.success) return undefined
+  return result.error.issues[0]?.message
 }
 
-function TextField({
-  id,
-  label,
-  value,
-  onChange,
-  error,
-  hint,
-  inputMode,
-  disabled,
-  className
-}: {
-  id: string
-  label: string
-  value: string
-  onChange: (value: string) => void
-  error?: string
-  hint?: string
-  inputMode?: 'numeric' | 'decimal'
-  disabled?: boolean
-  className?: string
-}): React.JSX.Element {
-  return (
-    <div className={`flex min-w-0 flex-col gap-1.5 ${className ?? ''}`}>
-      <Label htmlFor={id} className={LABEL}>
-        {label}
-      </Label>
-      <Input
-        id={id}
-        inputMode={inputMode}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        className="font-mono tabular-nums"
-      />
-      {error ? (
-        <p id={`${id}-error`} role="alert" className="text-[0.75rem] text-destructive">
-          {error}
-        </p>
-      ) : hint ? (
-        <p id={`${id}-hint`} className="text-[0.75rem] text-muted-foreground">
-          {hint}
-        </p>
-      ) : null}
-    </div>
-  )
+const TEXT_FIELDS: Record<
+  ItemTextKey,
+  {
+    label: string
+    help: FieldHelpContent
+    required?: boolean
+    inputMode?: 'numeric' | 'decimal'
+    mono?: boolean
+    autoFocus?: boolean
+    lockOnEdit?: boolean
+    hint?: (editing: boolean) => string | undefined
+  }
+> = {
+  name: {
+    label: 'Name',
+    required: true,
+    autoFocus: true,
+    help: FIELD_HELP.item.name
+  },
+  sku: { label: 'SKU', mono: true, help: FIELD_HELP.item.sku },
+  hsnSac: { label: 'HSN / SAC', mono: true, help: FIELD_HELP.item.hsnSac },
+  salePrice: {
+    label: 'Sale price (INR)',
+    inputMode: 'decimal',
+    mono: true,
+    help: FIELD_HELP.item.salePrice
+  },
+  purchasePrice: {
+    label: 'Purchase price (INR)',
+    inputMode: 'decimal',
+    mono: true,
+    help: FIELD_HELP.item.purchasePrice
+  },
+  openingQty: {
+    label: 'Opening qty',
+    inputMode: 'decimal',
+    mono: true,
+    lockOnEdit: true,
+    help: FIELD_HELP.item.openingQty,
+    hint: (editing) => (editing ? 'Fixed after the item is created.' : 'Up to 4 decimal places')
+  },
+  openingRate: {
+    label: 'Opening rate (INR)',
+    inputMode: 'decimal',
+    mono: true,
+    lockOnEdit: true,
+    help: FIELD_HELP.item.openingRate,
+    hint: (editing) => (editing ? 'Fixed after the item is created.' : undefined)
+  },
+  reorderLevel: {
+    label: 'Reorder level',
+    inputMode: 'decimal',
+    mono: true,
+    help: FIELD_HELP.item.reorderLevel,
+    hint: (editing) => (editing ? 'Leave blank to keep the current level.' : undefined)
+  }
 }
 
 export function ItemsPage(): React.JSX.Element {
@@ -185,8 +208,6 @@ export function ItemsPage(): React.JSX.Element {
   const [includeInactive, setIncludeInactive] = useState(false)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ItemRow | null>(null)
-  const [form, setForm] = useState<ItemForm>(blankForm)
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [target, setTarget] = useState<ItemRow | null>(null)
 
   const list = useQuery({
@@ -195,23 +216,6 @@ export function ItemsPage(): React.JSX.Element {
   })
   const units = useQuery({ queryKey: ['units'], queryFn: () => window.api.units.list() })
   const rows = list.data ?? []
-
-  const save = useMutation({
-    mutationFn: (input: ItemSave) =>
-      input.id
-        ? window.api.items.update({
-            ...input.payload,
-            id: input.id,
-            reorderLevelE4: input.reorderLevelE4
-          })
-        : window.api.items.create({ ...input.payload, reorderLevelE4: input.reorderLevelE4 ?? 0 }),
-    onSuccess: () => {
-      toast.success(editing ? 'Item updated' : 'Item added')
-      void queryClient.invalidateQueries({ queryKey: ['items'] })
-      setOpen(false)
-    },
-    onError: (err) => toast.error(errorMessage(err, 'Could not save the item'))
-  })
 
   const deactivate = useMutation({
     mutationFn: (id: number) => window.api.items.deactivate(id),
@@ -225,40 +229,7 @@ export function ItemsPage(): React.JSX.Element {
 
   function show(next: ItemRow | null): void {
     setEditing(next)
-    setForm(next ? toForm(next) : blankForm())
-    setErrors({})
-    save.reset()
     setOpen(true)
-  }
-
-  function set<K extends TextKey>(key: K, value: string): void {
-    setForm((prev) => ({ ...prev, [key]: value }))
-    setErrors((prev) => ({ ...prev, [key]: '' }))
-  }
-
-  function submit(event: React.FormEvent<HTMLFormElement>): void {
-    event.preventDefault()
-    const found = validate(form)
-    setErrors(found)
-    if (Object.keys(found).length > 0) return
-    const payload: ItemPayload = {
-      name: form.name.trim(),
-      sku: form.sku.trim() || null,
-      hsnSac: form.hsnSac.trim() || null,
-      uomId: Number(form.uomId) || null,
-      gstRateBps: Number(form.gstRateBps),
-      isService: form.isService,
-      salePriceMinor: toMinor(form.salePrice),
-      purchasePriceMinor: toMinor(form.purchasePrice),
-      openingQtyE4: toE4(form.openingQty),
-      openingRateMinor: toMinor(form.openingRate)
-    }
-    save.mutate({
-      id: editing?.id,
-      payload,
-      // The list row has no reorder level, so a blank field keeps the stored one.
-      reorderLevelE4: form.reorderLevel.trim() ? toE4(form.reorderLevel) : editing ? undefined : 0
-    })
   }
 
   return (
@@ -442,173 +413,15 @@ export function ItemsPage(): React.JSX.Element {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[640px]">
-          <DialogHeader>
-            <DialogTitle>{editing ? 'Edit item' : 'New item'}</DialogTitle>
-            <DialogDescription>
-              Prices are stored in rupees; stock keeps four decimal places.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="item-name" className={LABEL}>
-                  Name
-                </Label>
-                <Input
-                  id="item-name"
-                  value={form.name}
-                  autoFocus
-                  onChange={(event) => set('name', event.target.value)}
-                  aria-invalid={Boolean(errors.name)}
-                  aria-describedby={errors.name ? 'item-name-error' : undefined}
-                />
-                {errors.name ? (
-                  <p id="item-name-error" role="alert" className="text-[0.75rem] text-destructive">
-                    {errors.name}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="item-sku" className={LABEL}>
-                  SKU
-                </Label>
-                <Input
-                  id="item-sku"
-                  value={form.sku}
-                  onChange={(event) => set('sku', event.target.value)}
-                  className="font-mono"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="item-hsn" className={LABEL}>
-                  HSN / SAC
-                </Label>
-                <Input
-                  id="item-hsn"
-                  value={form.hsnSac}
-                  onChange={(event) => set('hsnSac', event.target.value)}
-                  className="font-mono"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="item-unit" className={LABEL}>
-                  Unit
-                </Label>
-                <Select value={form.uomId} onValueChange={(value) => set('uomId', value)}>
-                  <SelectTrigger id="item-unit" className="w-full">
-                    <SelectValue placeholder="Choose a unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">No unit</SelectItem>
-                    {(units.data ?? []).map((unit) => (
-                      <SelectItem key={unit.id} value={String(unit.id)}>
-                        {unit.name} ({unit.symbol})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="item-gst" className={LABEL}>
-                  GST rate
-                </Label>
-                <Select value={form.gstRateBps} onValueChange={(value) => set('gstRateBps', value)}>
-                  <SelectTrigger id="item-gst" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GST_RATES.map((rate) => (
-                      <SelectItem key={rate} value={String(rate * 100)}>
-                        {rate}%
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <label
-                htmlFor="item-service"
-                className="flex items-center gap-1.5 self-end pb-2 text-[0.875rem]"
-              >
-                <Checkbox
-                  id="item-service"
-                  checked={form.isService}
-                  onCheckedChange={(checked) =>
-                    setForm((prev) => ({ ...prev, isService: checked === true }))
-                  }
-                />
-                Service item (no stock)
-              </label>
-              <TextField
-                id="item-sale"
-                label="Sale price (INR)"
-                value={form.salePrice}
-                onChange={(value) => set('salePrice', value)}
-                error={errors.salePrice}
-                inputMode="decimal"
-              />
-              <TextField
-                id="item-purchase"
-                label="Purchase price (INR)"
-                value={form.purchasePrice}
-                onChange={(value) => set('purchasePrice', value)}
-                error={errors.purchasePrice}
-                inputMode="decimal"
-              />
-              <TextField
-                id="item-qty"
-                label="Opening qty"
-                value={form.openingQty}
-                onChange={(value) => set('openingQty', value)}
-                error={errors.openingQty}
-                inputMode="decimal"
-                disabled={editing !== null}
-                hint={editing ? 'Fixed after the item is created.' : 'Up to 4 decimal places'}
-              />
-              <TextField
-                id="item-rate"
-                label="Opening rate (INR)"
-                value={form.openingRate}
-                onChange={(value) => set('openingRate', value)}
-                error={errors.openingRate}
-                inputMode="decimal"
-                disabled={editing !== null}
-                hint={editing ? 'Fixed after the item is created.' : undefined}
-              />
-              <TextField
-                id="item-reorder"
-                label="Reorder level"
-                value={form.reorderLevel}
-                onChange={(value) => set('reorderLevel', value)}
-                error={errors.reorderLevel}
-                inputMode="decimal"
-                hint={editing ? 'Leave blank to keep the current level.' : undefined}
-              />
-            </div>
-
-            {save.isError ? (
-              <p
-                role="alert"
-                className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[0.875rem] text-destructive"
-              >
-                {errorMessage(save.error, 'Could not save the item.')}
-              </p>
-            ) : null}
-
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline" size="sm">
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button type="submit" size="sm" disabled={save.isPending}>
-                {save.isPending ? 'Saving...' : editing ? 'Save changes' : 'Add item'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {open ? (
+        <ItemDialog
+          open={open}
+          onOpenChange={setOpen}
+          item={editing}
+          units={units.data ?? []}
+          onSaved={() => setOpen(false)}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={target !== null}
@@ -627,5 +440,266 @@ export function ItemsPage(): React.JSX.Element {
         }}
       />
     </div>
+  )
+}
+
+/**
+ * Item capture dialog. Validation runs on blur, then live on change, so an
+ * error clears the moment the value is fixed. Required markers and field help
+ * come from the shared form primitives.
+ */
+function ItemDialog({
+  open,
+  onOpenChange,
+  item,
+  units,
+  onSaved
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  item: ItemRow | null
+  units: { id: number; name: string; symbol: string }[]
+  onSaved: () => void
+}): React.JSX.Element {
+  const queryClient = useQueryClient()
+  const editing = item !== null
+
+  const save = useMutation({
+    mutationFn: (input: ItemSave) =>
+      input.id
+        ? window.api.items.update({
+            ...input.payload,
+            id: input.id,
+            reorderLevelE4: input.reorderLevelE4
+          })
+        : window.api.items.create({ ...input.payload, reorderLevelE4: input.reorderLevelE4 ?? 0 }),
+    onSuccess: () => {
+      toast.success(editing ? 'Item updated' : 'Item added')
+      void queryClient.invalidateQueries({ queryKey: ['items'] })
+      onSaved()
+    },
+    onError: (err) => toast.error(errorMessage(err, 'Could not save the item'))
+  })
+
+  const form = useForm({
+    defaultValues: item ? toForm(item) : blankForm(),
+    // The dialog reveals every error and focuses the first one instead of
+    // disabling submit, so invalid attempts must reach validation.
+    canSubmitWhenInvalid: true,
+    validators: { onSubmit: itemFormSchema },
+    onSubmitInvalid: ({ formApi }) => focusFirstError(formApi),
+    onSubmit: ({ value }) => {
+      const payload: ItemPayload = {
+        name: value.name.trim(),
+        sku: value.sku.trim() || null,
+        hsnSac: value.hsnSac.trim() || null,
+        uomId: Number(value.uomId) || null,
+        gstRateBps: Number(value.gstRateBps),
+        isService: value.isService,
+        salePriceMinor: toMinor(value.salePrice),
+        purchasePriceMinor: toMinor(value.purchasePrice),
+        openingQtyE4: toE4(value.openingQty),
+        openingRateMinor: toMinor(value.openingRate)
+      }
+      save.mutate({
+        id: item?.id,
+        payload,
+        // The list row has no reorder level, so a blank field keeps the stored one.
+        reorderLevelE4: value.reorderLevel.trim()
+          ? toE4(value.reorderLevel)
+          : editing
+            ? undefined
+            : 0
+      })
+    }
+  })
+
+  function textField(name: ItemTextKey): React.JSX.Element {
+    const meta = TEXT_FIELDS[name]
+    return (
+      <form.Field
+        name={name}
+        validators={{
+          onBlur: ({ value }) => itemFieldError(name, value),
+          onChange: ({ value }) => itemFieldError(name, value),
+          onSubmit: ({ value }) => itemFieldError(name, value)
+        }}
+      >
+        {(field) => (
+          <FormTextField
+            field={field as unknown as FormFieldApi}
+            submitted={form.state.isSubmitted}
+            label={meta.label}
+            required={meta.required}
+            help={meta.help}
+            inputMode={meta.inputMode}
+            mono={meta.mono}
+            autoFocus={meta.autoFocus}
+            disabled={meta.lockOnEdit === true && editing}
+            hint={meta.hint?.(editing)}
+            afterChange={() => {
+              // TanStack Form keeps a blur error until the next blur; editing clears it.
+              field.setErrorMap({ onBlur: undefined })
+            }}
+          />
+        )}
+      </form.Field>
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>{editing ? 'Edit item' : 'New item'}</DialogTitle>
+          <DialogDescription>
+            Prices are stored in rupees; stock keeps four decimal places.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            void form.handleSubmit()
+          }}
+          className="flex flex-col gap-4"
+          noValidate
+        >
+          <FormLegend />
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {textField('name')}
+            {textField('sku')}
+            {textField('hsnSac')}
+
+            <form.Field
+              name="uomId"
+              validators={{
+                onBlur: ({ value }) => itemFieldError('uomId', value),
+                onChange: ({ value }) => itemFieldError('uomId', value),
+                onSubmit: ({ value }) => itemFieldError('uomId', value)
+              }}
+            >
+              {(field) => (
+                <Field id="item-unit" label="Unit" help={FIELD_HELP.item.uom}>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(value) => {
+                      field.handleChange(value)
+                      field.setErrorMap({ onBlur: undefined })
+                      void field.validate('change')
+                    }}
+                  >
+                    <SelectTrigger
+                      id="item-unit"
+                      className="w-full"
+                      onBlur={() => {
+                        field.handleBlur()
+                        void field.validate('blur')
+                      }}
+                    >
+                      <SelectValue placeholder="Choose a unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">No unit</SelectItem>
+                      {units.map((unit) => (
+                        <SelectItem key={unit.id} value={String(unit.id)}>
+                          {unit.name} ({unit.symbol})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="gstRateBps"
+              validators={{
+                onBlur: ({ value }) => itemFieldError('gstRateBps', value),
+                onChange: ({ value }) => itemFieldError('gstRateBps', value),
+                onSubmit: ({ value }) => itemFieldError('gstRateBps', value)
+              }}
+            >
+              {(field) => (
+                <Field id="item-gst" label="GST rate" help={FIELD_HELP.item.gstRate}>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(value) => {
+                      field.handleChange(value)
+                      field.setErrorMap({ onBlur: undefined })
+                      void field.validate('change')
+                    }}
+                  >
+                    <SelectTrigger
+                      id="item-gst"
+                      className="w-full"
+                      onBlur={() => {
+                        field.handleBlur()
+                        void field.validate('blur')
+                      }}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GST_RATES.map((rate) => (
+                        <SelectItem key={rate} value={String(rate * 100)}>
+                          {rate}%
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Field name="isService">
+              {(field) => (
+                <Field label="Item type" help={FIELD_HELP.item.service}>
+                  <label
+                    htmlFor="isService"
+                    className="flex items-center gap-1.5 pt-0.5 text-[0.9375rem]"
+                  >
+                    <Checkbox
+                      id="isService"
+                      checked={field.state.value}
+                      onCheckedChange={(checked) => field.handleChange(checked === true)}
+                    />
+                    Service item (no stock)
+                  </label>
+                </Field>
+              )}
+            </form.Field>
+
+            {textField('salePrice')}
+            {textField('purchasePrice')}
+            {textField('openingQty')}
+            {textField('openingRate')}
+            {textField('reorderLevel')}
+          </div>
+
+          {save.isError ? (
+            <p
+              role="alert"
+              className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[0.875rem] text-destructive"
+            >
+              {errorMessage(save.error, 'Could not save the item.')}
+            </p>
+          ) : null}
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" size="sm">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" size="sm" disabled={save.isPending}>
+              {save.isPending ? 'Saving...' : editing ? 'Save changes' : 'Add item'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

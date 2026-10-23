@@ -3,6 +3,7 @@ import { seedCompanyDefaults, seedRolesForCompany } from '../db/seed'
 import { hashPassword, verifyPassword } from '../auth/password'
 import { requirePermission, currentCompanyId, setSession, getSession } from '../auth/session'
 import { companyRepo, userRepo, roleRepo, staffRepo, appMetaRepo } from '../repositories/identity'
+import { numberingRepo } from '../repositories/numbering'
 import type {
   AuthStatus,
   CreateStaffMemberInput,
@@ -181,6 +182,7 @@ export function setupCompany(input: SetupCompanyInput): SessionContext {
 
     seedRolesForCompany(created.id)
     seedCompanyDefaults(created.id, booksBeginDate)
+    numberingRepo.ensureDefaults(created.id)
 
     const ownerRole = roleRepo.findByName(created.id, 'Owner')
     if (!ownerRole) throw new NotFoundError('Owner role not found')

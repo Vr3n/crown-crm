@@ -294,7 +294,12 @@ export function postVoucher(input: PostVoucherInput): PostedVoucher {
       }
     }
 
-    const { number, fy, series } = voucherRepo.allocateNumber(companyId, input.type, input.date)
+    const { number, fy, series } = voucherRepo.allocateNumber(
+      companyId,
+      input.type,
+      input.date,
+      input.manualNumber
+    )
 
     const dueDate =
       input.dueDate ??

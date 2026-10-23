@@ -125,4 +125,6 @@ export interface CompanyProfile {
   roundOffMode: string
   allowNegativeStock: boolean
   status: string
+  numberingSetupAt: string | null
+  onboardingCompletedAt: string | null
 }

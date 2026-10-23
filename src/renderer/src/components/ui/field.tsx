@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { AlertCircle, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { FieldHelp, type FieldHelpContent } from '@/components/ui/field-help'
 
 type FieldErrorValue = string | { message?: string } | undefined
 
@@ -16,9 +17,13 @@ function firstMessage(errors: FieldErrorValue[] | undefined): string | undefined
   return undefined
 }
 
-interface FieldProps {
+export interface FieldProps {
   id?: string
   label?: React.ReactNode
+  /** Marks the field with an asterisk and tells screen readers it is required. */
+  required?: boolean
+  /** Short explanation shown from a help affordance in the label row. */
+  help?: FieldHelpContent
   /** Node rendered right-aligned on the label row (e.g. a live "digits remaining" counter). */
   labelEnd?: React.ReactNode
   /** Helper text shown when the field is not in an error state. */
@@ -48,6 +53,8 @@ interface FieldProps {
 export function Field({
   id,
   label,
+  required,
+  help,
   labelEnd,
   hint,
   warning,
@@ -58,18 +65,26 @@ export function Field({
   children
 }: FieldProps): React.JSX.Element {
   const message = error ?? firstMessage(errors)
+  const helpLabel = typeof label === 'string' ? label : (id ?? 'this field')
 
   return (
     <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
       {label ? (
-        labelEnd ? (
-          <div className="flex items-center justify-between gap-3">
-            <FieldLabel htmlFor={id}>{label}</FieldLabel>
-            <div className="shrink-0">{labelEnd}</div>
-          </div>
-        ) : (
-          <FieldLabel htmlFor={id}>{label}</FieldLabel>
-        )
+        <div className="flex min-w-0 items-center gap-1.5">
+          <FieldLabel htmlFor={id}>
+            {label}
+            {required ? (
+              <>
+                <span aria-hidden className="ml-0.5 text-stamp">
+                  *
+                </span>
+                <span className="sr-only"> (required)</span>
+              </>
+            ) : null}
+          </FieldLabel>
+          {help ? <FieldHelp label={helpLabel} content={help} /> : null}
+          {labelEnd ? <div className="ml-auto shrink-0">{labelEnd}</div> : null}
+        </div>
       ) : null}
 
       {children}
@@ -166,4 +181,20 @@ export function FieldGroup({
   ...props
 }: React.ComponentProps<'div'>): React.JSX.Element {
   return <div className={cn('flex flex-col gap-5', className)} {...props} />
+}
+
+/**
+ * Legend shown once at the top of a form that uses asterisks. Screen readers
+ * read the marker inside each label, so the legend is visual reinforcement, not
+ * the only signal.
+ */
+export function FormLegend({ className }: { className?: string }): React.JSX.Element {
+  return (
+    <p className={cn('text-xs text-muted-foreground', className)}>
+      <span aria-hidden className="mr-0.5 text-stamp">
+        *
+      </span>
+      Required fields
+    </p>
+  )
 }
