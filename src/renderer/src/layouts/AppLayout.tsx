@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Sidebar } from '@/components/layout/Sidebar'
@@ -31,13 +32,19 @@ function OnboardingGate({ children }: { children: React.ReactNode }): React.JSX.
  */
 export function AppLayout(): React.JSX.Element {
   const location = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 })
+  }, [location.pathname])
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex h-screen overflow-hidden bg-background text-foreground">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar />
-          <main className="min-h-0 flex-1 overflow-y-auto">
+          <main ref={mainRef} className="min-h-0 flex-1 overflow-y-auto">
             <div key={location.pathname} className="page-in">
               <OnboardingGate>
                 <Outlet />

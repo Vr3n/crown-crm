@@ -51,6 +51,32 @@ async function waitForApi(): Promise<void> {
   await page.waitForFunction(() => Boolean((window as unknown as { api?: unknown }).api))
 }
 
+/** Finish first run without walking the wizard, so the rest of the flow can run. */
+async function completeOnboarding(): Promise<void> {
+  await page.waitForFunction(() =>
+    Boolean((window as unknown as { api?: { numbering?: unknown } }).api?.numbering)
+  )
+  await page.evaluate(async () => {
+    const api = (window as unknown as { api: Record<string, never> }).api as unknown as {
+      numbering: {
+        list: () => Promise<Record<string, unknown>[]>
+        update: (input: Record<string, unknown>) => Promise<unknown>
+        completeOnboarding: () => Promise<unknown>
+      }
+    }
+    const rows = await api.numbering.list()
+    await api.numbering.update({ requestId: `e2e-${Date.now()}`, items: rows })
+    await api.numbering.completeOnboarding()
+  })
+  await page.reload()
+  await page.waitForLoadState('domcontentloaded')
+  await waitForApi()
+  await page.evaluate(() => {
+    window.location.hash = '#/'
+  })
+  await page.waitForTimeout(300)
+}
+
 async function goto(hash: string): Promise<void> {
   await page.evaluate((target) => {
     window.location.hash = target
@@ -82,6 +108,9 @@ test('first run creates the company and opens the dashboard', async () => {
   await expect(page.getByText('Crown Books').first()).toBeVisible()
   await expect(page.getByRole('button', { name: 'Create company and sign in' })).toHaveCount(0)
   await waitForApi()
+  await page.getByRole('heading', { name: 'Number your vouchers' }).waitFor()
+  await completeOnboarding()
+  await page.getByText('Set up the books').waitFor()
 })
 
 test('masters, purchase, sale, receipt and reports flow end to end', async () => {

@@ -69,21 +69,29 @@ Unit tests cover 0.5 up, 0.4999 down, negative amounts, and large values near `N
 ## 4. Voucher numbering
 
 ```
+voucher_number_settings(company_id, voucher_type, series, prefix, suffix, padding, start_number, restart_yearly, manual_override)
 voucher_sequences(company_id, voucher_type, series, fy, prefix, suffix, last_value, padding)
 ```
 
-Format: `prefix + zero padded (last_value + 1) + suffix`, for example `TC/` + `0583`.
+Settings are per company and voucher type, edited from Company settings. The
+per-year counters stay in `voucher_sequences`.
+
+Format: `prefix + zero padded value + suffix`, for example `TC/` + `0583`.
 
 Rules:
 
-1. One sequence per company, voucher type, series and financial year.
+1. One sequence per company, voucher type, series and financial year. When
+   yearly restart is off the counter is keyed `ALL`.
 2. Financial year label is `2026-27`, derived from `fy_start_month` and the voucher date.
-3. The increment happens inside the posting transaction. A rollback does not consume a number.
-4. Cancelled vouchers keep their number. No reuse, ever.
-5. Manual numbers are allowed only if the company setting permits it, and they still update `last_value` to the maximum seen.
-6. A collision is a hard failure, not a retry, because a retry would mask a corrupted sequence.
+3. The first number in a period is `start_number`, not always 1.
+4. Changing a prefix, suffix or width affects the next number only.
+5. Changing the series starts a new sequence. Posted vouchers keep the series they were issued with.
+6. The increment happens inside the posting transaction. A rollback does not consume a number.
+7. Cancelled vouchers keep their number. No reuse, ever.
+8. Manual numbers are allowed only if the series permits it. A manual number must be at least the starting number and greater than the last used value; it raises the high water mark.
+9. A collision is a hard failure, not a retry, because a retry would mask a corrupted sequence.
 
-Example series seeded per company:
+Example defaults seeded per company:
 
 | Type | Series | Example |
 |---|---|---|

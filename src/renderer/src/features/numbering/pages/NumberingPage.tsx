@@ -150,6 +150,11 @@ export function NumberingPage({
     onSuccess: () => {
       setEdits({})
       toast.success('Voucher numbering saved')
+      // Update the cached profile before navigating, so the first run guard sees
+      // the new state immediately instead of bouncing back to this screen.
+      queryClient.setQueryData<Record<string, unknown> | null>(['company', 'profile'], (old) =>
+        old ? { ...old, numberingSetupAt: new Date().toISOString() } : old
+      )
       void queryClient.invalidateQueries({ queryKey: ['numbering'] })
       void queryClient.invalidateQueries({ queryKey: ['company', 'profile'] })
       onSaved?.()

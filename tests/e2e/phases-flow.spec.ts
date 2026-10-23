@@ -33,6 +33,32 @@ async function go(hash: string): Promise<void> {
   await page.waitForTimeout(300)
 }
 
+/** Finish first run without walking the wizard, so the phase screenshots stay focused. */
+async function completeOnboarding(): Promise<void> {
+  await page.waitForFunction(() =>
+    Boolean((window as unknown as { api?: { numbering?: unknown } }).api?.numbering)
+  )
+  await page.evaluate(async () => {
+    const api = (window as unknown as { api: Record<string, never> }).api as unknown as {
+      numbering: {
+        list: () => Promise<Record<string, unknown>[]>
+        update: (input: Record<string, unknown>) => Promise<unknown>
+        completeOnboarding: () => Promise<unknown>
+      }
+    }
+    const rows = await api.numbering.list()
+    await api.numbering.update({ requestId: `e2e-${Date.now()}`, items: rows })
+    await api.numbering.completeOnboarding()
+  })
+  await page.reload()
+  await page.waitForLoadState('domcontentloaded')
+  await page.waitForFunction(() => Boolean((window as unknown as { api?: unknown }).api))
+  await page.evaluate(() => {
+    window.location.hash = '#/'
+  })
+  await page.waitForTimeout(300)
+}
+
 test.describe.configure({ mode: 'serial' })
 
 test.beforeAll(async () => {
@@ -66,6 +92,8 @@ test('P0: first run, company setup and shell', async () => {
   await page.getByLabel('GSTIN (optional)').fill('27AABFU4477G1ZY')
   await page.getByRole('button', { name: 'Create company and sign in' }).click()
 
+  await page.getByRole('heading', { name: 'Number your vouchers' }).waitFor()
+  await completeOnboarding()
   await page.getByText('Good ', { exact: false }).first().waitFor()
   await shot('dashboard-empty')
 })
@@ -74,21 +102,21 @@ test('P1: parties, items, chart of accounts and company', async () => {
   // Customer
   await go('#/parties')
   await page.getByRole('button', { name: 'New party' }).first().click()
-  await page.getByLabel('Name', { exact: true }).fill('Acme Distributor')
+  await page.getByLabel(/^Name/).fill('Acme Distributor')
   await page.getByLabel('Phone', { exact: true }).fill('9000000001')
   await page.getByLabel('GSTIN', { exact: true }).fill('27AABFU4477G1ZY')
-  await page.getByLabel('State code').fill('27')
-  await page.getByLabel('Credit days').fill('30')
+  await page.getByRole('textbox', { name: 'State code' }).fill('27')
+  await page.getByRole('textbox', { name: 'Credit days' }).fill('30')
   await page.getByRole('button', { name: 'Add party' }).click()
   await expect(page.getByText('Acme Distributor').first()).toBeVisible()
 
   // Supplier
   await page.getByRole('button', { name: 'New party' }).first().click()
-  await page.getByLabel('Name', { exact: true }).fill('TechConnect')
+  await page.getByLabel(/^Name/).fill('TechConnect')
   await page.getByLabel('Phone', { exact: true }).fill('9000000002')
   await page.getByLabel('Customer').click()
   await page.getByLabel('Supplier').click()
-  await page.getByLabel('Credit days').fill('30')
+  await page.getByRole('textbox', { name: 'Credit days' }).fill('30')
   await page.getByRole('button', { name: 'Add party' }).click()
   await expect(page.getByText('TechConnect').first()).toBeVisible()
   await shot('parties-list')
@@ -96,15 +124,15 @@ test('P1: parties, items, chart of accounts and company', async () => {
   // Item
   await go('#/items')
   await page.getByRole('button', { name: 'New item' }).first().click()
-  await page.getByLabel('Name', { exact: true }).fill('SSD 256GB')
-  await page.getByLabel('SKU').fill('SSD-256')
-  await page.getByLabel(/HSN/).fill('8523')
+  await page.getByLabel(/^Name/).fill('SSD 256GB')
+  await page.getByRole('textbox', { name: 'SKU' }).fill('SSD-256')
+  await page.getByRole('textbox', { name: 'HSN / SAC' }).fill('8523')
   await page.locator('#item-unit').click()
   await page.getByRole('option', { name: /Nos/ }).click()
   await page.locator('#item-gst').click()
   await page.getByRole('option', { name: '18%' }).click()
-  await page.getByLabel('Sale price (INR)').fill('3855.93')
-  await page.getByLabel('Purchase price (INR)').fill('3000')
+  await page.getByRole('textbox', { name: 'Sale price (INR)' }).fill('3855.93')
+  await page.getByRole('textbox', { name: 'Purchase price (INR)' }).fill('3000')
   await page.getByRole('button', { name: 'Add item' }).click()
   await expect(page.getByText('SSD 256GB').first()).toBeVisible()
   await shot('items-list')
@@ -120,8 +148,10 @@ test('P1: parties, items, chart of accounts and company', async () => {
 
 test('P2 and P4: purchase bill, payment, posting and trial balance', async () => {
   await go('#/purchases/new')
-  await page.getByLabel('Party').selectOption({ index: 1 })
-  await page.getByLabel('Item for line 1').selectOption({ index: 1 })
+  await page.getByRole('combobox', { name: 'Select supplier' }).click()
+  await page.getByRole('option', { name: /TechConnect/ }).click()
+  await page.getByRole('combobox', { name: 'Choose item or use free text' }).click()
+  await page.getByRole('option', { name: /SSD 256GB/ }).click()
   await page.getByLabel('Qty for line 1').fill('10')
   await page.getByLabel('Rate for line 1').fill('3000')
   await shot('purchase-entry')
@@ -149,8 +179,10 @@ test('P2 and P4: purchase bill, payment, posting and trial balance', async () =>
 
 test('P3: sales invoice, receipt with allocation, receivables and ageing', async () => {
   await go('#/sales/new')
-  await page.getByLabel('Party').selectOption({ index: 1 })
-  await page.getByLabel('Item for line 1').selectOption({ index: 1 })
+  await page.getByRole('combobox', { name: 'Select customer' }).click()
+  await page.getByRole('option', { name: /Acme Distributor/ }).click()
+  await page.getByRole('combobox', { name: 'Choose item or use free text' }).click()
+  await page.getByRole('option', { name: /SSD 256GB/ }).click()
   await page.getByLabel('Qty for line 1').fill('1')
   await shot('sales-entry')
   await page.getByRole('button', { name: 'Post invoice' }).click()
@@ -200,11 +232,10 @@ test('P5 and P6: stock, registers, profit and loss, balance sheet', async () => 
 test('P2 and P8: journals, contra and backup', async () => {
   await go('#/journals')
   await page.getByRole('button', { name: 'New contra' }).click()
-  await page.getByText('From', { exact: true }).waitFor()
-  const selects = page.locator('div.fixed select')
-  await selects.nth(0).selectOption({ index: 1 })
-  await selects.nth(1).selectOption({ index: 2 })
-  await page.getByLabel('Amount').fill('500')
+  await page.locator('#contra-from').waitFor()
+  await page.locator('#contra-from').selectOption({ index: 1 })
+  await page.locator('#contra-to').selectOption({ index: 2 })
+  await page.locator('#contra-amount').fill('500')
   await page.getByRole('button', { name: 'Post', exact: true }).click()
   await expect(page.getByText('CTR/0001').first()).toBeVisible()
   await shot('journals-contra')
