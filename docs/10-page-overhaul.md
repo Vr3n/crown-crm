@@ -76,6 +76,10 @@ the items page can show reorder status without a second call.
 - **Item detail** (`/items/:id`) — on hand, stock value, reorder level and
   margin KPIs, a stock-position meter, and stock movements with a running
   balance. Movements come from the new `reports:stock-movements` read model.
+- **Chart of Accounts** — assets, liabilities, income and expenses KPIs and a
+  balance-by-group chart above the grouped account list.
+- **Backup** — last-backup age, copy count, total size and a fresh/stale health
+  KPI above the backup files.
 
 Party and item names in their lists are links to these pages.
 

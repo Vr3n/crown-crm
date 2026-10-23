@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ListTree, Plus, Search } from 'lucide-react'
+import { ListTree, Plus, Search, Landmark, TrendingUp, Wallet, ArrowDownLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { PageHeader } from '@/components/page-header'
@@ -30,6 +30,9 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { FIELD_HELP } from '@/lib/form-help'
+import { KpiCard } from '@/components/ui/kpi-card'
+import { ChartCard } from '@/components/ui/chart-card'
+import { RankedBarsChart } from '@/components/charts/list-charts'
 import { formatMinor } from '@/lib/money'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type {
@@ -92,6 +95,64 @@ function accountFieldError(name: keyof AccountForm, value: string): string | und
   const result = accountFormSchema.shape[name].safeParse(value)
   if (result.success) return undefined
   return result.error.issues[0]?.message
+}
+
+function AccountOverview({ rows }: { rows: AccountRow[] }): React.JSX.Element {
+  const total = (type: string): number =>
+    rows
+      .filter((row) => row.type === type)
+      .reduce((sum, row) => sum + Math.abs(row.balanceMinor), 0)
+
+  const groups = new Map<string, number>()
+  for (const row of rows) {
+    groups.set(row.groupName, (groups.get(row.groupName) ?? 0) + Math.abs(row.balanceMinor))
+  }
+  const topGroups = [...groups.entries()]
+    .map(([label, valueMinor]) => ({ label, valueMinor }))
+    .filter((row) => row.valueMinor > 0)
+    .sort((a, b) => b.valueMinor - a.valueMinor)
+    .slice(0, 6)
+
+  return (
+    <>
+      <section className="grid grid-cols-2 gap-px border border-border bg-border xl:grid-cols-4">
+        <KpiCard
+          label="Assets"
+          value={formatMinor(total('ASSET'), 'INR')}
+          context="What the business owns"
+          icon={Landmark}
+          tone="primary"
+        />
+        <KpiCard
+          label="Liabilities"
+          value={formatMinor(total('LIABILITY'), 'INR')}
+          context="What the business owes"
+          icon={ArrowDownLeft}
+          tone="stamp"
+        />
+        <KpiCard
+          label="Income"
+          value={formatMinor(total('INCOME'), 'INR')}
+          context="Earned so far"
+          icon={TrendingUp}
+          tone="success"
+        />
+        <KpiCard
+          label="Expenses"
+          value={formatMinor(total('EXPENSE'), 'INR')}
+          context="Spent so far"
+          icon={Wallet}
+          tone="warning"
+        />
+      </section>
+
+      {topGroups.length > 0 ? (
+        <ChartCard title="Balance by group" subtitle="Where the ledger's value sits">
+          <RankedBarsChart rows={topGroups} ariaLabel="Account balance by group" />
+        </ChartCard>
+      ) : null}
+    </>
+  )
 }
 
 function Balance({ minor }: { minor: number }): React.JSX.Element {
@@ -167,6 +228,8 @@ export function AccountsPage(): React.JSX.Element {
           </Button>
         }
       />
+
+      <AccountOverview rows={rows} />
 
       <div className="flex flex-wrap items-center gap-2 border border-border bg-card px-3 py-2">
         <div className="relative min-w-56 flex-1">

@@ -205,4 +205,8 @@ test('the dashboard reflects the records and shows the trends', async () => {
   await expect(page.getByText('Total debit', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'CSV' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'PDF' })).toBeVisible()
+
+  await goto('#/masters/accounts')
+  await expect(page.getByText('Assets', { exact: true })).toBeVisible()
+  await expect(page.getByText('Balance by group')).toBeVisible()
 })
