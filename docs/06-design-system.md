@@ -335,7 +335,27 @@ Motion is feedback, not decoration. Durations come from common guidance: 100 to 
 
 The animation system is in `src/renderer/src/assets/main.css` under utilities: `ui-press`, `ui-lift`, `page-in`, `no-scrollbar`.
 
-### 13.5 What was deliberately not done
+### 13.5 Module accents and charts
+
+One accent marks each workflow area, applied to the page header rule, empty
+state plate and chart series. The body stays neutral.
+
+| Area | Accent | Token |
+|---|---|---|
+| Parties | Ledger green | `--success` |
+| Items and stock | Ochre | `--warning` |
+| Reports and day book | Info blue | `--info` |
+| Admin, purchases, payments | Vermilion | `--stamp` |
+| Sales, journals, dashboard | Action blue | `--primary` |
+
+The map lives in `src/renderer/src/lib/module-tone.ts`. Colour is never the
+only signal: labels and icons carry the same meaning.
+
+Charts use `@tanstack/charts` with the `--chart-1` to `--chart-5` tokens, at
+most two per screen, always with an accessible name and a data table fallback.
+They are not decorative: each answers a question the page already asks.
+
+### 13.6 What was deliberately not done
 
 - No gradient text, glass panels, neon glow or floating cards.
 - No global zoom multiplier.

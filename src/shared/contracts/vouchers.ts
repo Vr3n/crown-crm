@@ -65,6 +65,8 @@ export const postVoucherInputSchema = z.object({
   placeOfSupplyStateCode: z.string().max(2).optional().nullable(),
   narration: z.string().max(1000).optional().nullable(),
   referenceNo: z.string().max(80).optional().nullable(),
+  /** Only honoured when the series allows manual overrides. */
+  manualNumber: z.number().int().positive().optional().nullable(),
   lines: z.array(voucherLineInputSchema).default([]),
   journalLines: z
     .array(
@@ -138,6 +140,9 @@ export interface VoucherDetail {
   narration: string | null
   referenceNo: string | null
   status: 'DRAFT' | 'POSTED' | 'CANCELLED'
+  createdAt: string
+  cancelledAt: string | null
+  cancelReason: string | null
   taxableMinor: number
   cgstMinor: number
   sgstMinor: number

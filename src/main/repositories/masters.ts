@@ -285,11 +285,13 @@ export const itemRepo = {
   list(companyId: number, query?: string, includeInactive = false): ItemRow[] {
     const rows = getDb()
       .prepare(
-        `SELECT i.*, u.name AS uom_name,
+        `SELECT i.*, u.name AS uom_name, sg.name AS stock_group,
           COALESCE((SELECT SUM(m.qty_in_e4 - m.qty_out_e4) FROM stock_movements m
                     JOIN vouchers v ON v.id = m.voucher_id AND v.status = 'POSTED'
                     WHERE m.item_id = i.id), 0) AS stock_qty
-         FROM items i LEFT JOIN units u ON u.id = i.uom_id
+         FROM items i
+         LEFT JOIN units u ON u.id = i.uom_id
+         LEFT JOIN stock_groups sg ON sg.id = i.stock_group_id
          WHERE i.company_id = ? ${includeInactive ? '' : 'AND i.is_active = 1'}
            ${query ? "AND (lower(i.name) LIKE ? OR lower(COALESCE(i.sku,'')) LIKE ? OR lower(COALESCE(i.hsn_sac,'')) LIKE ?)" : ''}
          ORDER BY i.name COLLATE NOCASE`
@@ -308,11 +310,13 @@ export const itemRepo = {
   findById(companyId: number, id: number): ItemRow | null {
     const row = getDb()
       .prepare(
-        `SELECT i.*, u.name AS uom_name,
+        `SELECT i.*, u.name AS uom_name, sg.name AS stock_group,
           COALESCE((SELECT SUM(m.qty_in_e4 - m.qty_out_e4) FROM stock_movements m
                     JOIN vouchers v ON v.id = m.voucher_id AND v.status = 'POSTED'
                     WHERE m.item_id = i.id), 0) AS stock_qty
-         FROM items i LEFT JOIN units u ON u.id = i.uom_id
+         FROM items i
+         LEFT JOIN units u ON u.id = i.uom_id
+         LEFT JOIN stock_groups sg ON sg.id = i.stock_group_id
          WHERE i.company_id = ? AND i.id = ?`
       )
       .get(companyId, id) as Record<string, unknown> | undefined
@@ -412,6 +416,9 @@ function mapItem(row: Record<string, unknown>): ItemRow {
     openingQtyE4: (row.opening_qty_e4 as number) ?? 0,
     openingRateMinor: (row.opening_rate_minor as number) ?? 0,
     stockQtyE4: Number(row.stock_qty ?? 0),
+    reorderLevelE4: (row.reorder_level_e4 as number) ?? 0,
+    stockGroupId: (row.stock_group_id as number) ?? null,
+    stockGroup: (row.stock_group as string) ?? null,
     isActive: Boolean(row.is_active)
   }
 }

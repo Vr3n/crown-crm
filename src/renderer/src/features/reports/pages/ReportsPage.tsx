@@ -2,9 +2,25 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
+import { Button } from '@/components/ui/button'
+import { KpiCard, type KpiTone } from '@/components/ui/kpi-card'
 import { formatMinor } from '@/lib/money'
+import { downloadCsv, safeFilename } from '@/lib/export'
 import { cn } from '@/lib/utils'
-import { FileText } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Download,
+  FileText,
+  IndianRupee,
+  Landmark,
+  Printer,
+  Scale,
+  TrendingUp
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { toast } from 'sonner'
 
 export type ReportKind =
   | 'receivables'
@@ -126,8 +142,235 @@ export function ReportsPage({ kind }: { kind: ReportKind }): React.JSX.Element {
         </div>
       ) : null}
 
-      {query.data ? <ReportBody kind={kind} data={query.data.rows as never} /> : null}
+      {query.data ? (
+        <>
+          <ReportStats kind={kind} data={query.data.rows} />
+          <ReportBody kind={kind} data={query.data.rows as never} />
+        </>
+      ) : null}
     </div>
+  )
+}
+
+function ReportStats({ kind, data }: { kind: ReportKind; data: unknown }): React.JSX.Element {
+  const money = (minor: number): string => formatMinor(minor, 'INR')
+  const cards: {
+    label: string
+    value: string
+    context: string
+    tone: KpiTone
+    icon: LucideIcon
+  }[] = []
+
+  if (kind === 'receivables' || kind === 'payables') {
+    const rows = data as { notDueMinor: number; overdueMinor: number; totalMinor: number }[]
+    const total = rows.reduce((sum, row) => sum + row.totalMinor, 0)
+    const overdue = rows.reduce((sum, row) => sum + row.overdueMinor, 0)
+    cards.push(
+      {
+        label: kind === 'receivables' ? 'Receivable' : 'Payable',
+        value: money(total),
+        context: `${rows.length} ${rows.length === 1 ? 'party' : 'parties'}`,
+        tone: 'primary',
+        icon: kind === 'receivables' ? ArrowDownLeft : ArrowUpRight
+      },
+      {
+        label: 'Overdue',
+        value: money(overdue),
+        context:
+          total > 0 ? `${Math.round((overdue / total) * 100)}% of the total` : 'Nothing overdue',
+        tone: 'warning',
+        icon: AlertTriangle
+      },
+      {
+        label: 'Not due yet',
+        value: money(total - overdue),
+        context: 'Within agreed terms',
+        tone: 'success',
+        icon: Scale
+      }
+    )
+  }
+
+  if (kind === 'ageing') {
+    const rows = data as { bucketsMinor: number[]; totalMinor: number }[]
+    const total = rows.reduce((sum, row) => sum + row.totalMinor, 0)
+    const overdue = rows.reduce(
+      (sum, row) => sum + row.bucketsMinor.slice(1).reduce((inner, value) => inner + value, 0),
+      0
+    )
+    cards.push(
+      {
+        label: 'Open balance',
+        value: money(total),
+        context: `${rows.length} ${rows.length === 1 ? 'party' : 'parties'}`,
+        tone: 'primary',
+        icon: IndianRupee
+      },
+      {
+        label: 'Overdue',
+        value: money(overdue),
+        context: 'Past the due date',
+        tone: 'warning',
+        icon: AlertTriangle
+      },
+      {
+        label: 'Oldest',
+        value: money(rows.reduce((sum, row) => sum + (row.bucketsMinor.at(-1) ?? 0), 0)),
+        context: 'More than 180 days late',
+        tone: 'stamp',
+        icon: Landmark
+      }
+    )
+  }
+
+  if (kind === 'trial-balance') {
+    const rows = data as { debitMinor: number; creditMinor: number }[]
+    const debit = rows.reduce((sum, row) => sum + row.debitMinor, 0)
+    const credit = rows.reduce((sum, row) => sum + row.creditMinor, 0)
+    cards.push(
+      {
+        label: 'Total debit',
+        value: money(debit),
+        context: `${rows.length} accounts`,
+        tone: 'primary',
+        icon: ArrowDownLeft
+      },
+      {
+        label: 'Total credit',
+        value: money(credit),
+        context: 'Must equal total debit',
+        tone: 'success',
+        icon: ArrowUpRight
+      },
+      {
+        label: 'Difference',
+        value: money(debit - credit),
+        context: debit === credit ? 'The books balance' : 'The books do not balance',
+        tone: debit === credit ? 'success' : 'stamp',
+        icon: Scale
+      }
+    )
+  }
+
+  if (kind === 'profit-loss') {
+    const report = data as {
+      totalIncomeMinor: number
+      totalExpenseMinor: number
+      netProfitMinor: number
+    }
+    const margin =
+      report.totalIncomeMinor > 0
+        ? Math.round((report.netProfitMinor / report.totalIncomeMinor) * 100)
+        : 0
+    cards.push(
+      {
+        label: 'Income',
+        value: money(report.totalIncomeMinor),
+        context: 'For the period',
+        tone: 'success',
+        icon: ArrowDownLeft
+      },
+      {
+        label: 'Expenses',
+        value: money(report.totalExpenseMinor),
+        context: 'For the period',
+        tone: 'warning',
+        icon: ArrowUpRight
+      },
+      {
+        label: report.netProfitMinor >= 0 ? 'Net profit' : 'Net loss',
+        value: money(Math.abs(report.netProfitMinor)),
+        context: `${margin}% of income`,
+        tone: report.netProfitMinor >= 0 ? 'success' : 'stamp',
+        icon: TrendingUp
+      }
+    )
+  }
+
+  if (kind === 'balance-sheet') {
+    const report = data as {
+      totalAssetsMinor: number
+      totalLiabilitiesMinor: number
+      totalEquityMinor: number
+      differenceMinor: number
+    }
+    cards.push(
+      {
+        label: 'Assets',
+        value: money(report.totalAssetsMinor),
+        context: 'As of the date',
+        tone: 'primary',
+        icon: Landmark
+      },
+      {
+        label: 'Liabilities',
+        value: money(report.totalLiabilitiesMinor),
+        context: 'What the business owes',
+        tone: 'warning',
+        icon: ArrowUpRight
+      },
+      {
+        label: 'Equity',
+        value: money(report.totalEquityMinor + report.differenceMinor),
+        context: 'Owners and reserves',
+        tone: 'success',
+        icon: Scale
+      }
+    )
+  }
+
+  if (kind === 'sales-register' || kind === 'purchase-register') {
+    const rows = data as {
+      taxableMinor: number
+      cgstMinor: number
+      sgstMinor: number
+      igstMinor: number
+      totalMinor: number
+    }[]
+    const taxable = rows.reduce((sum, row) => sum + row.taxableMinor, 0)
+    const tax = rows.reduce((sum, row) => sum + row.cgstMinor + row.sgstMinor + row.igstMinor, 0)
+    const total = rows.reduce((sum, row) => sum + row.totalMinor, 0)
+    cards.push(
+      {
+        label: 'Taxable value',
+        value: money(taxable),
+        context: `${rows.length} documents`,
+        tone: 'primary',
+        icon: IndianRupee
+      },
+      {
+        label: 'GST',
+        value: money(tax),
+        context: 'CGST + SGST + IGST',
+        tone: 'warning',
+        icon: Scale
+      },
+      {
+        label: 'Invoice total',
+        value: money(total),
+        context: 'Including tax',
+        tone: 'success',
+        icon: FileText
+      }
+    )
+  }
+
+  if (cards.length === 0) return <></>
+
+  return (
+    <section className="grid grid-cols-2 gap-px border border-border bg-border xl:grid-cols-3">
+      {cards.map((card) => (
+        <KpiCard
+          key={card.label}
+          label={card.label}
+          value={card.value}
+          context={card.context}
+          tone={card.tone}
+          icon={card.icon}
+        />
+      ))}
+    </section>
   )
 }
 
@@ -143,6 +386,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
     const total = rows.reduce((sum, row) => sum + row.totalMinor, 0)
     return (
       <Table
+        exportName={TITLES[kind]}
         empty={rows.length === 0}
         emptyTitle={kind === 'receivables' ? 'No receivables' : 'No payables'}
         emptyText="Post an invoice or a purchase bill and it will appear here."
@@ -169,6 +413,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
     rows.forEach((row) => row.bucketsMinor.forEach((value, index) => (totals[index] += value)))
     return (
       <Table
+        exportName={TITLES[kind]}
         empty={rows.length === 0}
         emptyTitle="Nothing overdue"
         emptyText="Open bills appear here once they are posted."
@@ -196,6 +441,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
     const credit = rows.reduce((sum, row) => sum + row.creditMinor, 0)
     return (
       <Table
+        exportName={TITLES[kind]}
         empty={rows.length === 0}
         emptyTitle="No accounts"
         emptyText="The chart of accounts is empty."
@@ -226,6 +472,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
     return (
       <div className="flex flex-col gap-4">
         <Table
+          exportName={TITLES[kind]}
           empty={false}
           emptyTitle=""
           emptyText=""
@@ -235,6 +482,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
           footer={['Total income', money(report.totalIncomeMinor)]}
         />
         <Table
+          exportName={TITLES[kind]}
           empty={false}
           emptyTitle=""
           emptyText=""
@@ -273,6 +521,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
     return (
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Table
+          exportName={TITLES[kind]}
           empty={false}
           emptyTitle=""
           emptyText=""
@@ -283,6 +532,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
         />
         <div className="flex flex-col gap-4">
           <Table
+            exportName={TITLES[kind]}
             empty={false}
             emptyTitle=""
             emptyText=""
@@ -292,6 +542,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
             footer={['Total liabilities', money(report.totalLiabilitiesMinor)]}
           />
           <Table
+            exportName={TITLES[kind]}
             empty={false}
             emptyTitle=""
             emptyText=""
@@ -332,6 +583,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
   const tax = rows.reduce((sum, row) => sum + row.cgstMinor + row.sgstMinor + row.igstMinor, 0)
   return (
     <Table
+      exportName={TITLES[kind]}
       empty={rows.length === 0}
       emptyTitle="No documents"
       emptyText="Post a bill and it will appear in this register."
@@ -368,7 +620,8 @@ function Table({
   emptyTitle,
   emptyText,
   note,
-  noteTone
+  noteTone,
+  exportName = 'report'
 }: {
   head: string[]
   rows: string[][]
@@ -379,12 +632,42 @@ function Table({
   emptyText: string
   note?: string
   noteTone?: 'ok' | 'bad'
+  exportName?: string
 }): React.JSX.Element {
   if (empty) {
     return <EmptyState icon={FileText} title={emptyTitle} description={emptyText} />
   }
+
+  function saveCsv(): void {
+    downloadCsv(safeFilename(exportName), head, footer ? [...rows, footer] : rows)
+  }
+
+  async function savePdf(): Promise<void> {
+    try {
+      const result = await window.api.exportPdf(exportName)
+      if (result.saved) toast.success('PDF saved')
+    } catch {
+      toast.error('Could not create the PDF')
+    }
+  }
+
   return (
     <div className="border border-border bg-card">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-1.5">
+        <span className="text-[0.75rem] text-muted-foreground">
+          {rows.length} row{rows.length === 1 ? '' : 's'}
+        </span>
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="xs" onClick={saveCsv}>
+            <Download className="size-3.5" strokeWidth={2} />
+            CSV
+          </Button>
+          <Button variant="ghost" size="xs" onClick={() => void savePdf()}>
+            <Printer className="size-3.5" strokeWidth={2} />
+            PDF
+          </Button>
+        </div>
+      </div>
       <table className="w-full border-collapse text-[0.875rem]">
         <thead>
           <tr>

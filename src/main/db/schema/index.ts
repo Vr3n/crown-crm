@@ -24,6 +24,7 @@ import {
   ledgerLines,
   stockMovements,
   voucherItemLines,
+  voucherNumberSettings,
   voucherSequences,
   vouchers
 } from './documents'
@@ -57,6 +58,7 @@ export const schema = {
   ledgerLines,
   stockMovements,
   voucherItemLines,
+  voucherNumberSettings,
   voucherSequences,
   vouchers,
   auditEvents,

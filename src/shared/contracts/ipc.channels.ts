@@ -49,6 +49,19 @@ export const IPC_CHANNELS = {
   // Dashboard
   DASHBOARD_SUMMARY: 'dashboard:summary',
 
+  // Page summaries
+  PARTIES_SUMMARY: 'parties:summary',
+  ITEMS_SUMMARY: 'items:summary',
+  VOUCHERS_SUMMARY: 'vouchers:summary',
+
+  // Export
+  EXPORT_PDF: 'export:pdf',
+
+  // Voucher numbering and first run
+  NUMBERING_LIST: 'numbering:list',
+  NUMBERING_UPDATE: 'numbering:update',
+  ONBOARDING_COMPLETE: 'onboarding:complete',
+
   // Reports
   REPORTS_TRIAL_BALANCE: 'reports:trialBalance',
   REPORTS_PROFIT_LOSS: 'reports:profitLoss',
@@ -59,7 +72,7 @@ export const IPC_CHANNELS = {
   REPORTS_STATEMENT: 'reports:statement',
   REPORTS_REGISTER: 'reports:register',
   REPORTS_STOCK: 'reports:stock',
-
+  REPORTS_STOCK_MOVEMENTS: 'reports:stock-movements',
   // Licensing
   LICENSE_STATUS: 'license:status',
 

@@ -337,5 +337,8 @@ describe('journals and cancellation', () => {
     expect(open.find((row) => row.id === sale.id)).toBeUndefined()
     const detail = getVoucher(companyId, sale.id)
     expect(detail.status).toBe('CANCELLED')
+    expect(detail.cancelReason).toBe('Wrong party')
+    expect(detail.cancelledAt).toBeTruthy()
+    expect(detail.createdAt).toBeTruthy()
   })
 })

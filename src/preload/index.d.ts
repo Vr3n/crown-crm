@@ -11,6 +11,9 @@ import type {
   UpdateCompanyInput
 } from '../shared/contracts/identity'
 import type { DashboardSummary } from '../shared/contracts/dashboard'
+import type { NumberingRow, UpdateNumberingInput } from '../shared/contracts/numbering'
+import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contracts/summaries'
+import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
 import type {
@@ -40,6 +43,7 @@ import type {
   ReceivableRow,
   RegisterRow,
   StatementRow,
+  StockMovementRow,
   StockRow,
   TrialBalanceRow
 } from '../shared/contracts/reports'
@@ -99,6 +103,20 @@ declare global {
       dashboard: {
         summary: () => Promise<DashboardSummary>
       }
+      summaries: {
+        parties: () => Promise<PartySummary>
+        items: () => Promise<ItemSummary>
+        vouchers: (input: {
+          type?: VoucherType
+          from: string
+          to: string
+        }) => Promise<VoucherSummary>
+      }
+      numbering: {
+        list: () => Promise<NumberingRow[]>
+        update: (input: UpdateNumberingInput) => Promise<NumberingRow[]>
+        completeOnboarding: () => Promise<{ onboardingCompletedAt: string | null }>
+      }
       reports: {
         trialBalance: () => Promise<TrialBalanceRow[]>
         profitLoss: (from: string, to: string) => Promise<ProfitLossReport>
@@ -109,6 +127,7 @@ declare global {
         statement: (partyId: number, from: string, to: string) => Promise<StatementRow[]>
         register: (type: 'SALES' | 'PURCHASE', from: string, to: string) => Promise<RegisterRow[]>
         stock: () => Promise<StockRow[]>
+        stockMovements: (itemId: number, from: string, to: string) => Promise<StockMovementRow[]>
       }
       license: {
         status: () => Promise<LicenseStatus>
@@ -117,6 +136,7 @@ declare global {
         create: () => Promise<{ name: string; sizeBytes: number; createdAt: string }>
         list: () => Promise<{ name: string; sizeBytes: number; createdAt: string }[]>
       }
+      exportPdf: (filename: string) => Promise<{ saved: boolean; filePath?: string }>
     }
   }
 }

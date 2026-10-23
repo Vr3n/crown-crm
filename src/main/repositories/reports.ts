@@ -2,13 +2,14 @@ import { getDb } from '../db/connection'
 import type {
   RegisterRow,
   StatementRow,
+  StockMovementRow,
   StockRow,
   TrialBalanceRow
 } from '../../shared/contracts/reports'
 
 /** Report queries. Everything is computed from posted rows; nothing is stored. */
 
-export type { RegisterRow, StatementRow, StockRow, TrialBalanceRow }
+export type { RegisterRow, StatementRow, StockMovementRow, StockRow, TrialBalanceRow }
 
 export const reportRepo = {
   trialBalance(companyId: number): TrialBalanceRow[] {
@@ -147,6 +148,33 @@ export const reportRepo = {
       roundOffMinor: Number(row.round_off_minor),
       totalMinor: Number(row.total_minor),
       status: row.status as string
+    }))
+  },
+
+  stockMovements(companyId: number, itemId: number, from: string, to: string): StockMovementRow[] {
+    const rows = getDb()
+      .prepare(
+        `SELECT m.id, v.id AS voucher_id, v.voucher_date AS date, v.number, v.voucher_type AS type,
+                p.name AS party_name, m.qty_in_e4, m.qty_out_e4, m.unit_cost_minor,
+                v.narration
+         FROM stock_movements m
+         JOIN vouchers v ON v.id = m.voucher_id AND v.status = 'POSTED'
+         LEFT JOIN parties p ON p.id = v.party_id
+         WHERE m.company_id = ? AND m.item_id = ? AND v.voucher_date BETWEEN ? AND ?
+         ORDER BY v.voucher_date, v.id, m.id`
+      )
+      .all(companyId, itemId, from, to) as Record<string, unknown>[]
+    return rows.map((row) => ({
+      id: row.id as number,
+      voucherId: row.voucher_id as number,
+      date: row.date as string,
+      number: row.number as string,
+      type: row.type as string,
+      partyName: (row.party_name as string) ?? null,
+      qtyInE4: Number(row.qty_in_e4 ?? 0),
+      qtyOutE4: Number(row.qty_out_e4 ?? 0),
+      unitCostMinor: Number(row.unit_cost_minor ?? 0),
+      narration: (row.narration as string) ?? null
     }))
   },
 

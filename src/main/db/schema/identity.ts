@@ -35,6 +35,10 @@ export const companies = sqliteTable('companies', {
     .notNull()
     .default(true),
   status: text('status').notNull().default('ACTIVE'),
+  /** Set when the owner finishes the numbering step of first run. */
+  numbering_setup_at: text('numbering_setup_at'),
+  /** Set when the guided tour is finished or skipped. */
+  onboarding_completed_at: text('onboarding_completed_at'),
   created_at: text('created_at')
     .notNull()
     .default(sql`(datetime('now'))`)

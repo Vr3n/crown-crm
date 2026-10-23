@@ -31,9 +31,14 @@ import { StockPage } from '@/features/stock/pages/StockPage'
 import { BackupPage } from '@/features/backup/pages/BackupPage'
 import { JournalsPage } from '@/features/journals/pages/JournalsPage'
 import { PartiesPage } from '@/features/parties/pages/PartiesPage'
+import { PartyDetailPage } from '@/features/parties/pages/PartyDetailPage'
 import { ItemsPage } from '@/features/items/pages/ItemsPage'
+import { ItemDetailPage } from '@/features/items/pages/ItemDetailPage'
 import { AccountsPage } from '@/features/accounts/pages/AccountsPage'
 import { CompanyPage } from '@/features/company/pages/CompanyPage'
+import { NumberingPage } from '@/features/numbering/pages/NumberingPage'
+import { SetupTourPage } from '@/features/onboarding/pages/SetupTourPage'
+import { SetupNumberingPage } from '@/features/onboarding/pages/SetupNumberingPage'
 import { VoucherListPage } from '@/features/vouchers/pages/VoucherListPage'
 import { VoucherEntryPage } from '@/features/vouchers/pages/VoucherEntryPage'
 import { ReceiptEntryPage } from '@/features/vouchers/pages/ReceiptEntryPage'
@@ -236,14 +241,34 @@ function VoucherDetailRoute(): React.JSX.Element {
 export function AppRoutes(): React.JSX.Element {
   return (
     <Routes>
+      <Route
+        path="setup/numbering"
+        element={
+          <Protected code="settings.manage">
+            <SetupNumberingPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="setup/tour"
+        element={
+          <Protected code="settings.manage">
+            <SetupTourPage />
+          </Protected>
+        }
+      />
       <Route element={<AppLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="stock" element={<StockPage />} />
         <Route path="journals" element={<JournalsPage />} />
         <Route path="parties" element={<PartiesPage />} />
+        <Route path="parties/:id" element={<PartyDetailPage />} />
         <Route path="customers" element={<PartiesPage />} />
+        <Route path="customers/:id" element={<PartyDetailPage />} />
         <Route path="suppliers" element={<PartiesPage />} />
+        <Route path="suppliers/:id" element={<PartyDetailPage />} />
         <Route path="items" element={<ItemsPage />} />
+        <Route path="items/:id" element={<ItemDetailPage />} />
         <Route path="masters/accounts" element={<AccountsPage />} />
         <Route path="day-book" element={<VoucherListPage title="Day Book" />} />
         <Route path="sales" element={<VoucherListPage type="SALES" title="Sales" />} />
@@ -262,6 +287,14 @@ export function AppRoutes(): React.JSX.Element {
           element={
             <Protected code="company.view">
               <CompanyPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="settings/numbering"
+          element={
+            <Protected code="settings.manage">
+              <NumberingPage />
             </Protected>
           }
         />

@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { Building2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { FormLegend } from '@/components/ui/field'
+import { FieldHelp, type FieldHelpContent } from '@/components/ui/field-help'
+import { StatusPill } from '@/components/ui/status-pill'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FIELD_HELP } from '@/lib/form-help'
 import {
   Select,
   SelectContent,
@@ -92,6 +97,31 @@ const IDENTITY_FIELDS: {
   }
 ]
 
+function formatDay(value: string): string {
+  if (!value) return '—'
+  return new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+}
+
+function initials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || 'CB'
+  )
+}
+
+function fyLabel(startMonth: number, today = new Date()): string {
+  const year = today.getMonth() + 1 >= startMonth ? today.getFullYear() : today.getFullYear() - 1
+  return `${year}–${String((year + 1) % 100).padStart(2, '0')}`
+}
+
 const toForm = (profile: CompanyProfile): CompanyForm => ({
   name: profile.name,
   legalName: profile.legalName ?? '',
@@ -145,6 +175,60 @@ function Section({
   )
 }
 
+function CompanySummary({ profile }: { profile: CompanyProfile }): React.JSX.Element {
+  return (
+    <section className="border border-border bg-card">
+      <div className="flex flex-wrap items-start gap-4 p-4">
+        <div className="flex size-12 shrink-0 items-center justify-center border border-rule-strong bg-muted font-heading text-[1.0625rem] font-semibold tracking-tight">
+          {initials(profile.name)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-heading text-[1.125rem] font-semibold tracking-tight">
+              {profile.name}
+            </h2>
+            <StatusPill tone={profile.gstin ? 'success' : 'warning'}>
+              {profile.gstin ? 'GSTIN on file' : 'GSTIN missing'}
+            </StatusPill>
+            <StatusPill tone={profile.numberingSetupAt ? 'success' : 'warning'}>
+              {profile.numberingSetupAt ? 'Numbering set' : 'Numbering not set'}
+            </StatusPill>
+          </div>
+          <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">
+            {profile.legalName ?? 'No legal name on file'}
+          </p>
+          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-[0.8125rem] sm:grid-cols-4">
+            <div>
+              <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                GSTIN
+              </dt>
+              <dd className="mt-0.5 font-mono">{profile.gstin ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                State
+              </dt>
+              <dd className="mt-0.5 font-mono">{profile.stateCode}</dd>
+            </div>
+            <div>
+              <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                Financial year
+              </dt>
+              <dd className="mt-0.5">{fyLabel(profile.fyStartMonth)}</dd>
+            </div>
+            <div>
+              <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                Books begin
+              </dt>
+              <dd className="mt-0.5 font-mono">{formatDay(profile.booksBeginDate)}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function TextField({
   id,
   label,
@@ -152,6 +236,8 @@ function TextField({
   onChange,
   error,
   hint,
+  help,
+  required,
   type = 'text',
   inputMode,
   maxLength,
@@ -164,6 +250,8 @@ function TextField({
   onChange: (value: string) => void
   error?: string
   hint?: string
+  help?: FieldHelpContent
+  required?: boolean
   type?: string
   inputMode?: 'tel' | 'email' | 'numeric'
   maxLength?: number
@@ -172,14 +260,26 @@ function TextField({
 }): React.JSX.Element {
   return (
     <div className={`flex min-w-0 flex-col gap-1.5 ${className ?? ''}`}>
-      <Label htmlFor={id} className={LABEL}>
-        {label}
-      </Label>
+      <div className="flex items-center gap-1.5">
+        <Label htmlFor={id} className={LABEL}>
+          {label}
+          {required ? (
+            <>
+              <span aria-hidden className="ml-0.5 text-stamp">
+                *
+              </span>
+              <span className="sr-only"> (required)</span>
+            </>
+          ) : null}
+        </Label>
+        {help ? <FieldHelp label={label} content={help} /> : null}
+      </div>
       <Input
         id={id}
         type={type}
         inputMode={inputMode}
         maxLength={maxLength}
+        required={required}
         value={value}
         onChange={(event) => {
           const raw = event.target.value
@@ -192,6 +292,7 @@ function TextField({
           )
         }}
         aria-invalid={Boolean(error)}
+        aria-required={required}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
         className={filter === 'upper' || inputMode === 'numeric' ? 'font-mono' : undefined}
       />
@@ -212,6 +313,7 @@ function CompanyEditor({ profile }: { profile: CompanyProfile }): React.JSX.Elem
   const queryClient = useQueryClient()
   const [form, setForm] = useState<CompanyForm>(() => toForm(profile))
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const dirty = JSON.stringify(form) !== JSON.stringify(toForm(profile))
 
   const save = useMutation({
     mutationFn: (input: UpdateCompanyInput) => window.api.identity.updateCompany(input),
@@ -255,6 +357,7 @@ function CompanyEditor({ profile }: { profile: CompanyProfile }): React.JSX.Elem
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
+      <FormLegend />
       <Section title="Identity" hint="Printed on every document">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {IDENTITY_FIELDS.map((field) => (
@@ -295,6 +398,8 @@ function CompanyEditor({ profile }: { profile: CompanyProfile }): React.JSX.Elem
             value={form.booksBeginDate}
             onChange={(value) => set('booksBeginDate', value)}
             error={errors.booksBeginDate}
+            help={FIELD_HELP.company.booksBegin}
+            required
           />
         </div>
       </Section>
@@ -375,12 +480,17 @@ function CompanyEditor({ profile }: { profile: CompanyProfile }): React.JSX.Elem
       </Section>
 
       <div className="flex items-center justify-end gap-2">
-        {save.isError ? (
-          <p role="alert" className="mr-auto text-[0.875rem] text-destructive">
-            {errorMessage(save.error, 'Could not save the company details.')}
-          </p>
-        ) : null}
-        <Button type="submit" size="sm" disabled={save.isPending}>
+        <div className="mr-auto flex flex-wrap items-center gap-2">
+          <StatusPill tone={dirty ? 'warning' : 'neutral'}>
+            {dirty ? 'Unsaved changes' : 'Saved'}
+          </StatusPill>
+          {save.isError ? (
+            <p role="alert" className="text-[0.875rem] text-destructive">
+              {errorMessage(save.error, 'Could not save the company details.')}
+            </p>
+          ) : null}
+        </div>
+        <Button type="submit" size="sm" disabled={save.isPending || !dirty}>
           {save.isPending ? 'Saving...' : 'Save changes'}
         </Button>
       </div>
@@ -494,6 +604,24 @@ export function CompanyPage(): React.JSX.Element {
         </div>
       ) : profile.data ? (
         <>
+          <CompanySummary profile={profile.data} />
+          <Section
+            title="Voucher numbering"
+            hint={profile.data.numberingSetupAt ? 'Configured' : 'Not set up yet'}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="max-w-[60ch] text-[0.875rem] leading-relaxed text-muted-foreground">
+                Set the series, prefix, width and starting number used by every document. The next
+                number is previewed before you save.
+              </p>
+              <Link
+                to="/settings/numbering"
+                className="flex h-8 items-center gap-1.5 bg-primary px-3 text-[0.875rem] font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Open numbering
+              </Link>
+            </div>
+          </Section>
           <CompanyEditor key={profile.data.id} profile={profile.data} />
           <OpeningBalances defaultDate={profile.data.booksBeginDate} />
         </>

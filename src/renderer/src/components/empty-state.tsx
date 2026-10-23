@@ -1,5 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { toneForPath } from '@/lib/module-tone'
 
 /**
  * Composed empty state (plan §10). A successful pause, not a system failure.
@@ -20,6 +22,9 @@ export function EmptyState({
   action?: React.ReactNode
   className?: string
 }): React.JSX.Element {
+  const location = useLocation()
+  const tone = toneForPath(location.pathname)
+
   return (
     <div
       className={cn(
@@ -27,7 +32,7 @@ export function EmptyState({
         className
       )}
     >
-      <div className="crm-float flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <div className={cn('crm-float flex size-12 items-center justify-center rounded-full', tone.soft)}>
         <Icon className="size-6" />
       </div>
       <h3 className="mt-4 font-heading text-sm font-semibold">{title}</h3>

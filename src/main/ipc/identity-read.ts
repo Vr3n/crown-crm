@@ -31,6 +31,8 @@ interface CompanyRow {
   round_off_mode: string
   allow_negative_stock: boolean
   status: string
+  numbering_setup_at: string | null
+  onboarding_completed_at: string | null
 }
 interface UserRow {
   id: number
@@ -81,7 +83,9 @@ export function registerIdentityReadIpc(): void {
       costingMethod: row.costing_method,
       roundOffMode: row.round_off_mode,
       allowNegativeStock: row.allow_negative_stock,
-      status: row.status
+      status: row.status,
+      numberingSetupAt: row.numbering_setup_at,
+      onboardingCompletedAt: row.onboarding_completed_at
     }
   })
   handle(IPC_CHANNELS.IDENTITY_STAFF, () => {

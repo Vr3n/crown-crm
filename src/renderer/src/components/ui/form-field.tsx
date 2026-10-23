@@ -1,169 +1,141 @@
 import * as React from 'react'
 import { CheckCircle2 } from 'lucide-react'
-import { Field } from '@/components/ui/field'
+import { Field, type FieldProps } from '@/components/ui/field'
+import type { FieldHelpContent } from '@/components/ui/field-help'
 import { Input } from '@/components/ui/input'
-import { InputGroup, InputGroupAddon } from '@/components/ui/input-group'
 import { cn } from '@/lib/utils'
 
 /**
- * Reactive labeled field that wires a TanStack field to the auth-form UX:
- *
- * - `aria-invalid` on error → red border + ring (control styles it)
- * - `data-valid` once complete and correct → green border
- * - a `CheckCircle2` success check in the reserved helper line
- *
- * Evaluation rules (the app-wide standard, from the auth forms):
- *   a field is "evaluated" once it is touched, the form was submitted, or its
- *   `completeWhen` predicate flips true (e.g. a 10-digit mobile) — so inputs
- *   react live, not only after blur. An externally-computed `extraError`
- *   (e.g. an async "already exists" check) is always treated as invalid.
- *
- * Two usage modes:
- *  - Text inputs: pass `leading`/`trailing` icons + input props and let
- *    `FormField` render the `Input` inside an `InputGroup` (most common).
- *  - Custom controls (Select, Textarea, DateTimePicker, combobox): pass a
- *    render-prop `children` that receives `{ value, invalid, valid,
- *    describedBy, onBlur, onChange }` to spread onto the control.
+ * Structural shape of a TanStack Form field. Keeping the adapter decoupled from
+ * the generic `FieldApi` signature lets every dialog share one control without
+ * casts.
  */
-export function FormField({
-  name,
-  state,
-  handleChange,
-  handleBlur,
+export interface FormFieldApi<T = string> {
+  name: string
+  state: {
+    value: T
+    meta: { isTouched: boolean; errors: unknown[] }
+  }
+  handleChange: (value: T) => void
+  handleBlur: () => void
+  validate: (cause: 'change' | 'blur' | 'submit') => unknown
+  /** TanStack keeps a blur error until the next blur; clear it on edit. */
+  setErrorMap?: (map: { onBlur?: undefined; onChange?: undefined }) => void
+}
+
+type Filter = 'digits' | 'upper' | 'decimal'
+
+function applyFilter(value: string, filter?: Filter): string {
+  if (filter === 'digits') return value.replace(/\D/g, '')
+  if (filter === 'upper') return value.toUpperCase()
+  return value
+}
+
+/**
+ * Reactive labelled input for a TanStack Form field.
+ *
+ * Validation runs on blur. Once a field has been touched or the form has been
+ * submitted, changing the value re-runs the rule immediately, so an error
+ * disappears as soon as it is fixed. A success check marks a complete field.
+ */
+export function FormTextField({
+  field,
   submitted,
   label,
-  labelEnd,
+  required,
+  help,
   hint,
-  validate,
-  completeWhen,
-  extraError,
   warning,
-  showSuccessCheck = true,
-  leading,
-  trailing,
-  type = 'text',
-  placeholder,
-  autoComplete,
-  inputMode,
+  validate,
+  filter,
+  mono,
+  className,
   inputClassName,
-  onChange,
-  children
+  showSuccessCheck = true,
+  afterChange,
+  ...input
 }: {
-  name: string
-  state: { value: string; meta: { isTouched: boolean } }
-  handleChange: (value: string) => void
-  handleBlur: () => void
+  field: FormFieldApi
   /** True once the enclosing form has been submitted at least once. */
   submitted: boolean
   label: React.ReactNode
-  /** Node rendered right-aligned on the label row (e.g. a live "digits remaining" counter). */
-  labelEnd?: React.ReactNode
+  required?: boolean
+  help?: FieldHelpContent
   hint?: React.ReactNode
-  /** Granular message; `undefined` means valid. */
-  validate: (value: string) => string | undefined
-  /**
-   * Returns true once the value is complete enough to judge live (e.g. a
-   * 10-digit mobile). When provided the field evaluates as soon as it flips
-   * true; when omitted it evaluates only on blur/submit.
-   */
-  completeWhen?: (value: string) => boolean
-  /** Externally-computed error shown in the same red style as a field error. */
-  extraError?: string | null
-  /**
-   * Non-blocking amber notice (yellow input + `FieldWarning` message) shown only
-   * while the field is otherwise valid. An active error (field or `extraError`)
-   * always wins over it.
-   */
   warning?: React.ReactNode
-  showSuccessCheck?: boolean
-  /** Node rendered as a leading addon inside the input (Input convenience mode). */
-  leading?: React.ReactNode
-  /** Node rendered as a trailing addon inside the input (e.g. counter, eye). */
-  trailing?: React.ReactNode
-  type?: string
-  placeholder?: string
-  autoComplete?: string
-  inputMode?: 'text' | 'tel' | 'email' | 'numeric' | 'url'
+  /** Extra cross-field rule evaluated after the field-level validators. */
+  validate?: (value: string) => string | undefined
+  filter?: Filter
+  mono?: boolean
+  className?: string
   inputClassName?: string
-  /** Optional transform applied on change (e.g. digit stripping). */
-  onChange?: (value: string) => void
-  /** Render-prop mode: receives the reactive control state to spread onto any control. */
-  children?: (control: {
-    id: string
-    value: string
-    invalid: boolean | undefined
-    valid: boolean | undefined
-    warning: boolean | undefined
-    describedBy: string | undefined
-    onBlur: () => void
-    onChange: (value: string) => void
-  }) => React.ReactNode
-}): React.JSX.Element {
-  const value = state.value
-  const evaluated = state.meta.isTouched || submitted || Boolean(completeWhen?.(value))
-  const errorMsg = validate(value)
-  const hasExtra = Boolean(extraError)
-  const invalid = (Boolean(errorMsg) || hasExtra) && (evaluated || hasExtra)
-  const valid = !errorMsg && !hasExtra && evaluated
-  const error = invalid ? (extraError ?? errorMsg) : undefined
-  const hasWarning = Boolean(warning) && !invalid
-  const describedBy = error
-    ? `${name}-error`
-    : hasWarning
-      ? `${name}-warning`
-      : hint
-        ? `${name}-hint`
-        : undefined
+  showSuccessCheck?: boolean
+  /** Runs after the field value is committed, for dependent fields. */
+  afterChange?: (value: string) => void
+} & Omit<React.ComponentProps<'input'>, 'value' | 'onChange' | 'className'>): React.JSX.Element {
+  const value = field.state.value
+  const evaluated = field.state.meta.isTouched || submitted
+  const fieldError = field.state.meta.errors.find((error) => Boolean(error))
+  const extraError = validate?.(value)
+  const error = extraError ?? (fieldError ? String(fieldError) : undefined)
+  const valid = !error && evaluated
 
-  const control = {
-    id: name,
-    value,
-    invalid: invalid || undefined,
-    valid: valid || undefined,
-    warning: hasWarning || undefined,
-    describedBy,
-    onBlur: handleBlur,
-    onChange: handleChange
+  const change = (raw: string): void => {
+    const next = applyFilter(raw, filter)
+    field.handleChange(next)
+    afterChange?.(next)
+    // A blur error would otherwise outlive the fix; drop it and re-check live.
+    field.setErrorMap?.({ onBlur: undefined, onChange: undefined })
+    if (evaluated) void field.validate('change')
   }
 
   return (
     <Field
-      id={name}
+      id={field.name}
       label={label}
-      labelEnd={labelEnd}
+      required={required}
+      help={help}
       hint={hint}
-      warning={hasWarning ? warning : undefined}
+      warning={error ? undefined : warning}
       error={error}
+      className={className}
       trailing={
-        valid && showSuccessCheck && !hasWarning ? (
-          <CheckCircle2 className="size-4 text-green-600 dark:text-green-400" aria-hidden />
+        valid && showSuccessCheck ? (
+          <CheckCircle2 className="size-4 text-success" aria-hidden />
         ) : undefined
       }
     >
-      {children ? (
-        children(control)
-      ) : (
-        <InputGroup>
-          {leading ? <InputGroupAddon align="start">{leading}</InputGroupAddon> : null}
-          <Input
-            id={name}
-            name={name}
-            value={value}
-            onChange={(e) => (onChange ?? handleChange)(e.target.value)}
-            onBlur={handleBlur}
-            type={type}
-            placeholder={placeholder}
-            autoComplete={autoComplete}
-            inputMode={inputMode}
-            aria-invalid={control.invalid}
-            data-valid={control.valid}
-            data-warning={control.warning}
-            aria-describedby={describedBy}
-            className={cn(inputClassName, leading ? 'pl-9' : '', trailing ? 'pr-10' : '')}
-          />
-          {trailing ? <InputGroupAddon align="end">{trailing}</InputGroupAddon> : null}
-        </InputGroup>
-      )}
+      <Input
+        {...input}
+        id={field.name}
+        name={field.name}
+        value={value}
+        onChange={(event) => change(event.target.value)}
+        onBlur={() => {
+          field.handleBlur()
+          void field.validate('blur')
+        }}
+        aria-invalid={Boolean(error)}
+        aria-required={required}
+        data-valid={valid || undefined}
+        aria-describedby={error ? `${field.name}-error` : hint ? `${field.name}-hint` : undefined}
+        className={cn(mono && 'font-mono tabular-nums', inputClassName)}
+      />
     </Field>
   )
 }
+
+/** Focus the first field TanStack Form reports as invalid. */
+export function focusFirstError(form: {
+  state: { fieldMeta: Record<string, { errors: unknown[] }> }
+}): void {
+  const first = Object.entries(form.state.fieldMeta).find(
+    ([, meta]) => Array.isArray(meta.errors) && meta.errors.length > 0
+  )
+  if (!first) return
+  const element = document.getElementById(first[0])
+  element?.focus()
+  element?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+}
+
+export type { FieldProps }

@@ -69,21 +69,51 @@ Unit tests cover 0.5 up, 0.4999 down, negative amounts, and large values near `N
 ## 4. Voucher numbering
 
 ```
+voucher_number_settings(company_id, voucher_type, series, prefix, suffix, padding, start_number, reset_period, manual_override)
 voucher_sequences(company_id, voucher_type, series, fy, prefix, suffix, last_value, padding)
 ```
 
-Format: `prefix + zero padded (last_value + 1) + suffix`, for example `TC/` + `0583`.
+Settings are per company and voucher type, edited from Company settings. The
+per-period counters stay in `voucher_sequences`.
+
+Format: `prefix + zero padded value + suffix`, for example `TC/` + `0583`.
+
+Prefix and suffix accept date tokens that resolve from the voucher date:
+
+| Token | Example (2026-07-13) | Meaning |
+|---|---|---|
+| `{YYYY}` | 2026 | Four digit year |
+| `{YY}` | 26 | Two digit year |
+| `{MM}` | 07 | Month |
+| `{DD}` | 13 | Day |
+| `{YYYYMM}` | 202607 | Year and month |
+| `{FY}` | 2026-27 | Financial year |
+| `{FY_SHORT}` | 26-27 | Short financial year |
+
+`INV/{YYYYMM}` with width 3 gives `INV/202607001`, matching the common
+year-month-series format.
 
 Rules:
 
-1. One sequence per company, voucher type, series and financial year.
-2. Financial year label is `2026-27`, derived from `fy_start_month` and the voucher date.
-3. The increment happens inside the posting transaction. A rollback does not consume a number.
-4. Cancelled vouchers keep their number. No reuse, ever.
-5. Manual numbers are allowed only if the company setting permits it, and they still update `last_value` to the maximum seen.
-6. A collision is a hard failure, not a retry, because a retry would mask a corrupted sequence.
+1. One sequence per company, voucher type, series and reset period.
+2. Reset periods are `YEARLY` (default, keyed by financial year), `MONTHLY`
+   (keyed by `YYYY-MM`) and `NEVER` (keyed `ALL`).
+3. Financial year label is `2026-27`, derived from `fy_start_month` and the voucher date.
+4. The first number in a period is `start_number`, not always 1.
+5. Changing a prefix, suffix or width affects the next number only.
+6. Changing the series starts a new sequence. Posted vouchers keep the series they were issued with.
+7. The increment happens inside the posting transaction. A rollback does not consume a number.
+8. Cancelled vouchers keep their number. No reuse, ever.
+9. Manual numbers are allowed only if the series permits it. A manual number must be at least the starting number and greater than the last used value; it raises the high water mark.
+10. A collision is a hard failure, not a retry, because a retry would mask a corrupted sequence.
 
-Example series seeded per company:
+GST Rule 46(b): the number must not exceed 16 characters, may use letters,
+digits, `-` and `/`, and must be unique for the financial year. The editor
+enforces the allowed characters and the 16 character limit, and the database
+enforces uniqueness. `INV/2026-27/0001` is exactly 16 characters, so a wider
+prefix or padding is rejected.
+
+Example defaults seeded per company:
 
 | Type | Series | Example |
 |---|---|---|

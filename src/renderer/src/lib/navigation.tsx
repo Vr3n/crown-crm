@@ -19,6 +19,7 @@ import {
   PieChart,
   Landmark,
   ListTree,
+  ListOrdered,
   Percent,
   Ruler,
   Building2,
@@ -105,6 +106,12 @@ export const NAV_GROUPS: NavGroup[] = [
     id: 'admin',
     label: 'Admin',
     items: [
+      {
+        to: '/settings/numbering',
+        label: 'Voucher numbering',
+        icon: ListOrdered,
+        requires: 'settings.manage'
+      },
       { to: '/settings/company', label: 'Company', icon: Building2, requires: 'company.view' },
       { to: '/settings/users', label: 'Users and Roles', icon: ShieldCheck, requires: 'user.view' },
       {

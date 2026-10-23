@@ -12,6 +12,9 @@ import type {
   UpdateCompanyInput
 } from '../shared/contracts/identity'
 import type { DashboardSummary } from '../shared/contracts/dashboard'
+import type { NumberingRow, UpdateNumberingInput } from '../shared/contracts/numbering'
+import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contracts/summaries'
+import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
 import type {
@@ -42,6 +45,7 @@ import type {
   ReceivableRow,
   RegisterRow,
   StatementRow,
+  StockMovementRow,
   StockRow,
   TrialBalanceRow
 } from '../shared/contracts/reports'
@@ -134,6 +138,21 @@ const api = {
     summary: (): Promise<DashboardSummary> => call(IPC_CHANNELS.DASHBOARD_SUMMARY)
   },
 
+  summaries: {
+    parties: (): Promise<PartySummary> => call(IPC_CHANNELS.PARTIES_SUMMARY),
+    items: (): Promise<ItemSummary> => call(IPC_CHANNELS.ITEMS_SUMMARY),
+    vouchers: (input: { type?: VoucherType; from: string; to: string }): Promise<VoucherSummary> =>
+      call(IPC_CHANNELS.VOUCHERS_SUMMARY, input)
+  },
+
+  numbering: {
+    list: (): Promise<NumberingRow[]> => call(IPC_CHANNELS.NUMBERING_LIST),
+    update: (input: UpdateNumberingInput): Promise<NumberingRow[]> =>
+      call(IPC_CHANNELS.NUMBERING_UPDATE, input),
+    completeOnboarding: (): Promise<{ onboardingCompletedAt: string | null }> =>
+      call(IPC_CHANNELS.ONBOARDING_COMPLETE)
+  },
+
   reports: {
     trialBalance: (): Promise<TrialBalanceRow[]> => call(IPC_CHANNELS.REPORTS_TRIAL_BALANCE),
     profitLoss: (from: string, to: string): Promise<ProfitLossReport> =>
@@ -150,9 +169,10 @@ const api = {
       call(IPC_CHANNELS.REPORTS_STATEMENT, { partyId, from, to }),
     register: (type: 'SALES' | 'PURCHASE', from: string, to: string): Promise<RegisterRow[]> =>
       call(IPC_CHANNELS.REPORTS_REGISTER, { type, from, to }),
-    stock: (): Promise<StockRow[]> => call(IPC_CHANNELS.REPORTS_STOCK)
+    stock: (): Promise<StockRow[]> => call(IPC_CHANNELS.REPORTS_STOCK),
+    stockMovements: (itemId: number, from: string, to: string): Promise<StockMovementRow[]> =>
+      call(IPC_CHANNELS.REPORTS_STOCK_MOVEMENTS, { itemId, from, to })
   },
-
   license: {
     status: (): Promise<LicenseStatus> => call(IPC_CHANNELS.LICENSE_STATUS)
   },
@@ -162,7 +182,10 @@ const api = {
       call(IPC_CHANNELS.BACKUP_CREATE),
     list: (): Promise<{ name: string; sizeBytes: number; createdAt: string }[]> =>
       call(IPC_CHANNELS.BACKUP_LIST)
-  }
+  },
+
+  exportPdf: (filename: string): Promise<{ saved: boolean; filePath?: string }> =>
+    call(IPC_CHANNELS.EXPORT_PDF, { filename })
 }
 
 export type Api = typeof api

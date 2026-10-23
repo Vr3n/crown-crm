@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { BookOpen, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { FieldHelp } from '@/components/ui/field-help'
+import { FIELD_HELP } from '@/lib/form-help'
 
 type SessionContext = Awaited<ReturnType<typeof window.api.identity.session>>
 type Phase = 'setup' | 'login'
@@ -225,13 +227,33 @@ export function AuthGate({
                     maxLength={15}
                   />
                 </div>
-                <Field
-                  label="Books begin"
-                  value={booksBegin}
-                  onChange={setBooksBegin}
-                  type="date"
-                  hint="The first day Crown Books records transactions. Opening balances are as at the day before."
-                />
+                <div>
+                  <div className="mb-1.5 flex items-center gap-1.5">
+                    <label
+                      htmlFor="setup-books-begin"
+                      className="text-[0.75rem] font-medium text-foreground"
+                    >
+                      Books begin
+                      <span aria-hidden className="ml-0.5 text-stamp">
+                        *
+                      </span>
+                      <span className="sr-only"> (required)</span>
+                    </label>
+                    <FieldHelp label="Books begin" content={FIELD_HELP.company.booksBegin} />
+                  </div>
+                  <input
+                    id="setup-books-begin"
+                    type="date"
+                    value={booksBegin}
+                    onChange={(event) => setBooksBegin(event.target.value)}
+                    required
+                    className="h-9 w-full border border-input bg-card px-2.5 text-[0.9375rem] outline-none transition-colors focus:border-primary"
+                  />
+                  <span className="mt-1 block text-[0.75rem] leading-relaxed text-muted-foreground">
+                    The first day Crown Books records transactions. Opening balances are as at the
+                    day before.
+                  </span>
+                </div>
               </>
             ) : (
               <>

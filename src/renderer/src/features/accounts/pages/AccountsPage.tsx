@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ListTree, Plus, Search } from 'lucide-react'
+import { ListTree, Plus, Search, Landmark, TrendingUp, Wallet, ArrowDownLeft } from 'lucide-react'
 import { toast } from 'sonner'
+import { z } from 'zod'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -17,8 +19,9 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import { Field, FormLegend } from '@/components/ui/field'
+import { focusFirstError, FormTextField, type FormFieldApi } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -26,17 +29,27 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { FIELD_HELP } from '@/lib/form-help'
+import { KpiCard } from '@/components/ui/kpi-card'
+import { ChartCard } from '@/components/ui/chart-card'
+import { RankedBarsChart } from '@/components/charts/list-charts'
 import { formatMinor } from '@/lib/money'
 import { errorMessage } from '../../../../../shared/contracts/errors'
-import type { AccountRow, CreateAccountInput } from '../../../../../shared/contracts/masters'
+import type {
+  AccountGroupRow,
+  AccountRow,
+  CreateAccountInput
+} from '../../../../../shared/contracts/masters'
 
-const LABEL = 'text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TH =
   'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TD = 'h-9 border-b border-border px-3 align-middle'
 const TAG = 'rounded-none px-1.5 py-0 text-[0.6875rem] uppercase tracking-[0.08em]'
 
-type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE'
+const ACCOUNT_TYPES = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'] as const
+type AccountType = (typeof ACCOUNT_TYPES)[number]
+type AccountSide = 'DEBIT' | 'CREDIT'
+
 const TYPES: { value: AccountType; label: string }[] = [
   { value: 'ASSET', label: 'Asset' },
   { value: 'LIABILITY', label: 'Liability' },
@@ -50,7 +63,7 @@ interface AccountForm {
   groupId: string
   type: AccountType
   amount: string
-  side: 'DEBIT' | 'CREDIT'
+  side: AccountSide
 }
 
 const blankForm = (): AccountForm => ({
@@ -67,6 +80,79 @@ function toMinor(value: string): number {
   if (!cleaned || cleaned === '.') return 0
   const parsed = Number(cleaned)
   return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0
+}
+
+const accountFormSchema = z.object({
+  name: z.string().trim().min(1, 'Account name is required'),
+  groupId: z.string().min(1, 'Choose an account group'),
+  type: z.enum(ACCOUNT_TYPES),
+  amount: z.string().refine((value) => toMinor(value) >= 0, 'Cannot be negative'),
+  side: z.enum(['DEBIT', 'CREDIT'])
+})
+
+/** Field-level rule reused for live blur/change validation. */
+function accountFieldError(name: keyof AccountForm, value: string): string | undefined {
+  const result = accountFormSchema.shape[name].safeParse(value)
+  if (result.success) return undefined
+  return result.error.issues[0]?.message
+}
+
+function AccountOverview({ rows }: { rows: AccountRow[] }): React.JSX.Element {
+  const total = (type: string): number =>
+    rows
+      .filter((row) => row.type === type)
+      .reduce((sum, row) => sum + Math.abs(row.balanceMinor), 0)
+
+  const groups = new Map<string, number>()
+  for (const row of rows) {
+    groups.set(row.groupName, (groups.get(row.groupName) ?? 0) + Math.abs(row.balanceMinor))
+  }
+  const topGroups = [...groups.entries()]
+    .map(([label, valueMinor]) => ({ label, valueMinor }))
+    .filter((row) => row.valueMinor > 0)
+    .sort((a, b) => b.valueMinor - a.valueMinor)
+    .slice(0, 6)
+
+  return (
+    <>
+      <section className="grid grid-cols-2 gap-px border border-border bg-border xl:grid-cols-4">
+        <KpiCard
+          label="Assets"
+          value={formatMinor(total('ASSET'), 'INR')}
+          context="What the business owns"
+          icon={Landmark}
+          tone="primary"
+        />
+        <KpiCard
+          label="Liabilities"
+          value={formatMinor(total('LIABILITY'), 'INR')}
+          context="What the business owes"
+          icon={ArrowDownLeft}
+          tone="stamp"
+        />
+        <KpiCard
+          label="Income"
+          value={formatMinor(total('INCOME'), 'INR')}
+          context="Earned so far"
+          icon={TrendingUp}
+          tone="success"
+        />
+        <KpiCard
+          label="Expenses"
+          value={formatMinor(total('EXPENSE'), 'INR')}
+          context="Spent so far"
+          icon={Wallet}
+          tone="warning"
+        />
+      </section>
+
+      {topGroups.length > 0 ? (
+        <ChartCard title="Balance by group" subtitle="Where the ledger's value sits">
+          <RankedBarsChart rows={topGroups} ariaLabel="Account balance by group" />
+        </ChartCard>
+      ) : null}
+    </>
+  )
 }
 
 function Balance({ minor }: { minor: number }): React.JSX.Element {
@@ -92,8 +178,6 @@ export function AccountsPage(): React.JSX.Element {
   const [group, setGroup] = useState('ALL')
   const [includeInactive, setIncludeInactive] = useState(false)
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<AccountForm>(blankForm)
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [target, setTarget] = useState<AccountRow | null>(null)
 
   const list = useQuery({
@@ -122,16 +206,6 @@ export function AccountsPage(): React.JSX.Element {
     return acc
   }, [])
 
-  const save = useMutation({
-    mutationFn: (input: CreateAccountInput) => window.api.accounts.create(input),
-    onSuccess: () => {
-      toast.success('Account added')
-      void queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      setOpen(false)
-    },
-    onError: (err) => toast.error(errorMessage(err, 'Could not add the account'))
-  })
-
   const deactivate = useMutation({
     mutationFn: (id: number) => window.api.accounts.deactivate(id),
     onSuccess: () => {
@@ -142,50 +216,20 @@ export function AccountsPage(): React.JSX.Element {
     onError: (err) => toast.error(errorMessage(err, 'Could not deactivate the account'))
   })
 
-  function chooseGroup(value: string): void {
-    const nature = groups.data?.find((entry) => String(entry.id) === value)?.nature as
-      AccountType | undefined
-    setForm((prev) => ({ ...prev, groupId: value, type: nature ?? prev.type }))
-    setErrors((prev) => ({ ...prev, groupId: '' }))
-  }
-
-  function submit(event: React.FormEvent<HTMLFormElement>): void {
-    event.preventDefault()
-    const found: Record<string, string> = {}
-    if (!form.name.trim()) found.name = 'Account name is required'
-    if (!form.groupId) found.groupId = 'Choose an account group'
-    if (toMinor(form.amount) < 0) found.amount = 'Cannot be negative'
-    setErrors(found)
-    if (Object.keys(found).length > 0) return
-    save.mutate({
-      name: form.name.trim(),
-      groupId: Number(form.groupId),
-      type: form.type,
-      openingBalanceMinor: toMinor(form.amount),
-      openingBalanceSide: form.side
-    })
-  }
-
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 p-6">
       <PageHeader
         title="Chart of Accounts"
         description={`${rows.length} accounts in ${groups.data?.length ?? 0} groups`}
         actions={
-          <Button
-            size="sm"
-            onClick={() => {
-              setForm(blankForm())
-              setErrors({})
-              save.reset()
-              setOpen(true)
-            }}
-          >
+          <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="size-3.5" strokeWidth={2} />
             New account
           </Button>
         }
       />
+
+      <AccountOverview rows={rows} />
 
       <div className="flex flex-wrap items-center gap-2 border border-border bg-card px-3 py-2">
         <div className="relative min-w-56 flex-1">
@@ -372,152 +416,14 @@ export function AccountsPage(): React.JSX.Element {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle>New account</DialogTitle>
-            <DialogDescription>
-              Choose the group first. The type follows the group nature and can be adjusted.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="account-name" className={LABEL}>
-                Name
-              </Label>
-              <Input
-                id="account-name"
-                value={form.name}
-                autoFocus
-                onChange={(event) => {
-                  setForm((prev) => ({ ...prev, name: event.target.value }))
-                  setErrors((prev) => ({ ...prev, name: '' }))
-                }}
-                aria-invalid={Boolean(errors.name)}
-                aria-describedby={errors.name ? 'account-name-error' : undefined}
-              />
-              {errors.name ? (
-                <p id="account-name-error" role="alert" className="text-[0.75rem] text-destructive">
-                  {errors.name}
-                </p>
-              ) : null}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="account-group" className={LABEL}>
-                  Group
-                </Label>
-                <Select value={form.groupId} onValueChange={chooseGroup}>
-                  <SelectTrigger
-                    id="account-group"
-                    className="w-full"
-                    aria-invalid={Boolean(errors.groupId)}
-                    aria-describedby={errors.groupId ? 'account-group-error' : undefined}
-                  >
-                    <SelectValue placeholder="Choose a group" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(groups.data ?? []).map((entry) => (
-                      <SelectItem key={entry.id} value={String(entry.id)}>
-                        {entry.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.groupId ? (
-                  <p
-                    id="account-group-error"
-                    role="alert"
-                    className="text-[0.75rem] text-destructive"
-                  >
-                    {errors.groupId}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="account-type" className={LABEL}>
-                  Type
-                </Label>
-                <Select
-                  value={form.type}
-                  onValueChange={(value) =>
-                    setForm((prev) => ({ ...prev, type: value as AccountType }))
-                  }
-                >
-                  <SelectTrigger id="account-type" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="account-opening" className={LABEL}>
-                  Opening balance (INR)
-                </Label>
-                <Input
-                  id="account-opening"
-                  inputMode="decimal"
-                  value={form.amount}
-                  onChange={(event) => setForm((prev) => ({ ...prev, amount: event.target.value }))}
-                  className="text-right font-mono tabular-nums"
-                />
-                {errors.amount ? (
-                  <p role="alert" className="text-[0.75rem] text-destructive">
-                    {errors.amount}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="account-side" className={LABEL}>
-                  Side
-                </Label>
-                <Select
-                  value={form.side}
-                  onValueChange={(value) =>
-                    setForm((prev) => ({ ...prev, side: value as 'DEBIT' | 'CREDIT' }))
-                  }
-                >
-                  <SelectTrigger id="account-side" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DEBIT">Dr</SelectItem>
-                    <SelectItem value="CREDIT">Cr</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {save.isError ? (
-              <p
-                role="alert"
-                className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[0.875rem] text-destructive"
-              >
-                {errorMessage(save.error, 'Could not add the account.')}
-              </p>
-            ) : null}
-
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline" size="sm">
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button type="submit" size="sm" disabled={save.isPending}>
-                {save.isPending ? 'Saving...' : 'Add account'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {open ? (
+        <AccountDialog
+          open={open}
+          onOpenChange={setOpen}
+          groups={groups.data ?? []}
+          onSaved={() => setOpen(false)}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={target !== null}
@@ -536,5 +442,242 @@ export function AccountsPage(): React.JSX.Element {
         }}
       />
     </div>
+  )
+}
+
+/**
+ * Account capture dialog. Validation runs on blur, then live on change, so an
+ * error clears the moment the value is fixed. Required markers and field help
+ * come from the shared form primitives.
+ */
+function AccountDialog({
+  open,
+  onOpenChange,
+  groups,
+  onSaved
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  groups: AccountGroupRow[]
+  onSaved: () => void
+}): React.JSX.Element {
+  const queryClient = useQueryClient()
+
+  const save = useMutation({
+    mutationFn: (input: CreateAccountInput) => window.api.accounts.create(input),
+    onSuccess: () => {
+      toast.success('Account added')
+      void queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      onSaved()
+    },
+    onError: (err) => toast.error(errorMessage(err, 'Could not add the account'))
+  })
+
+  const form = useForm({
+    defaultValues: blankForm(),
+    // The dialog reveals every error and focuses the first one instead of
+    // disabling submit, so invalid attempts must reach validation.
+    canSubmitWhenInvalid: true,
+    validators: { onSubmit: accountFormSchema },
+    onSubmitInvalid: ({ formApi }) => focusFirstError(formApi),
+    onSubmit: ({ value }) => {
+      save.mutate({
+        name: value.name.trim(),
+        groupId: Number(value.groupId),
+        type: value.type,
+        openingBalanceMinor: toMinor(value.amount),
+        openingBalanceSide: value.side
+      })
+    }
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>New account</DialogTitle>
+          <DialogDescription>
+            Choose the group first. The type follows the group nature and can be adjusted.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            void form.handleSubmit()
+          }}
+          className="flex flex-col gap-4"
+          noValidate
+        >
+          <FormLegend />
+
+          <form.Field
+            name="name"
+            validators={{
+              onBlur: ({ value }) => accountFieldError('name', value),
+              onChange: ({ value }) => accountFieldError('name', value),
+              onSubmit: ({ value }) => accountFieldError('name', value)
+            }}
+          >
+            {(field) => (
+              <FormTextField
+                field={field as unknown as FormFieldApi}
+                submitted={form.state.isSubmitted}
+                label="Name"
+                required
+                help={FIELD_HELP.account.name}
+                autoFocus
+                afterChange={() => {
+                  // TanStack Form keeps a blur error until the next blur; editing clears it.
+                  field.setErrorMap({ onBlur: undefined })
+                }}
+              />
+            )}
+          </form.Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <form.Field
+              name="groupId"
+              validators={{
+                onBlur: ({ value }) => accountFieldError('groupId', value),
+                onChange: ({ value }) => accountFieldError('groupId', value),
+                onSubmit: ({ value }) => accountFieldError('groupId', value)
+              }}
+            >
+              {(field) => {
+                const error = field.state.meta.errors.find((entry) => Boolean(entry))
+                return (
+                  <Field
+                    id="groupId"
+                    label="Group"
+                    required
+                    help={FIELD_HELP.account.group}
+                    error={error ? String(error) : undefined}
+                  >
+                    <Select
+                      value={field.state.value}
+                      onValueChange={(value) => {
+                        const nature = groups.find((entry) => String(entry.id) === value)
+                          ?.nature as AccountType | undefined
+                        field.handleChange(value)
+                        field.setErrorMap({ onBlur: undefined })
+                        if (nature) form.setFieldValue('type', nature)
+                        void field.validate('change')
+                      }}
+                    >
+                      <SelectTrigger
+                        id="groupId"
+                        className="w-full"
+                        aria-invalid={Boolean(error)}
+                        aria-describedby={error ? 'groupId-error' : undefined}
+                        onBlur={() => {
+                          field.handleBlur()
+                          void field.validate('blur')
+                        }}
+                      >
+                        <SelectValue placeholder="Choose a group" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {groups.map((entry) => (
+                          <SelectItem key={entry.id} value={String(entry.id)}>
+                            {entry.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )
+              }}
+            </form.Field>
+
+            <form.Field name="type">
+              {(field) => (
+                <Field id="type" label="Type" help={FIELD_HELP.account.type}>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(value) => field.handleChange(value as AccountType)}
+                  >
+                    <SelectTrigger id="type" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+            </form.Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <form.Field
+              name="amount"
+              validators={{
+                onBlur: ({ value }) => accountFieldError('amount', value),
+                onChange: ({ value }) => accountFieldError('amount', value),
+                onSubmit: ({ value }) => accountFieldError('amount', value)
+              }}
+            >
+              {(field) => (
+                <FormTextField
+                  field={field as unknown as FormFieldApi}
+                  submitted={form.state.isSubmitted}
+                  label="Opening balance (INR)"
+                  help={FIELD_HELP.account.openingBalance}
+                  inputMode="decimal"
+                  inputClassName="text-right"
+                  mono
+                  afterChange={() => field.setErrorMap({ onBlur: undefined })}
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="side">
+              {(field) => (
+                <Field id="side" label="Side" help={FIELD_HELP.account.openingBalance}>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(value) => field.handleChange(value as AccountSide)}
+                  >
+                    <SelectTrigger id="side" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DEBIT">Dr</SelectItem>
+                      <SelectItem value="CREDIT">Cr</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+            </form.Field>
+          </div>
+
+          {save.isError ? (
+            <p
+              role="alert"
+              className="border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[0.875rem] text-destructive"
+            >
+              {errorMessage(save.error, 'Could not add the account.')}
+            </p>
+          ) : null}
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" size="sm">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" size="sm" disabled={save.isPending}>
+              {save.isPending ? 'Saving...' : 'Add account'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

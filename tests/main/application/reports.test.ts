@@ -114,6 +114,16 @@ describe('reports', () => {
     expect(ageing[0].bucketsMinor.reduce((sum, value) => sum + value, 0)).toBe(455000)
   })
 
+  it('stock movements name the voucher that caused them', () => {
+    const { customerId, itemId } = setup()
+    const voucher = sell(customerId, itemId)
+    const rows = reports.stockMovements(itemId, '2026-04-01', '2027-03-31')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].voucherId).toBe(voucher)
+    expect(rows[0].qtyOutE4).toBe(10000)
+    expect(rows[0].type).toBe('SALES')
+  })
+
   it('party statement carries a running balance', () => {
     const { customerId, itemId } = setup()
     sell(customerId, itemId)

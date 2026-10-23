@@ -27,6 +27,32 @@ export const voucherSequences = sqliteTable(
   (table) => [unique().on(table.company_id, table.voucher_type, table.series, table.fy)]
 )
 
+/**
+ * Per company, per voucher type numbering defaults. The per financial year
+ * counters stay in `voucher_sequences`; this table holds what the owner edits.
+ */
+export const voucherNumberSettings = sqliteTable(
+  'voucher_number_settings',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    company_id: integer('company_id')
+      .notNull()
+      .references(() => companies.id),
+    voucher_type: text('voucher_type').notNull(),
+    series: text('series').notNull(),
+    prefix: text('prefix').notNull().default(''),
+    suffix: text('suffix').notNull().default(''),
+    padding: integer('padding').notNull().default(4),
+    start_number: integer('start_number').notNull().default(1),
+    reset_period: text('reset_period').notNull().default('YEARLY'),
+    manual_override: integer('manual_override', { mode: 'boolean' }).notNull().default(false),
+    updated_at: text('updated_at')
+      .notNull()
+      .default(sql`(datetime('now'))`)
+  },
+  (table) => [unique().on(table.company_id, table.voucher_type)]
+)
+
 export const vouchers = sqliteTable(
   'vouchers',
   {

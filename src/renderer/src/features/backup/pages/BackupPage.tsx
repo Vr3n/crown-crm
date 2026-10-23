@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { DatabaseBackup } from 'lucide-react'
+import { Clock, Database, DatabaseBackup, HardDrive, ShieldCheck } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
+import { KpiCard } from '@/components/ui/kpi-card'
 import { formatDateTime } from '@/lib/format'
 
 /**
@@ -28,6 +30,14 @@ export function BackupPage(): React.JSX.Element {
       })
   })
 
+  const latest = data[0]
+  const [now] = useState(() => Date.now())
+  const ageDays = latest
+    ? Math.floor((now - new Date(latest.createdAt).getTime()) / 86_400_000)
+    : null
+  const totalBytes = data.reduce((sum, file) => sum + file.sizeBytes, 0)
+  const fresh = ageDays !== null && ageDays <= 7
+
   return (
     <div className="mx-auto flex w-full max-w-[1000px] flex-col gap-5 p-6">
       <PageHeader
@@ -44,6 +54,35 @@ export function BackupPage(): React.JSX.Element {
           </button>
         }
       />
+
+      <section className="grid grid-cols-2 gap-px border border-border bg-border xl:grid-cols-4">
+        <KpiCard
+          label="Last backup"
+          value={ageDays === null ? 'Never' : ageDays === 0 ? 'Today' : `${ageDays}d ago`}
+          context={latest ? formatDateTime(latest.createdAt) : 'No copy exists yet'}
+          icon={Clock}
+          tone={fresh ? 'success' : 'warning'}
+        />
+        <KpiCard
+          label="Backups"
+          value={String(data.length)}
+          context="Copies on this computer"
+          icon={Database}
+        />
+        <KpiCard
+          label="Total size"
+          value={`${(totalBytes / 1024 / 1024).toFixed(1)} MB`}
+          context="Across all copies"
+          icon={HardDrive}
+        />
+        <KpiCard
+          label="Health"
+          value={fresh ? 'Fresh' : data.length === 0 ? 'None' : 'Stale'}
+          context={fresh ? 'Safe to keep posting' : 'Create a copy before posting more'}
+          icon={ShieldCheck}
+          tone={fresh ? 'success' : 'stamp'}
+        />
+      </section>
 
       <div className="border border-border bg-accent-soft/50 px-4 py-3 text-[0.875rem] leading-relaxed text-muted-foreground">
         Restoring is manual by design. Close Crown Books, keep a copy of the current
