@@ -32,7 +32,7 @@ function update(
     suffix: string
     padding: number
     startNumber: number
-    restartYearly: boolean
+    resetPeriod: 'YEARLY' | 'MONTHLY' | 'NEVER'
     manualOverride: boolean
   }>
 ): void {
@@ -48,7 +48,7 @@ function update(
         suffix: patch.suffix ?? current.suffix,
         padding: patch.padding ?? current.padding,
         startNumber: patch.startNumber ?? current.startNumber,
-        restartYearly: patch.restartYearly ?? current.restartYearly,
+        resetPeriod: patch.resetPeriod ?? current.resetPeriod,
         manualOverride: patch.manualOverride ?? current.manualOverride
       }
     ]
@@ -121,11 +121,31 @@ describe('voucher numbering settings', () => {
     expect(voucherRepo.allocateNumber(1, 'PURCHASE', '2027-05-01').number).toBe('PUR/0001')
   })
 
-  it('continues across years when restart is off', () => {
+  it('continues across years when reset is off', () => {
     company()
-    update('PURCHASE', { restartYearly: false, startNumber: 1 })
+    update('PURCHASE', { resetPeriod: 'NEVER', startNumber: 1 })
     expect(voucherRepo.allocateNumber(1, 'PURCHASE', '2026-05-01').number).toBe('PUR/0001')
     expect(voucherRepo.allocateNumber(1, 'PURCHASE', '2027-05-01').number).toBe('PUR/0002')
+  })
+
+  it('resets every month when monthly reset is on', () => {
+    company()
+    update('PURCHASE', { resetPeriod: 'MONTHLY', prefix: 'PUR/{YYYYMM}', padding: 3 })
+    expect(voucherRepo.allocateNumber(1, 'PURCHASE', '2026-07-01').number).toBe('PUR/202607001')
+    expect(voucherRepo.allocateNumber(1, 'PURCHASE', '2026-07-20').number).toBe('PUR/202607002')
+    expect(voucherRepo.allocateNumber(1, 'PURCHASE', '2026-08-01').number).toBe('PUR/202608001')
+  })
+
+  it('builds the year-month example', () => {
+    company()
+    update('PURCHASE', { prefix: 'INV/{YYYYMM}', suffix: '', padding: 3 })
+    expect(voucherRepo.allocateNumber(1, 'PURCHASE', '2026-07-13').number).toBe('INV/202607001')
+  })
+
+  it('expands the financial year token', () => {
+    company()
+    update('PURCHASE', { prefix: 'PUR/{FY}/', padding: 4 })
+    expect(voucherRepo.allocateNumber(1, 'PURCHASE', '2026-07-13').number).toBe('PUR/2026-27/0001')
   })
 
   it('honours a manual number only when the series allows it', () => {
@@ -155,7 +175,7 @@ describe('voucher numbering settings', () => {
             suffix: '',
             padding: 4,
             startNumber: 1,
-            restartYearly: true,
+            resetPeriod: 'YEARLY',
             manualOverride: false
           }
         ]

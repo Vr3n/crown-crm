@@ -118,7 +118,7 @@ describe('dashboard read model', () => {
           suffix: '',
           padding: 4,
           startNumber: 1,
-          restartYearly: true,
+          resetPeriod: 'YEARLY',
           manualOverride: false
         }
       ]

@@ -6,10 +6,12 @@ import {
   NUMBERING_DEFAULTS,
   VOUCHER_TYPE_ORDER,
   formatVoucherNumber,
-  nextSequenceValue
+  nextSequenceValue,
+  sequencePeriod
 } from '../domain/numbering'
 import type { VoucherType } from '../../shared/contracts/vouchers'
 import type { NumberingRow } from '../../shared/contracts/numbering'
+import type { NumberResetPeriod } from '../../shared/numbering'
 
 export interface NumberingSetting {
   voucherType: VoucherType
@@ -18,13 +20,8 @@ export interface NumberingSetting {
   suffix: string
   padding: number
   startNumber: number
-  restartYearly: boolean
+  resetPeriod: NumberResetPeriod
   manualOverride: boolean
-}
-
-/** The financial year key used to reset counters. Turned off by the setting. */
-export function sequenceYear(fy: string, restartYearly: boolean): string {
-  return restartYearly ? fy : 'ALL'
 }
 
 /**
@@ -43,7 +40,8 @@ export function ensureNumberingDefaults(companyId: number): void {
         prefix: defaults.prefix,
         suffix: defaults.suffix,
         padding: defaults.padding,
-        start_number: defaults.startNumber
+        start_number: defaults.startNumber,
+        reset_period: 'YEARLY'
       })
       .onConflictDoNothing()
       .run()
@@ -55,6 +53,10 @@ function currentFy(companyId: number): string {
     .prepare('SELECT fy_start_month FROM companies WHERE id = ?')
     .get(companyId) as { fy_start_month: number } | undefined
   return financialYearLabel(new Date().toISOString().slice(0, 10), row?.fy_start_month ?? 4)
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 export const numberingRepo = {
@@ -84,10 +86,11 @@ export const numberingRepo = {
         suffix: row?.suffix ?? defaults.suffix,
         padding: row?.padding ?? defaults.padding,
         startNumber: row?.start_number ?? defaults.startNumber,
-        restartYearly: row?.restart_yearly ?? true,
+        resetPeriod: (row?.reset_period as NumberResetPeriod | undefined) ?? 'YEARLY',
         manualOverride: row?.manual_override ?? false
       }
 
+      const today = todayIso()
       const seq =
         db
           .select({ lastValue: voucherSequences.last_value })
@@ -97,7 +100,7 @@ export const numberingRepo = {
               eq(voucherSequences.company_id, companyId),
               eq(voucherSequences.voucher_type, type),
               eq(voucherSequences.series, setting.series),
-              eq(voucherSequences.fy, sequenceYear(fy, setting.restartYearly))
+              eq(voucherSequences.fy, sequencePeriod(today, fy, setting.resetPeriod))
             )
           )
           .get() ?? null
@@ -115,10 +118,13 @@ export const numberingRepo = {
         suffix: setting.suffix,
         padding: setting.padding,
         startNumber: setting.startNumber,
-        restartYearly: setting.restartYearly,
+        resetPeriod: setting.resetPeriod,
         manualOverride: setting.manualOverride,
         fy,
-        nextNumber: formatVoucherNumber(setting.prefix, next, setting.padding, setting.suffix),
+        nextNumber: formatVoucherNumber(setting.prefix, next, setting.padding, setting.suffix, {
+          date: today,
+          fy
+        }),
         lastUsed: seq?.lastValue ?? 0,
         usedCount: used.n
       }
@@ -146,7 +152,7 @@ export const numberingRepo = {
         suffix: defaults.suffix,
         padding: defaults.padding,
         startNumber: defaults.startNumber,
-        restartYearly: true,
+        resetPeriod: 'YEARLY',
         manualOverride: false
       }
     }
@@ -157,7 +163,7 @@ export const numberingRepo = {
       suffix: row.suffix,
       padding: row.padding,
       startNumber: row.start_number,
-      restartYearly: row.restart_yearly,
+      resetPeriod: (row.reset_period as NumberResetPeriod | undefined) ?? 'YEARLY',
       manualOverride: row.manual_override
     }
   },
@@ -174,7 +180,7 @@ export const numberingRepo = {
           suffix: item.suffix,
           padding: item.padding,
           start_number: item.startNumber,
-          restart_yearly: item.restartYearly,
+          reset_period: item.resetPeriod,
           manual_override: item.manualOverride
         })
         .onConflictDoUpdate({
@@ -185,7 +191,7 @@ export const numberingRepo = {
             suffix: item.suffix,
             padding: item.padding,
             start_number: item.startNumber,
-            restart_yearly: item.restartYearly,
+            reset_period: item.resetPeriod,
             manual_override: item.manualOverride,
             updated_at: new Date().toISOString()
           }

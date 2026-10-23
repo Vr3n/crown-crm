@@ -2,10 +2,22 @@ import type { VoucherType } from '../../shared/contracts/vouchers'
 import {
   formatVoucherNumber,
   nextSequenceValue,
-  validateNumberingSetting
+  resolveNumberTokens,
+  sequencePeriod,
+  validateNumberingSetting,
+  voucherNumberLength,
+  type NumberResetPeriod
 } from '../../shared/numbering'
 
-export { formatVoucherNumber, nextSequenceValue, validateNumberingSetting }
+export {
+  formatVoucherNumber,
+  nextSequenceValue,
+  resolveNumberTokens,
+  sequencePeriod,
+  validateNumberingSetting,
+  voucherNumberLength
+}
+export type { NumberResetPeriod }
 
 export interface NumberingDefaults {
   label: string

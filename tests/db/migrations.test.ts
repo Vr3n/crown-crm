@@ -65,14 +65,15 @@ describe('runMigrations', () => {
     }
   })
 
-  it('records the baseline and numbering migrations once', () => {
+  it('records the baseline, numbering and reset migrations once', () => {
     runMigrations()
     const rows = getDb()
       .prepare('SELECT version, name FROM schema_migrations ORDER BY version')
       .all() as { version: number; name: string }[]
     expect(rows).toEqual([
       { version: 0, name: 'accounting_core' },
-      { version: 1, name: 'voucher_numbering' }
+      { version: 1, name: 'voucher_numbering' },
+      { version: 2, name: 'numbering_reset_period' }
     ])
   })
 
@@ -82,7 +83,7 @@ describe('runMigrations', () => {
     const row = getDb().prepare('SELECT COUNT(*) AS n FROM schema_migrations').get() as {
       n: number
     }
-    expect(row.n).toBe(2)
+    expect(row.n).toBe(3)
     expect(tableNames().has('vouchers')).toBe(true)
   })
 

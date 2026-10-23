@@ -12,6 +12,7 @@ import { errorMessage } from '../../../../../shared/contracts/errors'
 import { formatVoucherNumber, nextSequenceValue } from '../../../../../shared/numbering'
 import type { NumberingRow } from '../../../../../shared/contracts/numbering'
 import type { VoucherType } from '../../../../../shared/contracts/vouchers'
+import type { NumberResetPeriod } from '../../../../../shared/numbering'
 
 interface Draft {
   series: string
@@ -19,7 +20,7 @@ interface Draft {
   suffix: string
   padding: string
   startNumber: string
-  restartYearly: boolean
+  resetPeriod: NumberResetPeriod
   manualOverride: boolean
 }
 
@@ -45,8 +46,8 @@ const HELP: Record<string, FieldHelpContent> = {
     points: ['Existing numbers are never reused.']
   },
   restart: {
-    summary: 'Restart at the starting number each financial year.',
-    points: ['Turn it off for one continuous series.']
+    summary: 'When the counter returns to the starting number.',
+    points: ['Yearly matches the financial year.', 'Monthly is common with a YYYYMM prefix.']
   },
   manual: {
     summary: 'Allow typing a voucher number when posting.',
@@ -67,7 +68,7 @@ function toDrafts(rows: NumberingRow[]): Record<string, Draft> {
         suffix: row.suffix,
         padding: String(row.padding),
         startNumber: String(row.startNumber),
-        restartYearly: row.restartYearly,
+        resetPeriod: row.resetPeriod,
         manualOverride: row.manualOverride
       }
     ])
@@ -89,14 +90,31 @@ function preface(draft: Draft): { padding: number; start: number; error?: string
   return { padding, start }
 }
 
-function preview(row: NumberingRow, draft: Draft): { number: string; error?: string } {
+function preview(
+  row: NumberingRow,
+  draft: Draft
+): { number: string; error?: string; length: number } {
   const parsed = preface(draft)
-  if (parsed.error) return { number: '—', error: parsed.error }
-  const lastUsed = draft.series === row.series ? row.lastUsed : 0
+  if (parsed.error) return { number: '—', error: parsed.error, length: 0 }
+  const sameSeries = draft.series === row.series && draft.resetPeriod === row.resetPeriod
+  const lastUsed = sameSeries ? row.lastUsed : 0
   const next = nextSequenceValue(lastUsed, parsed.start)
-  return {
-    number: formatVoucherNumber(draft.prefix.trim(), next, parsed.padding, draft.suffix.trim())
+  const today = new Date().toISOString().slice(0, 10)
+  const number = formatVoucherNumber(
+    draft.prefix.trim(),
+    next,
+    parsed.padding,
+    draft.suffix.trim(),
+    { date: today, fy: row.fy }
+  )
+  if (number.length > 16) {
+    return {
+      number,
+      length: number.length,
+      error: `${number.length} characters. GST allows 16`
+    }
   }
+  return { number, length: number.length }
 }
 
 /**
@@ -141,7 +159,7 @@ export function NumberingPage({
             suffix: draft.suffix.trim(),
             padding: parsed.padding,
             startNumber: parsed.start,
-            restartYearly: draft.restartYearly,
+            resetPeriod: draft.resetPeriod,
             manualOverride: draft.manualOverride
           }
         })
@@ -209,6 +227,18 @@ export function NumberingPage({
           Changing a prefix or width affects the next number only. Changing the series starts a new
           series; older vouchers keep the series they were posted with.
         </p>
+        <p className="mt-2 flex flex-wrap items-center gap-1.5 font-mono text-[0.75rem] text-muted-foreground">
+          <span className="font-sans font-medium text-foreground">Date tokens:</span>
+          {['{YYYY}', '{YY}', '{MM}', '{DD}', '{YYYYMM}', '{FY}', '{FY_SHORT}'].map((token) => (
+            <span key={token} className="border border-border bg-card px-1.5 py-0.5">
+              {token}
+            </span>
+          ))}
+        </p>
+        <p className="mt-1.5 text-[0.75rem] text-muted-foreground">
+          Example: prefix <span className="font-mono">INV/{'{YYYYMM}'}</span> with width 3 gives{' '}
+          <span className="font-mono">INV/202607001</span>. GST allows 16 characters.
+        </p>
       </div>
 
       {query.isPending || !drafts ? (
@@ -248,7 +278,7 @@ export function NumberingPage({
                 </th>
                 <th className={`${LABEL} px-2 py-2 text-center`}>
                   <span className="inline-flex items-center gap-1">
-                    Yearly <FieldHelp label="Restart each year" content={HELP.restart} />
+                    Reset <FieldHelp label="Reset period" content={HELP.restart} />
                   </span>
                 </th>
                 <th className={`${LABEL} px-2 py-2 text-center`}>
@@ -318,13 +348,22 @@ export function NumberingPage({
                       />
                     </td>
                     <td className="px-2 py-2 text-center">
-                      <Checkbox
-                        aria-label={`${row.label} restarts each year`}
-                        checked={draft.restartYearly}
-                        onCheckedChange={(checked) =>
-                          set(row.voucherType, 'restartYearly', checked === true)
+                      <select
+                        aria-label={`${row.label} reset period`}
+                        value={draft.resetPeriod}
+                        onChange={(event) =>
+                          set(
+                            row.voucherType,
+                            'resetPeriod',
+                            event.target.value as NumberResetPeriod
+                          )
                         }
-                      />
+                        className="h-8 w-24 border border-input bg-background px-1 text-[0.75rem]"
+                      >
+                        <option value="YEARLY">Yearly</option>
+                        <option value="MONTHLY">Monthly</option>
+                        <option value="NEVER">Never</option>
+                      </select>
                     </td>
                     <td className="px-2 py-2 text-center">
                       <Checkbox
@@ -343,7 +382,16 @@ export function NumberingPage({
                             : 'font-mono text-[0.8125rem] tabular-nums'
                         }
                       >
-                        {next.error ?? next.number}
+                        {next.number}
+                      </span>
+                      <span
+                        className={
+                          next.error
+                            ? 'ml-2 font-mono text-[0.625rem] text-destructive'
+                            : 'ml-2 font-mono text-[0.625rem] text-muted-foreground'
+                        }
+                      >
+                        {next.error ?? `${next.length}/16`}
                       </span>
                     </td>
                   </tr>

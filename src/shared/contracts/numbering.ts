@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { voucherTypeSchema } from './vouchers'
 
+export const numberResetPeriodSchema = z.enum(['YEARLY', 'MONTHLY', 'NEVER'])
+export type NumberResetPeriod = z.infer<typeof numberResetPeriodSchema>
+
 /**
  * Voucher numbering settings. One row per voucher type per company, edited from
  * Company settings or the first run wizard.
@@ -8,11 +11,11 @@ import { voucherTypeSchema } from './vouchers'
 export const numberingSettingSchema = z.object({
   voucherType: voucherTypeSchema,
   series: z.string().trim().min(2).max(8),
-  prefix: z.string().max(24),
-  suffix: z.string().max(24),
+  prefix: z.string().max(40),
+  suffix: z.string().max(40),
   padding: z.number().int().min(1).max(8),
   startNumber: z.number().int().min(1).max(99999999),
-  restartYearly: z.boolean(),
+  resetPeriod: numberResetPeriodSchema,
   manualOverride: z.boolean()
 })
 
@@ -30,13 +33,13 @@ export interface NumberingRow {
   suffix: string
   padding: number
   startNumber: number
-  restartYearly: boolean
+  resetPeriod: NumberResetPeriod
   manualOverride: boolean
   /** Financial year the preview belongs to. */
   fy: string
   /** Next number that would be allocated, formatted. */
   nextNumber: string
-  /** Highest value already used in this financial year. */
+  /** Highest value already used in the current reset period. */
   lastUsed: number
   /** Posted vouchers using this voucher type. */
   usedCount: number

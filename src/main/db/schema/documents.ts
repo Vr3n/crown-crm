@@ -44,7 +44,7 @@ export const voucherNumberSettings = sqliteTable(
     suffix: text('suffix').notNull().default(''),
     padding: integer('padding').notNull().default(4),
     start_number: integer('start_number').notNull().default(1),
-    restart_yearly: integer('restart_yearly', { mode: 'boolean' }).notNull().default(true),
+    reset_period: text('reset_period').notNull().default('YEARLY'),
     manual_override: integer('manual_override', { mode: 'boolean' }).notNull().default(false),
     updated_at: text('updated_at')
       .notNull()

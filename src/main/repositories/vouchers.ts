@@ -10,9 +10,9 @@ import {
   vouchers
 } from '../db/schema'
 import { financialYearLabel } from '../domain/fy'
-import { formatVoucherNumber, nextSequenceValue } from '../domain/numbering'
+import { formatVoucherNumber, nextSequenceValue, sequencePeriod } from '../domain/numbering'
 import { ValidationError } from '../domain/errors'
-import { numberingRepo, sequenceYear } from './numbering'
+import { numberingRepo } from './numbering'
 import type {
   ListVouchersInput,
   OutstandingBill,
@@ -105,7 +105,7 @@ export const voucherRepo = {
       .prepare('SELECT fy_start_month FROM companies WHERE id = ?')
       .get(companyId) as { fy_start_month: number } | undefined
     const fy = financialYearLabel(date, company?.fy_start_month ?? 4)
-    const key = sequenceYear(fy, setting.restartYearly)
+    const key = sequencePeriod(date, fy, setting.resetPeriod)
     const db = getDrizzle()
 
     const findSequence = (): typeof voucherSequences.$inferSelect | undefined =>
@@ -156,6 +156,16 @@ export const voucherRepo = {
       next = manualNumber
     }
 
+    const number = formatVoucherNumber(setting.prefix, next, setting.padding, setting.suffix, {
+      date,
+      fy
+    })
+    if (number.length > 16) {
+      throw new ValidationError(
+        `Voucher number "${number}" is ${number.length} characters. GST allows 16. Shorten the prefix or width`
+      )
+    }
+
     db.update(voucherSequences)
       .set({
         last_value: next,
@@ -167,7 +177,7 @@ export const voucherRepo = {
       .run()
 
     return {
-      number: formatVoucherNumber(setting.prefix, next, setting.padding, setting.suffix),
+      number,
       fy,
       series: setting.series
     }

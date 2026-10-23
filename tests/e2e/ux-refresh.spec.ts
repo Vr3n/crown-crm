@@ -15,6 +15,7 @@ import { join } from 'node:path'
  */
 
 const userData = mkdtempSync(join(tmpdir(), 'crown-books-ux-'))
+const YEAR_MONTH = new Date().toISOString().slice(0, 7).replace('-', '')
 let app: ElectronApplication
 let page: Page
 
@@ -59,9 +60,11 @@ test('first run numbers the books and finishes the tour', async () => {
 
   await page.getByRole('heading', { name: 'Number your vouchers' }).waitFor()
 
-  const salesPrefix = page.getByLabel('Sales invoice prefix')
-  await salesPrefix.fill('BILL/')
-  await expect(page.getByText('BILL/0001').first()).toBeVisible()
+  const purchasePrefix = page.getByLabel('Purchase bill prefix')
+  await purchasePrefix.fill('PUR/{YYYYMM}')
+  await page.getByLabel('Purchase bill width').fill('3')
+  await page.getByLabel('Purchase bill reset period').selectOption('MONTHLY')
+  await expect(page.getByText(`PUR/${YEAR_MONTH}001`).first()).toBeVisible()
 
   await page.getByRole('button', { name: 'Save numbering' }).click()
   await page.getByRole('heading', { name: 'Walk through the main flow' }).waitFor()
@@ -147,7 +150,7 @@ test('the purchase bill exposes the supplier picker and posts', async () => {
   await page.getByRole('option', { name: /SSD 256GB/ }).click()
 
   await page.getByRole('button', { name: 'Post bill' }).click()
-  await expect(page.getByText(/PUR\/0001/).first()).toBeVisible()
+  await expect(page.getByText(new RegExp(`PUR/${YEAR_MONTH}001`)).first()).toBeVisible()
 })
 
 test('the dashboard reflects the records and shows the trends', async () => {
@@ -159,7 +162,5 @@ test('the dashboard reflects the records and shows the trends', async () => {
   await expect(page.getByLabel('Open receivables and payables by age')).toBeVisible()
 
   await goto('#/reports/trial-balance')
-  await expect(
-    page.getByRole('main').getByRole('heading', { name: 'Trial Balance' })
-  ).toBeVisible()
+  await expect(page.getByRole('main').getByRole('heading', { name: 'Trial Balance' })).toBeVisible()
 })

@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { getDb, withTransaction } from './connection'
 import accountingCoreSql from './migrations/20261021000000_accounting_core/migration.sql?raw'
 import voucherNumberingSql from './migrations/20261023000000_voucher_numbering/migration.sql?raw'
+import numberingResetPeriodSql from './migrations/20261023000001_numbering_reset_period/migration.sql?raw'
 
 /**
  * Migration runner.
@@ -25,7 +26,8 @@ interface Migration {
 
 const migrations: Migration[] = [
   { version: 0, name: 'accounting_core', sql: accountingCoreSql },
-  { version: 1, name: 'voucher_numbering', sql: voucherNumberingSql }
+  { version: 1, name: 'voucher_numbering', sql: voucherNumberingSql },
+  { version: 2, name: 'numbering_reset_period', sql: numberingResetPeriodSql }
 ]
 
 const BREAKPOINT_RE = /^\s*--> statement-breakpoint\s*$/m
