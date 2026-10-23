@@ -189,9 +189,7 @@ export const dashboardRepo = {
     }))
     const ageingByBucket = new Map(ageing.map((row) => [row.bucket, row]))
 
-    let overdueMinor = 0
     let overdueCount = 0
-    let dueSoonMinor = 0
     let dueSoonCount = 0
     const soon = addDays(today, 7)
 
@@ -205,7 +203,6 @@ export const dashboardRepo = {
 
       if (bill.due_date && bill.due_date < today) {
         overdueCount += 1
-        if (bill.voucher_type === 'SALES') overdueMinor += bill.open_minor
       }
       if (
         bill.voucher_type === 'PURCHASE' &&
@@ -214,7 +211,6 @@ export const dashboardRepo = {
         bill.due_date <= soon
       ) {
         dueSoonCount += 1
-        dueSoonMinor += bill.open_minor
       }
     }
 
