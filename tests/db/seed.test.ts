@@ -69,7 +69,7 @@ describe('seedCompanyDefaults', () => {
 
     expect(db.select().from(units).where(eq(units.company_id, companyId)).all()).toHaveLength(11)
     expect(db.select().from(taxRates).where(eq(taxRates.company_id, companyId)).all()).toHaveLength(
-      5
+      4
     )
     expect(
       db.select().from(paymentMethods).where(eq(paymentMethods.company_id, companyId)).all()
@@ -85,9 +85,7 @@ describe('seedCompanyDefaults', () => {
       .from(taxRates)
       .where(eq(taxRates.company_id, companyId))
       .all()
-    expect(rows.map((r) => r.gst_rate_bps).sort((a, b) => a - b)).toEqual([
-      0, 500, 1200, 1800, 2800
-    ])
+    expect(rows.map((r) => r.gst_rate_bps).sort((a, b) => a - b)).toEqual([0, 500, 1800, 4000])
   })
 
   it('is idempotent', () => {

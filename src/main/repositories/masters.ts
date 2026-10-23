@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm'
 import { getDb, getDrizzle } from '../db/connection'
 import {
   accountGroups,
@@ -7,6 +7,7 @@ import {
   items,
   partyAccounts,
   parties,
+  taxRates,
   units
 } from '../db/schema'
 import type {
@@ -15,9 +16,13 @@ import type {
   CreateItemInput,
   CreatePartyInput,
   CreatePartyInput as PartyInput,
+  CreateTaxRateInput,
+  CreateUnitInput,
   ItemRow,
   PartyListInput,
   PartyRow,
+  TaxRateRow,
+  UnitRow,
   UpdateItemInput,
   UpdatePartyInput
 } from '../../shared/contracts/masters'
@@ -494,14 +499,223 @@ export const accountRepo = {
   }
 }
 
+interface UnitDbRow {
+  id: number
+  name: string
+  symbol: string
+  decimals: number
+  is_system: number | boolean
+  is_active: number | boolean
+  usage_count: number
+}
+
+function mapUnit(row: UnitDbRow): UnitRow {
+  return {
+    id: row.id,
+    name: row.name,
+    symbol: row.symbol,
+    decimals: row.decimals,
+    isSystem: Boolean(row.is_system),
+    isActive: Boolean(row.is_active),
+    usageCount: row.usage_count
+  }
+}
+
+const UNIT_SELECT = `
+  SELECT u.id, u.name, u.symbol, u.decimals, u.is_system, u.is_active,
+         (SELECT COUNT(*) FROM items i
+           WHERE i.company_id = u.company_id AND i.uom_id = u.id) AS usage_count
+    FROM units u
+`
+
 export const unitRepo = {
-  list(companyId: number): { id: number; name: string; symbol: string }[] {
-    return getDrizzle()
-      .select({ id: units.id, name: units.name, symbol: units.symbol })
-      .from(units)
-      .where(eq(units.company_id, companyId))
-      .orderBy(units.name)
+  list(companyId: number, includeInactive = false): UnitRow[] {
+    const activeFilter = includeInactive ? '' : ' AND u.is_active = 1'
+    const rows = getDb()
+      .prepare(
+        `${UNIT_SELECT}
+         WHERE u.company_id = ?${activeFilter}
+         ORDER BY u.name COLLATE NOCASE, u.id`
+      )
+      .all(companyId) as unknown as UnitDbRow[]
+    return rows.map(mapUnit)
+  },
+
+  findById(companyId: number, id: number): UnitRow | null {
+    const row = getDb()
+      .prepare(`${UNIT_SELECT} WHERE u.company_id = ? AND u.id = ?`)
+      .get(companyId, id) as unknown as UnitDbRow | undefined
+    return row ? mapUnit(row) : null
+  },
+
+  /** Case-insensitive duplicate check across both the label and the symbol. */
+  findByNameOrSymbol(
+    companyId: number,
+    name: string,
+    symbol: string,
+    excludeId?: number
+  ): UnitRow | null {
+    const exclude = excludeId === undefined ? '' : ' AND u.id != ?'
+    const params: (string | number)[] = [companyId, name, symbol]
+    if (excludeId !== undefined) params.push(excludeId)
+    const row = getDb()
+      .prepare(
+        `${UNIT_SELECT}
+         WHERE u.company_id = ?
+           AND (u.name = ? COLLATE NOCASE OR u.symbol = ? COLLATE NOCASE)${exclude}
+         LIMIT 1`
+      )
+      .get(...params) as unknown as UnitDbRow | undefined
+    return row ? mapUnit(row) : null
+  },
+
+  usageCount(companyId: number, id: number): number {
+    const row = getDb()
+      .prepare(
+        `SELECT COUNT(*) AS n FROM items WHERE company_id = ? AND uom_id = ?`
+      )
+      .get(companyId, id) as { n: number } | undefined
+    return row?.n ?? 0
+  },
+
+  create(companyId: number, input: CreateUnitInput): UnitRow {
+    const result = getDrizzle()
+      .insert(units)
+      .values({
+        company_id: companyId,
+        name: input.name.trim(),
+        symbol: input.symbol.trim(),
+        decimals: input.decimals
+      })
+      .run()
+    const created = this.findById(companyId, Number(result.lastInsertRowid))
+    if (!created) throw new Error('Unit could not be created')
+    return created
+  },
+
+  update(
+    companyId: number,
+    id: number,
+    patch: { name?: string; symbol?: string; decimals?: number; isActive?: boolean }
+  ): UnitRow {
+    const set: Partial<typeof units.$inferInsert> = {}
+    if (patch.name !== undefined) set.name = patch.name.trim()
+    if (patch.symbol !== undefined) set.symbol = patch.symbol.trim()
+    if (patch.decimals !== undefined) set.decimals = patch.decimals
+    if (patch.isActive !== undefined) set.is_active = patch.isActive
+    if (Object.keys(set).length > 0) {
+      getDrizzle()
+        .update(units)
+        .set(set)
+        .where(and(eq(units.company_id, companyId), eq(units.id, id)))
+        .run()
+    }
+    const updated = this.findById(companyId, id)
+    if (!updated) throw new Error('Unit not found')
+    return updated
+  }
+}
+
+interface TaxRateDbRow {
+  id: number
+  gst_rate_bps: number
+  cess_rate_bps: number
+  description: string | null
+  effective_from: string
+  effective_to: string | null
+}
+
+function mapTaxRate(row: TaxRateDbRow, asOf: string): TaxRateRow {
+  return {
+    id: row.id,
+    gstRateBps: row.gst_rate_bps,
+    cessRateBps: row.cess_rate_bps,
+    description: row.description,
+    effectiveFrom: row.effective_from,
+    effectiveTo: row.effective_to,
+    isCurrent:
+      row.effective_from <= asOf && (row.effective_to === null || row.effective_to >= asOf)
+  }
+}
+
+export const taxRateRepo = {
+  /** Current rows by default; `includeHistory` returns ended and future revisions too. */
+  list(companyId: number, asOf: string, includeHistory = false): TaxRateRow[] {
+    const conditions = [eq(taxRates.company_id, companyId)]
+    if (!includeHistory) {
+      conditions.push(lte(taxRates.effective_from, asOf))
+      const open = or(isNull(taxRates.effective_to), gte(taxRates.effective_to, asOf))
+      if (open) conditions.push(open)
+    }
+    const rows = getDrizzle()
+      .select()
+      .from(taxRates)
+      .where(and(...conditions))
+      .orderBy(desc(taxRates.effective_from), desc(taxRates.gst_rate_bps))
       .all()
+    return rows.map((row) => mapTaxRate(row, asOf))
+  },
+
+  findById(companyId: number, id: number, asOf: string): TaxRateRow | null {
+    const row = getDrizzle()
+      .select()
+      .from(taxRates)
+      .where(and(eq(taxRates.company_id, companyId), eq(taxRates.id, id)))
+      .get()
+    return row ? mapTaxRate(row, asOf) : null
+  },
+
+  /**
+   * Finds a date-range collision for the same GST/cess combination. Ranges are
+   * inclusive at both ends, so touching rows must be separated by one day.
+   */
+  findOverlapping(
+    companyId: number,
+    gstRateBps: number,
+    cessRateBps: number,
+    effectiveFrom: string,
+    effectiveTo: string | null,
+    excludeId?: number
+  ): TaxRateRow | null {
+    const conditions = [
+      eq(taxRates.company_id, companyId),
+      eq(taxRates.gst_rate_bps, gstRateBps),
+      eq(taxRates.cess_rate_bps, cessRateBps),
+      lte(taxRates.effective_from, effectiveTo ?? '9999-12-31')
+    ]
+    const open = or(isNull(taxRates.effective_to), gte(taxRates.effective_to, effectiveFrom))
+    if (open) conditions.push(open)
+    if (excludeId !== undefined) conditions.push(sql`${taxRates.id} != ${excludeId}`)
+    const row = getDrizzle()
+      .select()
+      .from(taxRates)
+      .where(and(...conditions))
+      .get()
+    return row ? mapTaxRate(row, effectiveFrom) : null
+  },
+
+  create(companyId: number, input: CreateTaxRateInput): TaxRateRow {
+    const result = getDrizzle()
+      .insert(taxRates)
+      .values({
+        company_id: companyId,
+        gst_rate_bps: input.gstRateBps,
+        cess_rate_bps: input.cessRateBps,
+        description: input.description?.trim() || null,
+        effective_from: input.effectiveFrom
+      })
+      .run()
+    const created = this.findById(companyId, Number(result.lastInsertRowid), input.effectiveFrom)
+    if (!created) throw new Error('Tax rate could not be created')
+    return created
+  },
+
+  setEffectiveTo(companyId: number, id: number, effectiveTo: string): void {
+    getDrizzle()
+      .update(taxRates)
+      .set({ effective_to: effectiveTo })
+      .where(and(eq(taxRates.company_id, companyId), eq(taxRates.id, id)))
+      .run()
   }
 }
 

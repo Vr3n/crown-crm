@@ -22,12 +22,20 @@ import type {
   CreateAccountInput,
   CreateItemInput,
   CreatePartyInput,
+  CreateTaxRateInput,
   CreateUnitInput,
   ItemRow,
   PartyListInput,
   PartyRow,
+  RetireTaxRateInput,
+  ReviseTaxRateInput,
+  TaxRateListInput,
+  TaxRateRow,
+  UnitListInput,
+  UnitRow,
   UpdateItemInput,
-  UpdatePartyInput
+  UpdatePartyInput,
+  UpdateUnitInput
 } from '../shared/contracts/masters'
 import type {
   ListVouchersInput,
@@ -113,9 +121,24 @@ const api = {
   },
 
   units: {
-    list: (): Promise<{ id: number; name: string; symbol: string }[]> =>
-      call(IPC_CHANNELS.UNITS_LIST),
-    create: (input: CreateUnitInput): Promise<void> => call(IPC_CHANNELS.UNITS_CREATE, input)
+    list: (input: UnitListInput): Promise<UnitRow[]> => call(IPC_CHANNELS.UNITS_LIST, input),
+    create: (input: CreateUnitInput): Promise<UnitRow> =>
+      call(IPC_CHANNELS.UNITS_CREATE, input),
+    update: (input: UpdateUnitInput): Promise<UnitRow> =>
+      call(IPC_CHANNELS.UNITS_UPDATE, input),
+    deactivate: (id: number): Promise<UnitRow> =>
+      call(IPC_CHANNELS.UNITS_DEACTIVATE, { id })
+  },
+
+  taxRates: {
+    list: (input: TaxRateListInput): Promise<TaxRateRow[]> =>
+      call(IPC_CHANNELS.TAX_RATES_LIST, input),
+    create: (input: CreateTaxRateInput): Promise<TaxRateRow> =>
+      call(IPC_CHANNELS.TAX_RATES_CREATE, input),
+    revise: (input: ReviseTaxRateInput): Promise<TaxRateRow> =>
+      call(IPC_CHANNELS.TAX_RATES_REVISE, input),
+    retire: (input: RetireTaxRateInput): Promise<TaxRateRow> =>
+      call(IPC_CHANNELS.TAX_RATES_RETIRE, input)
   },
 
   godowns: {

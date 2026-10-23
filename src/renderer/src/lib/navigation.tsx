@@ -98,8 +98,13 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Masters',
     items: [
       { to: '/masters/accounts', label: 'Chart of Accounts', icon: ListTree, phase: 'P1' },
-      { to: '/masters/tax-rates', label: 'Tax Rates', icon: Percent, phase: 'P1' },
-      { to: '/masters/units', label: 'Units', icon: Ruler, phase: 'P1' }
+      {
+        to: '/masters/tax-rates',
+        label: 'Tax Rates',
+        icon: Percent,
+        requires: 'item.view'
+      },
+      { to: '/masters/units', label: 'Units', icon: Ruler, requires: 'item.view' }
     ]
   },
   {

@@ -263,7 +263,11 @@ const ACCOUNT_SEED: {
   }
 ]
 
-const TAX_RATES = [0, 5, 12, 18, 28]
+/**
+ * GST 2.0 slabs, effective from 22 September 2025. The old 12% and 28% slabs
+ * were removed; keep these as the starting rows for a new company.
+ */
+const TAX_RATES = [0, 5, 18, 40]
 
 const PAYMENT_METHOD_SEED = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Cheque', 'NEFT', 'RTGS']
 

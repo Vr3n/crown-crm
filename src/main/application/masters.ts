@@ -1,20 +1,36 @@
 import { currentCompanyId, getSession, requirePermission } from '../auth/session'
-import { getDrizzle } from '../db/connection'
-import { units } from '../db/schema'
+import { withTransaction } from '../db/connection'
 import { PERMISSIONS } from '../db/permissions'
-import { accountRepo, godownRepo, itemRepo, partyRepo, unitRepo } from '../repositories/masters'
+import {
+  accountRepo,
+  godownRepo,
+  itemRepo,
+  partyRepo,
+  taxRateRepo,
+  unitRepo
+} from '../repositories/masters'
 import { ValidationError } from '../domain/errors'
+import { addDaysIso, assertValidBusinessDate, DEFAULT_TIMEZONE, todayInOrgTz } from '../domain/dates'
+import { formatRate } from '../../shared/contracts/money'
 import type {
   AccountRow,
   CreateAccountInput,
   CreateItemInput,
   CreatePartyInput,
+  CreateTaxRateInput,
   CreateUnitInput,
   ItemRow,
   PartyListInput,
   PartyRow,
+  RetireTaxRateInput,
+  ReviseTaxRateInput,
+  TaxRateListInput,
+  TaxRateRow,
+  UnitListInput,
+  UnitRow,
   UpdateItemInput,
-  UpdatePartyInput
+  UpdatePartyInput,
+  UpdateUnitInput
 } from '../../shared/contracts/masters'
 
 const GSTIN_RE = /^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/
@@ -23,6 +39,29 @@ function normalizeGstin(value?: string | null): string | null {
   const gstin = value?.trim().toUpperCase() || null
   if (gstin && !GSTIN_RE.test(gstin)) throw new ValidationError('Enter a valid 15 character GSTIN')
   return gstin
+}
+
+function currentBusinessDate(): string {
+  return todayInOrgTz(DEFAULT_TIMEZONE)
+}
+
+function resolveAsOf(asOf?: string): string {
+  if (asOf) assertValidBusinessDate(asOf, 'as of date')
+  return asOf ?? currentBusinessDate()
+}
+
+function taxRateLabel(gstRateBps: number, cessRateBps: number): string {
+  if (gstRateBps === 0 && cessRateBps === 0) return 'Exempt'
+  const gst = gstRateBps === 0 ? 'Nil GST' : `GST ${formatRate(gstRateBps)}`
+  return cessRateBps > 0 ? `${gst} + ${formatRate(cessRateBps)} cess` : gst
+}
+
+function normalizeTaxRate(input: CreateTaxRateInput): CreateTaxRateInput {
+  assertValidBusinessDate(input.effectiveFrom, 'effective from')
+  return {
+    ...input,
+    description: input.description?.trim() || taxRateLabel(input.gstRateBps, input.cessRateBps)
+  }
 }
 
 export const masters = {
@@ -113,21 +152,160 @@ export const masters = {
     return godownRepo.list(currentCompanyId())
   },
 
-  listUnits(): { id: number; name: string; symbol: string }[] {
+  listUnits(input: UnitListInput): UnitRow[] {
     requirePermission(PERMISSIONS.ITEM_VIEW)
-    return unitRepo.list(currentCompanyId())
+    return unitRepo.list(currentCompanyId(), input.includeInactive)
   },
 
-  createUnit(input: CreateUnitInput): void {
+  createUnit(input: CreateUnitInput): UnitRow {
     requirePermission(PERMISSIONS.SETTINGS_MANAGE)
-    getDrizzle()
-      .insert(units)
-      .values({
-        company_id: currentCompanyId(),
-        name: input.name.trim(),
-        symbol: input.symbol.trim(),
-        decimals: input.decimals
-      })
-      .run()
+    const companyId = currentCompanyId()
+    const name = input.name.trim()
+    const symbol = input.symbol.trim()
+    const duplicate = unitRepo.findByNameOrSymbol(companyId, name, symbol)
+    if (duplicate) {
+      throw new ValidationError(`"${duplicate.name}" already uses that unit name or symbol`)
+    }
+    return unitRepo.create(companyId, { ...input, name, symbol })
+  },
+
+  updateUnit(input: UpdateUnitInput): UnitRow {
+    requirePermission(PERMISSIONS.SETTINGS_MANAGE)
+    const companyId = currentCompanyId()
+    const existing = unitRepo.findById(companyId, input.id)
+    if (!existing) throw new ValidationError('Unit not found')
+
+    const name = input.name?.trim() ?? existing.name
+    const symbol = input.symbol?.trim() ?? existing.symbol
+    if (input.name !== undefined || input.symbol !== undefined) {
+      const duplicate = unitRepo.findByNameOrSymbol(companyId, name, symbol, input.id)
+      if (duplicate) {
+        throw new ValidationError(`"${duplicate.name}" already uses that unit name or symbol`)
+      }
+    }
+
+    if (input.isActive === false && existing.isActive && existing.usageCount > 0) {
+      throw new ValidationError(
+        `This unit is used by ${existing.usageCount} item${
+          existing.usageCount === 1 ? '' : 's'
+        }. Change those items to another unit first.`
+      )
+    }
+
+    return unitRepo.update(companyId, input.id, {
+      name: input.name === undefined ? undefined : name,
+      symbol: input.symbol === undefined ? undefined : symbol,
+      decimals: input.decimals,
+      isActive: input.isActive
+    })
+  },
+
+  deactivateUnit(id: number): UnitRow {
+    requirePermission(PERMISSIONS.SETTINGS_MANAGE)
+    const companyId = currentCompanyId()
+    const existing = unitRepo.findById(companyId, id)
+    if (!existing) throw new ValidationError('Unit not found')
+    if (!existing.isActive) return existing
+    if (existing.usageCount > 0) {
+      throw new ValidationError(
+        `This unit is used by ${existing.usageCount} item${
+          existing.usageCount === 1 ? '' : 's'
+        }. Change those items to another unit first.`
+      )
+    }
+    return unitRepo.update(companyId, id, { isActive: false })
+  },
+
+  listTaxRates(input: TaxRateListInput): TaxRateRow[] {
+    requirePermission(PERMISSIONS.ITEM_VIEW)
+    const asOf = resolveAsOf(input.asOf)
+    return taxRateRepo.list(currentCompanyId(), asOf, input.includeHistory)
+  },
+
+  createTaxRate(input: CreateTaxRateInput): TaxRateRow {
+    requirePermission(PERMISSIONS.SETTINGS_MANAGE)
+    const companyId = currentCompanyId()
+    const normalized = normalizeTaxRate(input)
+    const overlap = taxRateRepo.findOverlapping(
+      companyId,
+      normalized.gstRateBps,
+      normalized.cessRateBps,
+      normalized.effectiveFrom,
+      null
+    )
+    if (overlap) {
+      throw new ValidationError(
+        `A ${taxRateLabel(normalized.gstRateBps, normalized.cessRateBps)} rate already runs from ${
+          overlap.effectiveFrom
+        }. Revise that rate instead of adding an overlapping one.`
+      )
+    }
+    return taxRateRepo.create(companyId, normalized)
+  },
+
+  reviseTaxRate(input: ReviseTaxRateInput): TaxRateRow {
+    requirePermission(PERMISSIONS.SETTINGS_MANAGE)
+    return withTransaction(() => {
+      const companyId = currentCompanyId()
+      const asOf = currentBusinessDate()
+      const existing = taxRateRepo.findById(companyId, input.id, asOf)
+      if (!existing) throw new ValidationError('Tax rate not found')
+      if (existing.effectiveTo) {
+        throw new ValidationError('This rate has already ended. Add a new rate instead.')
+      }
+      if (input.effectiveFrom <= existing.effectiveFrom) {
+        throw new ValidationError(
+          `The new rate must start after ${existing.effectiveFrom}`
+        )
+      }
+
+      const normalized = normalizeTaxRate(input)
+      const overlap = taxRateRepo.findOverlapping(
+        companyId,
+        normalized.gstRateBps,
+        normalized.cessRateBps,
+        normalized.effectiveFrom,
+        null,
+        existing.id
+      )
+      if (overlap) {
+        throw new ValidationError(
+          `A ${taxRateLabel(normalized.gstRateBps, normalized.cessRateBps)} rate already runs from ${
+            overlap.effectiveFrom
+          }. Revise that rate instead.`
+        )
+      }
+
+      taxRateRepo.setEffectiveTo(
+        companyId,
+        existing.id,
+        addDaysIso(normalized.effectiveFrom, -1)
+      )
+      return taxRateRepo.create(companyId, normalized)
+    })
+  },
+
+  retireTaxRate(input: RetireTaxRateInput): TaxRateRow {
+    requirePermission(PERMISSIONS.SETTINGS_MANAGE)
+    return withTransaction(() => {
+      const companyId = currentCompanyId()
+      const existing = taxRateRepo.findById(companyId, input.id, currentBusinessDate())
+      if (!existing) throw new ValidationError('Tax rate not found')
+      if (existing.effectiveTo) throw new ValidationError('This rate has already ended')
+      if (input.effectiveFrom <= existing.effectiveFrom) {
+        throw new ValidationError(
+          `The end date must be after ${existing.effectiveFrom}`
+        )
+      }
+
+      taxRateRepo.setEffectiveTo(
+        companyId,
+        existing.id,
+        addDaysIso(input.effectiveFrom, -1)
+      )
+      const updated = taxRateRepo.findById(companyId, existing.id, currentBusinessDate())
+      if (!updated) throw new ValidationError('Tax rate not found')
+      return updated
+    })
   }
 }

@@ -139,7 +139,8 @@ export const units = sqliteTable(
     name: text('name').notNull(),
     symbol: text('symbol').notNull(),
     decimals: integer('decimals').notNull().default(0),
-    is_system: integer('is_system', { mode: 'boolean' }).notNull().default(false)
+    is_system: integer('is_system', { mode: 'boolean' }).notNull().default(false),
+    is_active: integer('is_active', { mode: 'boolean' }).notNull().default(true)
   },
   (table) => [unique().on(table.company_id, table.name)]
 )

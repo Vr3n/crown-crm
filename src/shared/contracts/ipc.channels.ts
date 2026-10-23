@@ -36,6 +36,12 @@ export const IPC_CHANNELS = {
   ACCOUNTS_DEACTIVATE: 'accounts:deactivate',
   UNITS_LIST: 'units:list',
   UNITS_CREATE: 'units:create',
+  UNITS_UPDATE: 'units:update',
+  UNITS_DEACTIVATE: 'units:deactivate',
+  TAX_RATES_LIST: 'taxRates:list',
+  TAX_RATES_CREATE: 'taxRates:create',
+  TAX_RATES_REVISE: 'taxRates:revise',
+  TAX_RATES_RETIRE: 'taxRates:retire',
   GODOWNS_LIST: 'godowns:list',
 
   // Vouchers

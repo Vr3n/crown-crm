@@ -112,6 +112,39 @@ test('an item is captured with required state and help', async () => {
   await expect(page.getByText('SSD 256GB').first()).toBeVisible()
 })
 
+test('units and effective-dated tax rates are editable masters', async () => {
+  const main = page.getByRole('main')
+
+  await goto('#/masters/units')
+  await expect(main.getByRole('heading', { name: 'Units', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'New unit' }).click()
+  await page.getByLabel('Unit name').fill('Dozen')
+  await page.getByLabel('Symbol').fill('dz')
+  await page.getByRole('button', { name: 'Add unit' }).click()
+  await expect(page.getByText('Dozen').first()).toBeVisible()
+
+  await goto('#/masters/tax-rates')
+  await expect(main.getByRole('heading', { name: 'Tax Rates', exact: true })).toBeVisible()
+  await expect(page.getByText('18%', { exact: true }).first()).toBeVisible()
+
+  await page.getByRole('button', { name: 'New rate' }).click()
+  await page.getByLabel('GST %').fill('25')
+  await page.getByLabel('Cess %').fill('0')
+  await page.getByLabel('Label').fill('Special 25')
+  await page.getByRole('button', { name: 'Add rate' }).click()
+  await expect(page.getByText('Special 25').first()).toBeVisible()
+
+  const specialRow = page.getByRole('row', { name: /Special 25/ })
+  await specialRow.getByRole('button', { name: 'Change' }).click()
+  await page.getByLabel('GST %').fill('30')
+  await page.getByLabel('Label').fill('Special 30')
+  await page.getByRole('button', { name: 'Schedule change' }).click()
+
+  await page.getByLabel('Show ended and upcoming rates').check()
+  await expect(page.getByText('Special 30').first()).toBeVisible()
+  await expect(page.getByText('Special 25').first()).toBeVisible()
+})
+
 test('global search opens with the keyboard and lands on a party', async () => {
   await goto('#/')
   await page.keyboard.press('Control+K')

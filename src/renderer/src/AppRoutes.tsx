@@ -9,9 +9,7 @@ import {
   ListTree,
   NotebookPen,
   Package,
-  Percent,
   PieChart,
-  Ruler,
   Scale,
   ShoppingCart,
   TrendingDown,
@@ -21,7 +19,6 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Boxes,
-  ShieldCheck,
   Building2
 } from 'lucide-react'
 import { AppLayout } from '@/layouts/AppLayout'
@@ -37,6 +34,8 @@ import { ItemDetailPage } from '@/features/items/pages/ItemDetailPage'
 import { AccountsPage } from '@/features/accounts/pages/AccountsPage'
 import { CompanyPage } from '@/features/company/pages/CompanyPage'
 import { NumberingPage } from '@/features/numbering/pages/NumberingPage'
+import { UnitsPage } from '@/features/settings/pages/UnitsPage'
+import { TaxRatesPage } from '@/features/settings/pages/TaxRatesPage'
 import { SetupTourPage } from '@/features/onboarding/pages/SetupTourPage'
 import { SetupNumberingPage } from '@/features/onboarding/pages/SetupNumberingPage'
 import { VoucherListPage } from '@/features/vouchers/pages/VoucherListPage'
@@ -200,20 +199,6 @@ const PLANNED: PlannedRoute[] = [
     icon: ListTree
   },
   {
-    path: 'masters/tax-rates',
-    title: 'Tax Rates',
-    description: 'GST and cess rates with effective dates, so history never changes.',
-    scope: 'P1',
-    icon: Percent
-  },
-  {
-    path: 'masters/units',
-    title: 'Units',
-    description: 'Nos, kilograms, litres, metres and the precision each one allows.',
-    scope: 'P1',
-    icon: Ruler
-  },
-  {
     path: 'settings/company',
     title: 'Company',
     description: 'Identity, GSTIN and state, financial year, costing method and invoice terms.',
@@ -221,14 +206,6 @@ const PLANNED: PlannedRoute[] = [
     icon: Building2,
     requires: 'company.view'
   },
-  {
-    path: 'settings/users',
-    title: 'Users and Roles',
-    description: 'Staff accounts and the permission sets attached to each role.',
-    scope: 'P8',
-    icon: ShieldCheck,
-    requires: 'user.view'
-  }
 ]
 
 function VoucherDetailRoute(): React.JSX.Element {
@@ -270,6 +247,22 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="items" element={<ItemsPage />} />
         <Route path="items/:id" element={<ItemDetailPage />} />
         <Route path="masters/accounts" element={<AccountsPage />} />
+        <Route
+          path="masters/units"
+          element={
+            <Protected code="item.view">
+              <UnitsPage />
+            </Protected>
+          }
+        />
+        <Route
+          path="masters/tax-rates"
+          element={
+            <Protected code="item.view">
+              <TaxRatesPage />
+            </Protected>
+          }
+        />
         <Route path="day-book" element={<VoucherListPage title="Day Book" />} />
         <Route path="sales" element={<VoucherListPage type="SALES" title="Sales" />} />
         <Route path="purchases" element={<VoucherListPage type="PURCHASE" title="Purchases" />} />
