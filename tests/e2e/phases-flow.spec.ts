@@ -5,7 +5,7 @@ import {
   type ElectronApplication,
   type Page
 } from '@playwright/test'
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -229,6 +229,20 @@ test('P5 and P6: stock, registers, profit and loss, balance sheet', async () => 
   await go('#/reports/balance-sheet')
   await expect(page.getByText(/Assets equal liabilities/)).toBeVisible()
   await shot('balance-sheet')
+})
+
+test('P6: a report exports to a real spreadsheet', async () => {
+  const target = join(tmpdir(), `crown-books-xlsx-${Date.now()}.xlsx`)
+  await app.evaluate(async ({ dialog }, filePath) => {
+    dialog.showSaveDialog = async () => ({ canceled: false, filePath })
+  }, target)
+
+  await go('#/reports/sales-register')
+  await expect(page.getByText('INV/0001').first()).toBeVisible()
+  await page.getByRole('button', { name: 'XLSX' }).click()
+  await expect(page.getByText('Spreadsheet saved')).toBeVisible()
+  expect(existsSync(target)).toBe(true)
+  rmSync(target, { force: true })
 })
 
 test('P2 and P8: journals, contra and backup', async () => {

@@ -110,24 +110,24 @@ stops hiding audit data that the schema already stores.
   (`src/main/ipc/export.ts`), saved through the native dialog. The print
   stylesheet decides what is included, so the rail and toolbar stay off the
   page.
-- **XLSX** is not implemented yet. It needs a spreadsheet writer (for example
-  `exceljs`) or a small XLSX generator in the main process; both are a
-  deliberate dependency decision rather than a silent addition.
+- **XLSX** is built in the main process with ExcelJS (`src/main/export/xlsx.ts`)
+  and saved through the native dialog. Money stays numeric, dates stay dates,
+  and the header row is frozen. See `docs/11-export.md` for the payload, the
+  dependency decision and the cell-coercion rules.
 
 ## Still open
 
 The post-refresh backlog is tracked as separate issues so each one can land on
 its own branch:
 
-- #8 XLSX export (CSV and PDF already ship).
 - #9 Global search and command palette.
 - #10 Units and Tax Rates masters.
 - #11 Users and roles.
 
 ## Verification
 
-- `npx vitest run` — 243 tests, including the summary read models, the CSV
-  writer and voucher cancellation audit fields.
-- `npx playwright test --workers=1` — 17 Electron flows, including contextual
-  headings, KPI presence, report export buttons, both detail pages and the
-  journals/contra history.
+- `npx vitest run` — 249 tests, including the summary read models, the CSV
+  writer, the XLSX cell types and voucher cancellation audit fields.
+- `npx playwright test --workers=1` — 18 Electron flows, including contextual
+  headings, KPI presence, report export buttons, a real XLSX save, both detail
+  pages and the journals/contra history.

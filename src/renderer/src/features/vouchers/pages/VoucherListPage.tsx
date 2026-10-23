@@ -1,7 +1,16 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Download, FileText, IndianRupee, ListChecks, Plus, Search } from 'lucide-react'
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  IndianRupee,
+  ListChecks,
+  Plus,
+  Search
+} from 'lucide-react'
+import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -120,6 +129,29 @@ export function VoucherListPage({
     )
   }
 
+  async function exportXlsx(): Promise<void> {
+    try {
+      const result = await window.api.exportXlsx({
+        filename: safeFilename(`${title}-${range.from}-${range.to}`),
+        sheetName: title,
+        head: ['Date', 'Number', 'Party', 'Total', 'Status'],
+        rows: rows.map((row) => [
+          row.date,
+          row.number,
+          row.partyName ?? '',
+          (row.totalMinor / 100).toFixed(2),
+          row.status
+        ]),
+        numeric: [3],
+        dateColumns: [0],
+        footer: ['Total', '', '', (total / 100).toFixed(2), '']
+      })
+      if (result.saved) toast.success('Spreadsheet saved')
+    } catch {
+      toast.error('Could not create the spreadsheet')
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 p-6">
       <PageHeader
@@ -130,6 +162,15 @@ export function VoucherListPage({
             <Button variant="outline" size="sm" onClick={exportCsv} disabled={rows.length === 0}>
               <Download className="size-3.5" strokeWidth={2} />
               CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void exportXlsx()}
+              disabled={rows.length === 0}
+            >
+              <FileSpreadsheet className="size-3.5" strokeWidth={2} />
+              XLSX
             </Button>
             {action ? (
               <Button asChild size="sm">
