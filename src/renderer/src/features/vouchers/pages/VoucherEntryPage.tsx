@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Receipt, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { formatMinor, minorToMajor, parseToMinor } from '@/lib/money'
+import type { ItemRow } from '../../../../../shared/contracts/masters'
 import type { PostVoucherInput } from '../../../../../shared/contracts/vouchers'
+import { ItemPicker } from '../components/item-picker'
+import { PartyPicker } from '../components/party-picker'
 
 type LineType = 'SALES' | 'PURCHASE' | 'CREDIT_NOTE' | 'DEBIT_NOTE'
 
@@ -29,11 +33,67 @@ interface LinePreview {
   total: number
 }
 
-const META: Record<LineType, { title: string; series: string; back: string; post: string }> = {
-  SALES: { title: 'Sales invoice', series: 'INV', back: '/sales', post: 'Post invoice' },
-  PURCHASE: { title: 'Purchase bill', series: 'PUR', back: '/purchases', post: 'Post bill' },
-  CREDIT_NOTE: { title: 'Credit note', series: 'CN', back: '/sales', post: 'Post credit note' },
-  DEBIT_NOTE: { title: 'Debit note', series: 'DN', back: '/purchases', post: 'Post debit note' }
+const META: Record<
+  LineType,
+  { title: string; series: string; back: string; post: string; accent: Accent }
+> = {
+  SALES: {
+    title: 'Sales invoice',
+    series: 'INV',
+    back: '/sales',
+    post: 'Post invoice',
+    accent: 'primary'
+  },
+  PURCHASE: {
+    title: 'Purchase bill',
+    series: 'PUR',
+    back: '/purchases',
+    post: 'Post bill',
+    accent: 'stamp'
+  },
+  CREDIT_NOTE: {
+    title: 'Credit note',
+    series: 'CN',
+    back: '/sales',
+    post: 'Post credit note',
+    accent: 'warning'
+  },
+  DEBIT_NOTE: {
+    title: 'Debit note',
+    series: 'DN',
+    back: '/purchases',
+    post: 'Post debit note',
+    accent: 'warning'
+  }
+}
+
+type Accent = 'primary' | 'stamp' | 'warning'
+
+const ACCENT: Record<
+  Accent,
+  { bar: string; text: string; chip: string; soft: string; border: string }
+> = {
+  primary: {
+    bar: 'bg-primary',
+    text: 'text-primary',
+    chip: 'bg-primary text-primary-foreground',
+    soft: 'bg-accent-soft/60',
+    border: 'border-t-primary'
+  },
+  stamp: {
+    bar: 'bg-stamp',
+    text: 'text-stamp',
+    chip: 'bg-stamp text-paper',
+    soft: 'bg-stamp-soft/60',
+    border: 'border-t-stamp'
+  },
+  warning: {
+    bar: 'bg-warning',
+    text: 'text-warning',
+    chip: 'bg-warning text-paper',
+    soft: 'bg-warning-soft/60',
+    border: 'border-t-warning'
+  }
 }
 const HEADERS = [
   '#',
@@ -130,9 +190,10 @@ function previewTotals(rows: LinePreview[]): LinePreview & { roundOff: number } 
 export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Element {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const partyRef = useRef<HTMLSelectElement>(null)
+  const partyRef = useRef<HTMLButtonElement>(null)
   const role = type === 'SALES' || type === 'CREDIT_NOTE' ? 'CUSTOMER' : 'SUPPLIER'
   const [partyId, setPartyId] = useState<number | null>(null)
+  const [partyOpen, setPartyOpen] = useState(false)
   const [date, setDate] = useState(todayIso())
   const [dueDate, setDueDate] = useState('')
   const [reference, setReference] = useState('')
@@ -223,6 +284,9 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
       if (event.altKey && event.key.toLowerCase() === 'a') {
         event.preventDefault()
         addLine()
+      } else if (event.key === 'F4') {
+        event.preventDefault()
+        setPartyOpen(true)
       } else if (event.ctrlKey && event.key === 'Enter') {
         event.preventDefault()
         submitRef.current()
@@ -255,8 +319,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
     setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)))
   }
 
-  function chooseItem(key: string, value: string): void {
-    const item = items.find((row) => row.id === Number(value))
+  function chooseItem(key: string, item: ItemRow | null): void {
     setLines((current) =>
       current.map((line) => {
         if (line.key !== key) return line
@@ -283,110 +346,137 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
 
   const postError = post.error instanceof Error ? post.error.message : 'Could not post the voucher.'
 
+  const accent = ACCENT[meta.accent]
+
   return (
-    <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 p-6">
-      <div className="flex flex-wrap items-end justify-between gap-3 border border-border bg-card px-5 py-4">
-        <div>
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            {meta.title}
-          </p>
-          <h1 className="mt-1 font-heading text-[1.5rem] font-semibold leading-none tracking-tight">
-            New {meta.title.toLowerCase()}
-          </h1>
-          <p className="mt-1.5 font-mono text-[0.75rem] text-muted-foreground">
-            Series {meta.series} · number assigned on posting
-          </p>
-        </div>
-        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted-foreground">
-          Original for recipient
-        </p>
-      </div>
-
-      <div className="grid border border-border bg-card sm:grid-cols-2">
-        <Field label="Party" className="border-b border-border sm:col-span-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <select
-              ref={partyRef}
-              value={partyId ?? ''}
-              onChange={(event) => chooseParty(event.target.value)}
-              className="h-7 min-w-[240px] flex-1 cursor-pointer border-0 bg-transparent text-[0.9375rem] font-medium outline-none"
-              aria-label="Party"
+    <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 p-6 pb-24">
+      <header className={cn('border border-border border-t-4 bg-card px-5 py-4', accent.border)}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <span
+              className={cn(
+                'mt-0.5 flex size-9 shrink-0 items-center justify-center',
+                accent.soft,
+                accent.text
+              )}
             >
-              <option value="">Select {role === 'CUSTOMER' ? 'customer' : 'supplier'}…</option>
-              {parties.map((row) => (
-                <option key={row.id} value={row.id}>
-                  {row.name} — {formatMinor(row.balanceMinor, 'INR')} · {row.creditDays}d
-                </option>
-              ))}
-            </select>
-            <span className="text-[0.75rem] text-muted-foreground">
-              {party
-                ? `Balance ${formatMinor(party.balanceMinor, 'INR')} · Credit ${party.creditDays} days${party.gstin ? ` · ${party.gstin}` : ''}`
-                : 'Search by name in the list'}
+              <Receipt className="size-4" strokeWidth={1.75} />
             </span>
+            <div>
+              <p
+                className={cn(
+                  'font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.2em]',
+                  accent.text
+                )}
+              >
+                {meta.series} · {meta.title}
+              </p>
+              <h1 className="mt-1 font-heading text-[1.5rem] font-semibold leading-none tracking-tight">
+                New {meta.title.toLowerCase()}
+              </h1>
+              <p className="mt-1.5 text-[0.8125rem] text-muted-foreground">
+                Party and dates, then lines, then review and post.
+              </p>
+            </div>
           </div>
-        </Field>
-        <Field label="Date" className="border-b border-border sm:border-r">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => changeDate(e.target.value)}
-            aria-label="Voucher date"
-            className="h-7 w-full border-0 bg-transparent font-mono text-[0.875rem] outline-none"
-          />
-        </Field>
-        <Field label="Due date" className="border-b border-border">
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            aria-label="Due date"
-            className="h-7 w-full border-0 bg-transparent font-mono text-[0.875rem] outline-none"
-          />
-        </Field>
-        <Field label="Reference" className="border-b border-border sm:border-b-0 sm:border-r">
-          <input
-            value={reference}
-            onChange={(e) => setReference(e.target.value)}
-            placeholder="Order or bill reference"
-            aria-label="Reference"
-            className="h-7 w-full border-0 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
-          />
-        </Field>
-        <Field label="Place of supply">
-          <div className="flex items-center gap-2">
-            <input
-              value={effectivePlace}
-              onChange={(e) => setPlaceOfSupply(e.target.value.replace(/\D/g, '').slice(0, 2))}
-              placeholder={company?.stateCode ?? '27'}
-              inputMode="numeric"
-              maxLength={2}
-              aria-label="Place of supply state code"
-              className="h-7 w-14 border border-border bg-transparent px-2 font-mono text-[0.875rem] outline-none"
-            />
-            <span className="text-[0.75rem] text-muted-foreground">
-              {intraState ? 'Intra-state · CGST + SGST' : 'Inter-state · IGST'}
-            </span>
-          </div>
-        </Field>
-      </div>
+          <span className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-muted-foreground">
+            Original for recipient
+          </span>
+        </div>
+      </header>
 
-      <div className="border border-border bg-card">
-        <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
-          <div className="flex items-baseline gap-2">
-            <h2 className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Lines
-            </h2>
-            <span className="text-[0.75rem] text-muted-foreground">
-              {lines.length} row{lines.length === 1 ? '' : 's'}
+      <Section
+        step={1}
+        title="Party and dates"
+        hint={party ? `Credit ${party.creditDays} days` : 'Choose who this bill is from'}
+        accent={accent}
+      >
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {role === 'CUSTOMER' ? 'Customer' : 'Supplier'}
+              <span aria-hidden className="ml-0.5 text-stamp">
+                *
+              </span>
+              <span className="sr-only"> (required)</span>
             </span>
+            <PartyPicker
+              parties={parties}
+              value={partyId}
+              onChange={(id) => chooseParty(id ? String(id) : '')}
+              roleLabel={role === 'CUSTOMER' ? 'customer' : 'supplier'}
+              open={partyOpen}
+              onOpenChange={setPartyOpen}
+              triggerRef={partyRef}
+            />
+            {!party ? (
+              <p className="text-[0.75rem] text-muted-foreground">
+                The bill cannot be posted until a {role === 'CUSTOMER' ? 'customer' : 'supplier'} is
+                chosen. Press F4 from anywhere on the page.
+              </p>
+            ) : null}
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <HeaderField label="Date" required>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => changeDate(e.target.value)}
+                aria-label="Voucher date"
+                className={INPUT}
+              />
+            </HeaderField>
+            <HeaderField label="Due date">
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                aria-label="Due date"
+                className={INPUT}
+              />
+            </HeaderField>
+            <HeaderField label="Reference">
+              <input
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                placeholder="Order or bill reference"
+                aria-label="Reference"
+                className={cn(INPUT, 'placeholder:text-muted-foreground/60')}
+              />
+            </HeaderField>
+            <HeaderField label="Place of supply">
+              <div className="flex items-center gap-2">
+                <input
+                  value={effectivePlace}
+                  onChange={(e) => setPlaceOfSupply(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                  placeholder={company?.stateCode ?? '27'}
+                  inputMode="numeric"
+                  maxLength={2}
+                  aria-label="Place of supply state code"
+                  className={cn(INPUT, 'w-14 font-mono')}
+                />
+                <span className="text-[0.6875rem] leading-tight text-muted-foreground">
+                  {intraState ? 'CGST + SGST' : 'IGST'}
+                </span>
+              </div>
+            </HeaderField>
+          </div>
+        </div>
+      </Section>
+
+      <Section
+        step={2}
+        title="Lines"
+        hint={`${lines.length} row${lines.length === 1 ? '' : 's'} · Alt+A adds a line`}
+        accent={accent}
+        actions={
           <Button type="button" variant="outline" size="xs" onClick={addLine}>
             <Plus className="size-3" />
             Add line
           </Button>
-        </div>
-
+        }
+      >
         <table className="w-full table-fixed border-collapse text-[0.875rem]">
           <colgroup>
             <col className="w-[3%]" />
@@ -401,8 +491,8 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
             <col className="w-[11%]" />
             <col className="w-[2%]" />
           </colgroup>
-          <thead>
-            <tr className="border-b border-rule-strong bg-muted/40">
+          <thead className="sticky top-0 z-10">
+            <tr className="border-b border-rule-strong bg-muted">
               {HEADERS.map((label, index) => {
                 const right =
                   label === 'Amount' || label === 'Qty' || label === 'Disc %' || label === 'GST %'
@@ -432,19 +522,12 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
               >
                 <td className="px-2 font-mono text-[0.75rem] text-muted-foreground">{index + 1}</td>
                 <td className="p-0">
-                  <select
-                    value={line.itemId ?? ''}
-                    onChange={(e) => chooseItem(line.key, e.target.value)}
-                    aria-label={`Item for line ${index + 1}`}
-                    className={`${CELL} cursor-pointer`}
-                  >
-                    <option value="">Free text</option>
-                    {items.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
+                  <ItemPicker
+                    items={items}
+                    value={line.itemId}
+                    sale={type === 'SALES' || type === 'CREDIT_NOTE'}
+                    onSelect={(item) => chooseItem(line.key, item)}
+                  />
                 </td>
                 {FIELD_KEYS.map((field) => (
                   <td key={field.key} className="p-0">
@@ -475,26 +558,44 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
             ))}
           </tbody>
         </table>
-      </div>
+      </Section>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="border border-border bg-card px-3 py-2">
-          <label
-            htmlFor="narration"
-            className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
-          >
-            Narration
-          </label>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="border border-border bg-card px-3 py-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <label
+              htmlFor="narration"
+              className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+            >
+              Narration
+            </label>
+            <span className="text-[0.6875rem] text-muted-foreground">Printed on the voucher</span>
+          </div>
           <textarea
             id="narration"
             rows={3}
             value={narration}
             onChange={(e) => setNarration(e.target.value)}
             placeholder="Notes printed on the voucher"
-            className="mt-1 w-full resize-none border-0 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
+            className="mt-1.5 w-full resize-none border border-input bg-background px-2 py-1.5 text-[0.875rem] outline-none placeholder:text-muted-foreground/60 focus:border-primary"
           />
         </div>
-        <div className="border border-border bg-card px-4 py-3">
+        <div
+          className={cn(
+            'self-start border border-border border-t-4 bg-card px-4 py-3 lg:sticky lg:top-4',
+            accent.border
+          )}
+        >
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]">
+              Summary
+            </span>
+            <span
+              className={cn('font-mono text-[0.6875rem] uppercase tracking-[0.1em]', accent.text)}
+            >
+              {intraState ? 'CGST + SGST' : 'IGST'}
+            </span>
+          </div>
           <TotalRow label="Taxable value" value={totals.taxable} />
           <TotalRow label="CGST" value={totals.cgst} />
           <TotalRow label="SGST" value={totals.sgst} />
@@ -504,11 +605,15 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]">
               Total
             </span>
-            <span className="font-mono text-[1rem] tabular-nums">
+            <span
+              className="font-mono text-[1.25rem] tabular-nums"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               {formatMinor(totals.total, 'INR')}
             </span>
           </div>
-          <p className="mt-2 text-[0.6875rem] text-muted-foreground">
+          <p className="mt-2 text-[0.6875rem] leading-relaxed text-muted-foreground">
             Local preview. The posted voucher is computed by the server.
           </p>
         </div>
@@ -523,13 +628,13 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
         </p>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+      <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 border-t border-rule-strong bg-background py-3">
         <div className="flex flex-wrap items-center gap-4">
           <Button type="button" variant="ghost" size="sm" onClick={() => navigate(meta.back)}>
             Cancel
           </Button>
           <p className="font-mono text-[0.6875rem] text-muted-foreground">
-            Alt+A add line · Ctrl+Enter post · Esc back
+            Alt+A add line · Ctrl+Enter post · F4 party · Esc back
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -537,6 +642,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           <Button
             type="button"
             size="sm"
+            className={cn(meta.accent === 'stamp' && 'bg-stamp text-paper hover:bg-stamp/90')}
             onClick={submit}
             disabled={Boolean(reason) || post.isPending}
           >
@@ -548,22 +654,78 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
   )
 }
 
-function Field({
-  label,
-  children,
-  className
+const INPUT =
+  'h-9 w-full border border-input bg-background px-2 text-[0.875rem] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary'
+
+function Section({
+  step,
+  title,
+  hint,
+  accent,
+  actions,
+  children
 }: {
-  label: string
+  step: number
+  title: string
+  hint?: string
+  accent: (typeof ACCENT)[Accent]
+  actions?: React.ReactNode
   children: React.ReactNode
-  className?: string
 }): React.JSX.Element {
   return (
-    <div className={`flex items-center gap-3 px-3 py-2 ${className ?? ''}`}>
-      <span className="w-[76px] shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+    <section className="border border-border bg-card">
+      <div
+        className={cn(
+          'flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-2.5',
+          accent.soft
+        )}
+      >
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            className={cn(
+              'flex size-5 shrink-0 items-center justify-center font-mono text-[0.6875rem] font-semibold',
+              accent.chip
+            )}
+            aria-hidden
+          >
+            {step}
+          </span>
+          <h2 className="text-[0.9375rem] font-semibold">{title}</h2>
+          {hint ? (
+            <span className="truncate text-[0.75rem] text-muted-foreground">{hint}</span>
+          ) : null}
+        </div>
+        {actions}
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  )
+}
+
+function HeaderField({
+  label,
+  required,
+  children
+}: {
+  label: string
+  required?: boolean
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <label className="flex min-w-0 flex-col gap-1">
+      <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
+        {required ? (
+          <>
+            <span aria-hidden className="ml-0.5 text-stamp">
+              *
+            </span>
+            <span className="sr-only"> (required)</span>
+          </>
+        ) : null}
       </span>
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+      {children}
+    </label>
   )
 }
 
