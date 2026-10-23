@@ -1,4 +1,4 @@
-import { and, count, eq, exists, or, sql } from 'drizzle-orm'
+import { and, count, eq, exists, inArray, ne, or, sql } from 'drizzle-orm'
 import { getDrizzle } from '../db/connection'
 import {
   appMeta,
@@ -284,15 +284,56 @@ export const userRepo = {
     const row = getDrizzle().select().from(users).where(eq(users.id, id)).get() as
       UserRow | undefined
     return row ? mapUser(row) : null
+  },
+
+  update(
+    id: number,
+    patch: { fullName?: string; status?: UserStatus; passwordHash?: string }
+  ): User | null {
+    const set: Partial<typeof users.$inferInsert> = {}
+    if (patch.fullName !== undefined) set.full_name = patch.fullName
+    if (patch.status !== undefined) set.status = patch.status
+    if (patch.passwordHash !== undefined) set.password_hash = patch.passwordHash
+    if (Object.keys(set).length === 0) return this.findById(id)
+    const row = getDrizzle()
+      .update(users)
+      .set(set)
+      .where(eq(users.id, id))
+      .returning()
+      .get() as UserRow | undefined
+    return row ? mapUser(row) : null
   }
 }
 
 export const roleRepo = {
+  findById(companyId: number, id: number): Role | null {
+    const row = getDrizzle()
+      .select()
+      .from(roles)
+      .where(and(eq(roles.company_id, companyId), eq(roles.id, id)))
+      .get() as RoleRow | undefined
+    return row ? mapRole(row) : null
+  },
+
   findByName(companyId: number, name: string): Role | null {
     const row = getDrizzle()
       .select()
       .from(roles)
       .where(and(eq(roles.company_id, companyId), eq(roles.name, name)))
+      .get() as RoleRow | undefined
+    return row ? mapRole(row) : null
+  },
+
+  findByNameInsensitive(companyId: number, name: string, excludeId?: number): Role | null {
+    const clauses = [
+      eq(roles.company_id, companyId),
+      eq(sql`lower(${roles.name})`, name.trim().toLowerCase())
+    ]
+    if (excludeId !== undefined) clauses.push(ne(roles.id, excludeId))
+    const row = getDrizzle()
+      .select()
+      .from(roles)
+      .where(and(...clauses))
       .get() as RoleRow | undefined
     return row ? mapRole(row) : null
   },
@@ -307,6 +348,73 @@ export const roleRepo = {
     return rows.map(mapRole)
   },
 
+  create(companyId: number, input: { name: string; description: string | null }): Role {
+    const row = getDrizzle()
+      .insert(roles)
+      .values({
+        company_id: companyId,
+        name: input.name,
+        description: input.description,
+        is_system_role: false,
+        is_super: false
+      })
+      .returning()
+      .get()
+    return mapRole(row as RoleRow)
+  },
+
+  update(
+    companyId: number,
+    id: number,
+    patch: { name?: string; description?: string | null }
+  ): Role | null {
+    const set: Partial<typeof roles.$inferInsert> = {}
+    if (patch.name !== undefined) set.name = patch.name
+    if (patch.description !== undefined) set.description = patch.description
+    if (Object.keys(set).length === 0) return this.findById(companyId, id)
+    const row = getDrizzle()
+      .update(roles)
+      .set(set)
+      .where(and(eq(roles.company_id, companyId), eq(roles.id, id)))
+      .returning()
+      .get() as RoleRow | undefined
+    return row ? mapRole(row) : null
+  },
+
+  delete(companyId: number, id: number): boolean {
+    const result = getDrizzle()
+      .delete(roles)
+      .where(and(eq(roles.company_id, companyId), eq(roles.id, id)))
+      .run()
+    return result.changes > 0
+  },
+
+  /** Replaces a role's grants. The caller validates codes and owns the transaction. */
+  setPermissions(roleId: number, codes: string[]): void {
+    const db = getDrizzle()
+    const unique = [...new Set(codes)]
+    db.delete(rolePermissions).where(eq(rolePermissions.role_id, roleId)).run()
+    if (unique.length === 0) return
+    const rows = db
+      .select({ id: permissions.id })
+      .from(permissions)
+      .where(inArray(permissions.code, unique))
+      .all()
+    if (rows.length !== unique.length) throw new Error('Unknown permission code')
+    db.insert(rolePermissions)
+      .values(rows.map((row) => ({ role_id: roleId, permission_id: row.id })))
+      .run()
+  },
+
+  memberCount(companyId: number, roleId: number): number {
+    const row = getDrizzle()
+      .select({ n: count() })
+      .from(companyUsers)
+      .where(and(eq(companyUsers.company_id, companyId), eq(companyUsers.role_id, roleId)))
+      .get()
+    return row?.n ?? 0
+  },
+
   /** Resolves the permission codes a role grants. Super roles return all codes. */
   findPermissionCodes(roleId: number): string[] {
     const db = getDrizzle()
@@ -318,11 +426,32 @@ export const roleRepo = {
     }
     const rows = db
       .select({ code: permissions.code })
-      .from(permissions)
-      .innerJoin(rolePermissions, eq(rolePermissions.permission_id, permissions.id))
+      .from(rolePermissions)
+      .innerJoin(permissions, eq(permissions.id, rolePermissions.permission_id))
       .where(eq(rolePermissions.role_id, roleId))
       .all()
     return rows.map((r) => r.code)
+  }
+}
+
+export const permissionRepo = {
+  list(): { id: number; code: string; description: string | null }[] {
+    return getDrizzle()
+      .select({ id: permissions.id, code: permissions.code, description: permissions.description })
+      .from(permissions)
+      .orderBy(permissions.code)
+      .all()
+  },
+
+  findCodes(codes: string[]): string[] {
+    const unique = [...new Set(codes)]
+    if (unique.length === 0) return []
+    const rows = getDrizzle()
+      .select({ code: permissions.code })
+      .from(permissions)
+      .where(inArray(permissions.code, unique))
+      .all()
+    return rows.map((row) => row.code)
   }
 }
 
@@ -384,6 +513,106 @@ export const staffRepo = {
     const row = getDrizzle().select().from(companyUsers).where(eq(companyUsers.id, id)).get() as
       StaffRow | undefined
     return row ? mapStaff(row) : null
+  },
+
+  findForCompany(
+    companyId: number,
+    id: number
+  ): { staff: CompanyStaff; user: User; role: Role } | null {
+    const row = getDrizzle()
+      .select({
+        staff: companyUsers,
+        user: users,
+        role: roles
+      })
+      .from(companyUsers)
+      .innerJoin(users, eq(users.id, companyUsers.user_id))
+      .innerJoin(roles, eq(roles.id, companyUsers.role_id))
+      .where(and(eq(companyUsers.company_id, companyId), eq(companyUsers.id, id)))
+      .get()
+    if (!row) return null
+    return {
+      staff: mapStaff(row.staff as StaffRow),
+      user: mapUser(row.user as UserRow),
+      role: mapRole(row.role as RoleRow)
+    }
+  },
+
+  listForCompany(companyId: number): {
+    id: number
+    userId: number
+    fullName: string
+    email: string
+    roleId: number
+    roleName: string
+    isSuper: boolean
+    isSystemRole: boolean
+    status: CompanyStaff['status']
+    joinedAt: string
+  }[] {
+    return getDrizzle()
+      .select({
+        id: companyUsers.id,
+        userId: companyUsers.user_id,
+        fullName: users.full_name,
+        email: users.email,
+        roleId: roles.id,
+        roleName: roles.name,
+        isSuper: roles.is_super,
+        isSystemRole: roles.is_system_role,
+        status: companyUsers.status,
+        joinedAt: companyUsers.joined_at
+      })
+      .from(companyUsers)
+      .innerJoin(users, eq(users.id, companyUsers.user_id))
+      .innerJoin(roles, eq(roles.id, companyUsers.role_id))
+      .where(eq(companyUsers.company_id, companyId))
+      .orderBy(users.full_name)
+      .all() as {
+      id: number
+      userId: number
+      fullName: string
+      email: string
+      roleId: number
+      roleName: string
+      isSuper: boolean
+      isSystemRole: boolean
+      status: CompanyStaff['status']
+      joinedAt: string
+    }[]
+  },
+
+  update(id: number, patch: { roleId?: number; status?: CompanyStaff['status'] }): CompanyStaff {
+    const set: Partial<typeof companyUsers.$inferInsert> = {}
+    if (patch.roleId !== undefined) set.role_id = patch.roleId
+    if (patch.status !== undefined) set.status = patch.status
+    const row = getDrizzle()
+      .update(companyUsers)
+      .set(set)
+      .where(eq(companyUsers.id, id))
+      .returning()
+      .get()
+    return mapStaff(row as StaffRow)
+  },
+
+  countActiveSupers(companyId: number, excludeMembershipId?: number): number {
+    const clauses = [
+      eq(companyUsers.company_id, companyId),
+      eq(companyUsers.status, 'ACTIVE'),
+      eq(users.status, 'ACTIVE'),
+      eq(roles.is_super, true)
+    ]
+    if (excludeMembershipId !== undefined) {
+      clauses.push(ne(companyUsers.id, excludeMembershipId))
+    }
+    const row = getDrizzle()
+      .select({ n: count() })
+      .from(companyUsers)
+      .innerJoin(users, eq(users.id, companyUsers.user_id))
+      .innerJoin(roles, eq(roles.id, companyUsers.role_id))
+      .where(and(...clauses))
+      .get()
+    return row?.n ?? 0
   },
 
   findActiveForLogin(companyId: number, email: string): { user: User; role: Role } | null {

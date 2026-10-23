@@ -15,6 +15,12 @@ export const IPC_CHANNELS = {
   IDENTITY_COMPANY_BY_ID: 'identity:companyById',
   IDENTITY_STAFF: 'identity:staff',
   IDENTITY_ROLES: 'identity:roles',
+  IDENTITY_PERMISSIONS: 'identity:permissions',
+  IDENTITY_UPDATE_STAFF: 'identity:updateStaff',
+  IDENTITY_RESET_STAFF_PASSWORD: 'identity:resetStaffPassword',
+  IDENTITY_ROLE_CREATE: 'identity:roleCreate',
+  IDENTITY_ROLE_UPDATE: 'identity:roleUpdate',
+  IDENTITY_ROLE_DELETE: 'identity:roleDelete',
   IDENTITY_UPDATE_COMPANY: 'identity:updateCompany',
 
   // Masters

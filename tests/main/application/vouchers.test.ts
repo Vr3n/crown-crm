@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { setupTestDb } from '../../helpers/db'
-import { setupCompany } from '../../../src/main/application/identity'
+import { createStaffMember, login, logout, setupCompany } from '../../../src/main/application/identity'
 import {
   postVoucher,
   cancelVoucher,
@@ -340,5 +340,44 @@ describe('journals and cancellation', () => {
     expect(detail.cancelReason).toBe('Wrong party')
     expect(detail.cancelledAt).toBeTruthy()
     expect(detail.createdAt).toBeTruthy()
+    expect(detail.createdByName).toBe('Owner')
+    expect(detail.cancelledByName).toBe('Owner')
+    expect(detail.audit.map((entry) => entry.action)).toEqual(['POST', 'CANCEL'])
+    expect(detail.audit.every((entry) => entry.actorName === 'Owner')).toBe(true)
+  })
+
+  it('rejects cancellation for a billing clerk even though they can post', () => {
+    const companyId = company()
+    const customer = party(companyId, 'Acme', true, false)
+    const ssd = item(companyId, 'SSD', 100000)
+    createStaffMember({
+      fullName: 'Asha Rao',
+      email: 'asha@acme.in',
+      password: 'billing-pass',
+      roleName: 'Billing Clerk'
+    })
+
+    logout()
+    login({ email: 'asha@acme.in', password: 'billing-pass' })
+    const sale = postVoucher({
+      requestId: 'req-billing-cancel',
+      type: 'SALES',
+      date: '2026-09-11',
+      partyId: customer.id,
+      lines: [
+        {
+          itemId: ssd,
+          description: 'SSD',
+          qtyE4: 10_000,
+          rateMinor: 100_000,
+          rateIncludesTax: false,
+          discountBps: 0,
+          gstRateBps: 1800
+        }
+      ]
+    })
+
+    expect(() => cancelVoucher(companyId, sale.id, 'Not allowed')).toThrow(/voucher.cancel/)
+    expect(getVoucher(companyId, sale.id).status).toBe('POSTED')
   })
 })

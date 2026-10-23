@@ -1,14 +1,16 @@
-import { and, desc, eq, gte, lte, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm'
 import { getDb, getDrizzle } from '../db/connection'
 import {
   billAllocations,
   ledgerLines,
   parties,
   stockMovements,
+  users,
   voucherItemLines,
   voucherSequences,
   vouchers
 } from '../db/schema'
+import { auditRepo } from './audit'
 import { financialYearLabel } from '../domain/fy'
 import { formatVoucherNumber, nextSequenceValue, sequencePeriod } from '../domain/numbering'
 import { ValidationError } from '../domain/errors'
@@ -332,6 +334,24 @@ export const voucherRepo = {
       .where(eq(billAllocations.from_voucher_id, id))
       .all()
 
+    const actorIds = [
+      ...new Set(
+        [header.created_by, header.posted_by, header.cancelled_by].filter(
+          (value): value is number => typeof value === 'number'
+        )
+      )
+    ]
+    const actors =
+      actorIds.length > 0
+        ? db
+            .select({ id: users.id, fullName: users.full_name })
+            .from(users)
+            .where(inArray(users.id, actorIds))
+            .all()
+        : []
+    const actorNames = new Map(actors.map((actor) => [actor.id, actor.fullName]))
+    const audit = auditRepo.list(companyId, 'VOUCHER', id)
+
     return {
       id: header.id,
       type: header.voucher_type as VoucherType,
@@ -345,8 +365,19 @@ export const voucherRepo = {
       referenceNo: header.reference_no,
       status: header.status as VoucherDetail['status'],
       createdAt: header.created_at,
+      createdByName: header.created_by ? (actorNames.get(header.created_by) ?? null) : null,
+      postedByName: header.posted_by ? (actorNames.get(header.posted_by) ?? null) : null,
       cancelledAt: header.cancelled_at,
+      cancelledByName: header.cancelled_by ? (actorNames.get(header.cancelled_by) ?? null) : null,
       cancelReason: header.cancel_reason,
+      audit: audit.map((entry) => ({
+        id: entry.id,
+        action: entry.action,
+        actorUserId: entry.actorUserId,
+        actorName: entry.actorName,
+        actorEmail: entry.actorEmail,
+        createdAt: entry.createdAt
+      })),
       taxableMinor: header.taxable_minor,
       cgstMinor: header.cgst_minor,
       sgstMinor: header.sgst_minor,

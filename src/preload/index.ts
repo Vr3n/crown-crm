@@ -16,7 +16,15 @@ import type { NumberingRow, UpdateNumberingInput } from '../shared/contracts/num
 import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contracts/summaries'
 import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
-import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
+import type {
+  CreateRoleInput,
+  PermissionOutput,
+  ResetStaffPasswordInput,
+  RoleOutput,
+  StaffMemberOutput,
+  UpdateRoleInput,
+  UpdateStaffInput
+} from '../shared/contracts/access'
 import type {
   AccountRow,
   CreateAccountInput,
@@ -88,7 +96,18 @@ const api = {
     updateCompany: (input: UpdateCompanyInput): Promise<CompanyProfile> =>
       call(IPC_CHANNELS.IDENTITY_UPDATE_COMPANY, input),
     staff: (): Promise<StaffMemberOutput[]> => call(IPC_CHANNELS.IDENTITY_STAFF),
-    roles: (): Promise<RoleOutput[]> => call(IPC_CHANNELS.IDENTITY_ROLES)
+    roles: (): Promise<RoleOutput[]> => call(IPC_CHANNELS.IDENTITY_ROLES),
+    permissions: (): Promise<PermissionOutput[]> => call(IPC_CHANNELS.IDENTITY_PERMISSIONS),
+    updateStaff: (input: UpdateStaffInput): Promise<StaffMemberOutput> =>
+      call(IPC_CHANNELS.IDENTITY_UPDATE_STAFF, input),
+    resetStaffPassword: (input: ResetStaffPasswordInput): Promise<void> =>
+      call(IPC_CHANNELS.IDENTITY_RESET_STAFF_PASSWORD, input),
+    createRole: (input: CreateRoleInput): Promise<RoleOutput> =>
+      call(IPC_CHANNELS.IDENTITY_ROLE_CREATE, input),
+    updateRole: (input: UpdateRoleInput): Promise<RoleOutput> =>
+      call(IPC_CHANNELS.IDENTITY_ROLE_UPDATE, input),
+    deleteRole: (id: number): Promise<boolean> =>
+      call(IPC_CHANNELS.IDENTITY_ROLE_DELETE, { id })
   },
 
   parties: {

@@ -70,12 +70,18 @@ export const companyExistenceInputSchema = z.object({
 })
 export type CompanyExistenceInput = z.infer<typeof companyExistenceInputSchema>
 
-export const createStaffMemberInputSchema = z.object({
-  fullName: z.string().min(1).max(120),
-  email: z.string().min(1).max(254),
-  password: z.string().min(1).max(256),
-  roleName: z.string().min(1).max(120)
-})
+export const createStaffMemberInputSchema = z
+  .object({
+    fullName: z.string().min(1).max(120),
+    email: z.string().min(1).max(254),
+    password: z.string().min(1).max(256),
+    /** Prefer `roleId`; `roleName` stays for older callers and tests. */
+    roleId: z.number().int().positive().optional(),
+    roleName: z.string().min(1).max(120).optional()
+  })
+  .refine((value) => value.roleId !== undefined || value.roleName !== undefined, {
+    message: 'Choose a role'
+  })
 export type CreateStaffMemberInput = z.infer<typeof createStaffMemberInputSchema>
 
 export const createdStaffMemberSchema = z.object({

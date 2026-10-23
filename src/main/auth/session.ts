@@ -1,6 +1,6 @@
 import { SessionContext } from '../../shared/contracts/identity'
 import { ForbiddenError, UnauthenticatedError } from '../domain/errors'
-import { PermissionCode } from '../db/permissions'
+import { PERMISSIONS, PermissionCode } from '../db/permissions'
 
 let currentSession: SessionContext | null = null
 
@@ -29,6 +29,15 @@ export function requirePermission(code: PermissionCode): void {
   if (session.isSuper) return
   if (!session.permissions.includes(code)) {
     throw new ForbiddenError(code)
+  }
+}
+
+/** Passes when the actor holds at least one of the supplied permissions. */
+export function requireAnyPermission(codes: PermissionCode[]): void {
+  const session = requireSession()
+  if (session.isSuper) return
+  if (!codes.some((code) => session.permissions.includes(code))) {
+    throw new ForbiddenError(codes[0] ?? PERMISSIONS.USER_VIEW)
   }
 }
 
