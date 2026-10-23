@@ -13,6 +13,7 @@ import type {
 } from '../shared/contracts/identity'
 import type { DashboardSummary } from '../shared/contracts/dashboard'
 import type { NumberingRow, UpdateNumberingInput } from '../shared/contracts/numbering'
+import type { ItemSummary, PartySummary } from '../shared/contracts/summaries'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
 import type {
@@ -133,6 +134,11 @@ const api = {
 
   dashboard: {
     summary: (): Promise<DashboardSummary> => call(IPC_CHANNELS.DASHBOARD_SUMMARY)
+  },
+
+  summaries: {
+    parties: (): Promise<PartySummary> => call(IPC_CHANNELS.PARTIES_SUMMARY),
+    items: (): Promise<ItemSummary> => call(IPC_CHANNELS.ITEMS_SUMMARY)
   },
 
   numbering: {

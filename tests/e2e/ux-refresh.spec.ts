@@ -112,6 +112,29 @@ test('an item is captured with required state and help', async () => {
   await expect(page.getByText('SSD 256GB').first()).toBeVisible()
 })
 
+test('parties, items and stock show contextual headings and metrics', async () => {
+  const main = page.getByRole('main')
+
+  await goto('#/customers')
+  await expect(main.getByRole('heading', { name: 'Customers', exact: true })).toBeVisible()
+  await expect(main.getByText('Receivables', { exact: true })).toBeVisible()
+
+  await goto('#/suppliers')
+  await expect(main.getByRole('heading', { name: 'Suppliers', exact: true })).toBeVisible()
+  await expect(main.getByText('Payables', { exact: true })).toBeVisible()
+
+  await goto('#/parties')
+  await expect(main.getByRole('heading', { name: 'Parties', exact: true })).toBeVisible()
+
+  await goto('#/items')
+  await expect(main.getByText('Inventory value')).toBeVisible()
+  await expect(main.getByText('Stock value by item')).toBeVisible()
+
+  await goto('#/stock')
+  await expect(main.getByRole('heading', { name: 'Stock Summary' })).toBeVisible()
+  await expect(main.getByText('Units on hand')).toBeVisible()
+})
+
 test('the purchase bill exposes the supplier picker and posts', async () => {
   const supplierId = await page.evaluate(async () => {
     const api = (window as unknown as { api: Record<string, never> }).api as unknown as {

@@ -67,6 +67,9 @@ export interface ItemRow {
   openingQtyE4: number
   openingRateMinor: number
   stockQtyE4: number
+  reorderLevelE4: number
+  stockGroupId: number | null
+  stockGroup: string | null
   isActive: boolean
 }
 

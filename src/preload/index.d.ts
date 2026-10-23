@@ -12,6 +12,7 @@ import type {
 } from '../shared/contracts/identity'
 import type { DashboardSummary } from '../shared/contracts/dashboard'
 import type { NumberingRow, UpdateNumberingInput } from '../shared/contracts/numbering'
+import type { ItemSummary, PartySummary } from '../shared/contracts/summaries'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { RoleOutput, StaffMemberOutput } from '../shared/contracts/identity-read'
 import type {
@@ -99,6 +100,10 @@ declare global {
       }
       dashboard: {
         summary: () => Promise<DashboardSummary>
+      }
+      summaries: {
+        parties: () => Promise<PartySummary>
+        items: () => Promise<ItemSummary>
       }
       numbering: {
         list: () => Promise<NumberingRow[]>

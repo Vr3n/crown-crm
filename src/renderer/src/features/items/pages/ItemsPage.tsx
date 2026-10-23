@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Package, Plus, Search } from 'lucide-react'
+import { AlertTriangle, Boxes, CircleSlash, Package, Plus, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { PageHeader } from '@/components/page-header'
@@ -10,6 +10,10 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { KpiCard } from '@/components/ui/kpi-card'
+import { StatusPill } from '@/components/ui/status-pill'
+import { ChartCard } from '@/components/ui/chart-card'
+import { RankedBarsChart } from '@/components/charts/list-charts'
 import {
   Dialog,
   DialogClose,
@@ -122,6 +126,35 @@ function qtyText(e4: number): string {
   return (e4 / 10000).toFixed(4).replace(/\.?0+$/, '') || '0'
 }
 
+function StockLevel({ item }: { item: ItemRow }): React.JSX.Element {
+  if (item.isService) {
+    return <StatusPill tone="info">Service</StatusPill>
+  }
+  if (item.stockQtyE4 <= 0) {
+    return <StatusPill tone="destructive">Out of stock</StatusPill>
+  }
+  if (item.reorderLevelE4 > 0 && item.stockQtyE4 <= item.reorderLevelE4) {
+    return (
+      <span className="inline-flex flex-col items-end gap-0.5">
+        <span className="font-mono text-[0.875rem] tabular-nums">{quantity(item.stockQtyE4)}</span>
+        <StatusPill tone="warning">Low</StatusPill>
+      </span>
+    )
+  }
+  return <span className="font-mono text-[0.875rem] tabular-nums">{quantity(item.stockQtyE4)}</span>
+}
+
+function Margin({ sale, purchase }: { sale: number; purchase: number }): React.JSX.Element {
+  if (purchase <= 0) return <span className="text-muted-foreground">—</span>
+  const percent = Math.round(((sale - purchase) / purchase) * 100)
+  return (
+    <span className={percent < 0 ? 'text-destructive' : 'text-success'}>
+      {percent > 0 ? '+' : ''}
+      {percent}%
+    </span>
+  )
+}
+
 const itemFormSchema = z.object({
   name: z.string().trim().min(2, 'Item name is required'),
   sku: z.string(),
@@ -206,6 +239,7 @@ export function ItemsPage(): React.JSX.Element {
   const [search, setSearch] = useState('')
   const query = useDebouncedValue(search, 250)
   const [includeInactive, setIncludeInactive] = useState(false)
+  const [filter, setFilter] = useState<'ALL' | 'LOW' | 'OUT' | 'SERVICE'>('ALL')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ItemRow | null>(null)
   const [target, setTarget] = useState<ItemRow | null>(null)
@@ -215,7 +249,24 @@ export function ItemsPage(): React.JSX.Element {
     queryFn: () => window.api.items.list(query.trim() || undefined, includeInactive)
   })
   const units = useQuery({ queryKey: ['units'], queryFn: () => window.api.units.list() })
-  const rows = list.data ?? []
+  const summary = useQuery({
+    queryKey: ['items', 'summary'],
+    queryFn: () => window.api.summaries.items()
+  })
+  const baseRows = list.data ?? []
+
+  const rows = baseRows.filter((item) => {
+    if (filter === 'SERVICE') return item.isService
+    if (item.isService) return false
+    if (filter === 'LOW')
+      return (
+        item.reorderLevelE4 > 0 && item.stockQtyE4 <= item.reorderLevelE4 && item.stockQtyE4 > 0
+      )
+    if (filter === 'OUT') return item.stockQtyE4 <= 0
+    return true
+  })
+
+  const s = summary.data
 
   const deactivate = useMutation({
     mutationFn: (id: number) => window.api.items.deactivate(id),
@@ -236,7 +287,7 @@ export function ItemsPage(): React.JSX.Element {
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 p-6">
       <PageHeader
         title="Items"
-        description={`${rows.length} ${rows.length === 1 ? 'item' : 'items'} on file`}
+        description={`${baseRows.length} ${baseRows.length === 1 ? 'item' : 'items'} on file`}
         actions={
           <Button size="sm" onClick={() => show(null)}>
             <Plus className="size-3.5" strokeWidth={2} />
@@ -244,6 +295,79 @@ export function ItemsPage(): React.JSX.Element {
           </Button>
         }
       />
+
+      <section className="grid grid-cols-2 gap-px border border-border bg-border xl:grid-cols-4">
+        <KpiCard
+          label="Inventory value"
+          value={formatMinor(s?.inventoryValueMinor ?? 0, 'INR')}
+          context="Stock held at cost"
+          icon={Boxes}
+          tone="success"
+        />
+        <KpiCard
+          label="Items"
+          value={String(s?.itemCount ?? 0)}
+          context={`${s?.serviceCount ?? 0} services`}
+          icon={Package}
+        />
+        <KpiCard
+          label="Low stock"
+          value={String(s?.lowStockCount ?? 0)}
+          context="At or below reorder level"
+          icon={AlertTriangle}
+          tone="warning"
+        />
+        <KpiCard
+          label="Out of stock"
+          value={String(s?.outOfStockCount ?? 0)}
+          context="Nothing on hand"
+          icon={CircleSlash}
+          tone="stamp"
+        />
+      </section>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <ChartCard title="Stock value by item" subtitle="Largest inventory balances">
+          {s && s.topItems.length > 0 ? (
+            <RankedBarsChart
+              rows={s.topItems.map((item) => ({ label: item.name, valueMinor: item.valueMinor }))}
+              ariaLabel="Stock value by item"
+            />
+          ) : (
+            <p className="py-10 text-center text-[0.8125rem] text-muted-foreground">
+              Post a purchase to value your stock.
+            </p>
+          )}
+        </ChartCard>
+        <ChartCard title="Quick filters" subtitle="Jump to the items that need a decision">
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                ['ALL', 'All items', s?.itemCount ?? 0],
+                ['LOW', 'Low stock', s?.lowStockCount ?? 0],
+                ['OUT', 'Out of stock', s?.outOfStockCount ?? 0],
+                ['SERVICE', 'Services', s?.serviceCount ?? 0]
+              ] as const
+            ).map(([value, label, count]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                className={`flex items-center justify-between border px-3 py-2.5 text-left text-[0.875rem] transition-colors ${
+                  filter === value
+                    ? 'border-primary bg-accent-soft/50 font-medium text-primary'
+                    : 'border-border bg-card hover:border-rule-strong'
+                }`}
+              >
+                <span>{label}</span>
+                <span className="font-mono text-[0.75rem] tabular-nums text-muted-foreground">
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </ChartCard>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2 border border-border bg-card px-3 py-2">
         <div className="relative min-w-56 flex-1">
@@ -312,8 +436,8 @@ export function ItemsPage(): React.JSX.Element {
       ) : (
         <div className="max-h-[calc(100vh-15.5rem)] overflow-auto border border-border bg-card">
           <table className="w-full border-collapse">
-            <thead>
-              <tr>
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-muted/95">
                 {[
                   'Name',
                   'HSN',
@@ -322,12 +446,13 @@ export function ItemsPage(): React.JSX.Element {
                   'Stock',
                   'Sale price',
                   'Purchase price',
+                  'Margin',
                   'Status'
                 ].map((heading) => (
                   <th
                     key={heading}
                     scope="col"
-                    className={`${TH} ${['GST', 'Stock', 'Sale price', 'Purchase price'].includes(heading) ? 'text-right' : ''}`}
+                    className={`${TH} ${['GST', 'Stock', 'Sale price', 'Purchase price', 'Margin'].includes(heading) ? 'text-right' : ''}`}
                   >
                     {heading}
                   </th>
@@ -341,7 +466,7 @@ export function ItemsPage(): React.JSX.Element {
               {list.isPending ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-3 py-8 text-center text-[0.875rem] text-muted-foreground"
                   >
                     Loading items...
@@ -374,8 +499,8 @@ export function ItemsPage(): React.JSX.Element {
                     <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
                       {formatRate(item.gstRateBps)}
                     </td>
-                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
-                      {quantity(item.stockQtyE4)}
+                    <td className={`${TD} text-right`}>
+                      <StockLevel item={item} />
                     </td>
                     <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
                       {formatMinor(item.salePriceMinor, 'INR')}
@@ -383,10 +508,13 @@ export function ItemsPage(): React.JSX.Element {
                     <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
                       {formatMinor(item.purchasePriceMinor, 'INR')}
                     </td>
+                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
+                      <Margin sale={item.salePriceMinor} purchase={item.purchasePriceMinor} />
+                    </td>
                     <td className={TD}>
-                      <Badge variant={item.isActive ? 'success' : 'outline'} className={TAG}>
+                      <StatusPill tone={item.isActive ? 'neutral' : 'destructive'}>
                         {item.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                      </StatusPill>
                     </td>
                     <td className={`${TD} text-right`}>
                       <div className="flex justify-end gap-0.5">
