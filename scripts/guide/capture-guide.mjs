@@ -33,8 +33,42 @@ async function goto(hash) {
   await wait(550)
 }
 
-async function snap(name, marks = []) {
-  await page.evaluate(() => window.scrollTo(0, 0))
+/**
+ * Voucher entry uses the searchable PartyPicker, not a native select. Open the
+ * combobox and click the party by name.
+ */
+async function chooseParty(role, name) {
+  await page.getByRole('combobox', { name: `Select ${role}` }).click()
+  await wait(250)
+  await page
+    .getByRole('option', { name: new RegExp(name) })
+    .first()
+    .click()
+  await wait(250)
+}
+
+/** The per-line item picker is also a combobox, keyed by table row. */
+async function chooseItem(row, name) {
+  await page
+    .locator('table tbody tr')
+    .nth(row - 1)
+    .getByRole('combobox')
+    .click()
+  await wait(250)
+  await page
+    .getByRole('option', { name: new RegExp(name) })
+    .first()
+    .click()
+  await wait(300)
+}
+
+async function snap(name, marks = [], options = {}) {
+  // The app scrolls inside <main>, not the window. A page such as the day book
+  // now has cards above the table, so allow the capture to start part-way down.
+  await page.evaluate((scroll) => {
+    const main = document.querySelector('main')
+    if (main) main.scrollTo(0, scroll === 'bottom' ? main.scrollHeight : scroll)
+  }, options.scroll ?? 0)
   await page.mouse.move(4, 4)
   await wait(250)
 
@@ -47,12 +81,12 @@ async function snap(name, marks = []) {
       continue
     }
     const rawX =
-      mark.anchor === 'tl'
+      (mark.anchor === 'tl'
         ? box.x + 2
         : mark.anchor === 'tr'
           ? box.x + box.width - 2
-          : box.x + box.width / 2
-    const rawY = mark.anchor === 'tl' ? box.y + 2 : box.y + box.height / 2
+          : box.x + box.width / 2) + (mark.dx ?? 0)
+    const rawY = (mark.anchor === 'tl' ? box.y + 2 : box.y + box.height / 2) + (mark.dy ?? 0)
     placed.push({
       label: mark.label,
       text: mark.text,
@@ -65,12 +99,68 @@ async function snap(name, marks = []) {
   console.log(`  captured ${name} (${placed.length} markers)`)
 }
 
-async function snapDialog(name, dialog, marks = []) {
+/**
+ * Captures one element (for example a settings section) plus a small margin.
+ * Markers are measured against the crop, so the figure stays legible at print
+ * size instead of shrinking a whole window.
+ */
+async function snapElement(name, locator, marks = [], options = {}) {
+  await locator.scrollIntoViewIfNeeded()
   await page.mouse.move(4, 4)
+  await wait(300)
+  const box = await locator.boundingBox()
+  if (!box) throw new Error(`Element not visible for ${name}`)
+  const viewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }))
+  // Side margins hold callouts; the top and bottom margins stay tight so a
+  // neighbouring section's buttons do not leak into the crop.
+  const padX = options.padX ?? 16
+  const padTop = options.padTop ?? 16
+  const padBottom = options.padBottom ?? 16
+  const left = Math.max(0, box.x - padX)
+  const top = Math.max(0, box.y - padTop)
+  const clip = {
+    x: left,
+    y: top,
+    width: Math.min(viewport.width - left, box.width + padX * 2),
+    height: Math.min(viewport.height - top, box.height + padTop + padBottom)
+  }
+  const placed = []
+  for (const mark of marks) {
+    const target = await mark.locator.boundingBox().catch(() => null)
+    if (!target) {
+      console.warn(`  ! marker ${mark.label} not found for ${name}`)
+      continue
+    }
+    const rawX =
+      (mark.anchor === 'tl'
+        ? target.x + 2
+        : mark.anchor === 'tr'
+          ? target.x + target.width - 2
+          : target.x + target.width / 2) + (mark.dx ?? 0)
+    const rawY =
+      (mark.anchor === 'tl' ? target.y + 2 : target.y + target.height / 2) + (mark.dy ?? 0)
+    placed.push({
+      label: mark.label,
+      text: mark.text,
+      xPct: Number(Math.min(97.5, Math.max(1.5, ((rawX - clip.x) / clip.width) * 100)).toFixed(2)),
+      yPct: Number(Math.min(97.5, Math.max(1.5, ((rawY - clip.y) / clip.height) * 100)).toFixed(2))
+    })
+  }
+  annotations[name] = placed
+  await page.screenshot({ path: join(shotsDir, `${name}.png`), clip })
+  console.log(`  captured ${name} (${placed.length} markers, element crop)`)
+}
+
+async function snapDialog(name, dialog, marks = [], options = {}) {
+  await page.mouse.move(4, 4)
+  // Dialogs taller than the window keep their own scroll position. Focus can
+  // leave them scrolled to the last field, which hides the header.
+  await dialog.evaluate((element) => element.scrollTo({ top: 0 }))
   await wait(250)
   const box = await dialog.boundingBox()
   if (!box) throw new Error(`Dialog not visible for ${name}`)
-  const pad = 16
+  // A wider margin leaves room for callouts beside the form labels.
+  const pad = options.pad ?? 16
   const clip = {
     x: Math.max(0, box.x - pad),
     y: Math.max(0, box.y - pad),
@@ -84,13 +174,20 @@ async function snapDialog(name, dialog, marks = []) {
       console.warn(`  ! marker ${mark.label} not found for ${name}`)
       continue
     }
+    // A tall form keeps its own scroll. A target below the fold would be
+    // clamped to the edge of the crop, so leave it out of the figure.
+    if (target.y < box.y - 2 || target.y + target.height > box.y + box.height + 2) {
+      console.warn(`  ! marker ${mark.label} is outside the dialog viewport for ${name}`)
+      continue
+    }
     const rawX =
-      mark.anchor === 'tl'
+      (mark.anchor === 'tl'
         ? target.x + 2
         : mark.anchor === 'tr'
           ? target.x + target.width - 2
-          : target.x + target.width / 2
-    const rawY = mark.anchor === 'tl' ? target.y + 2 : target.y + target.height / 2
+          : target.x + target.width / 2) + (mark.dx ?? 0)
+    const rawY =
+      (mark.anchor === 'tl' ? target.y + 2 : target.y + target.height / 2) + (mark.dy ?? 0)
     placed.push({
       label: mark.label,
       text: mark.text,
@@ -125,36 +222,43 @@ try {
       label: 1,
       text: 'Business name, owner and phone',
       locator: page.getByLabel('Business name'),
-      anchor: 'tl'
+      anchor: 'tl',
+      dx: -20
     },
     {
       label: 2,
       text: 'Owner email is the sign-in name',
       locator: page.getByLabel('Owner email'),
-      anchor: 'tl'
+      anchor: 'tl',
+      dx: -20
     },
     {
       label: 3,
       text: 'Password, at least 8 characters',
       locator: page.getByLabel('Password'),
-      anchor: 'tl'
+      anchor: 'tl',
+      dx: -20
     },
     {
       label: 4,
       text: 'State and GSTIN decide the tax treatment',
       locator: page.getByLabel('State'),
-      anchor: 'tl'
+      anchor: 'tl',
+      dx: -20
     },
     {
       label: 5,
       text: 'First day of your books',
-      locator: page.getByLabel('Books begin'),
-      anchor: 'tl'
+      locator: page.locator('#setup-books-begin'),
+      anchor: 'tl',
+      dx: -20
     },
     {
       label: 6,
       text: 'Creates the company and signs you in',
-      locator: page.getByRole('button', { name: 'Create company and sign in' })
+      locator: page.getByRole('button', { name: 'Create company and sign in' }),
+      anchor: 'tl',
+      dx: -20
     }
   ])
 
@@ -164,16 +268,59 @@ try {
   await page.getByLabel('Owner email').fill('owner@crowntraders.in')
   await page.getByLabel('Password').fill('crownbooks')
   await page.getByLabel('GSTIN (optional)').fill('27AABCT1234F1Z5')
-  await page.getByLabel('Books begin').fill('2026-04-01')
+  await page.locator('#setup-books-begin').fill('2026-04-01')
   await page.getByRole('button', { name: 'Create company and sign in' }).click()
-  await page.getByText('Good ', { exact: false }).first().waitFor()
+  await page.getByRole('heading', { name: 'Number your vouchers' }).waitFor()
   await hideToasts()
+  await wait(500)
+
+  await snap('00-first-run-numbering', [
+    {
+      label: 1,
+      text: 'Each document has its own series',
+      locator: page.getByLabel('Sales invoice series'),
+      anchor: 'tl'
+    },
+    {
+      label: 2,
+      text: 'The next number is previewed live',
+      locator: page.getByText('INV/0001').first(),
+      anchor: 'tl'
+    }
+  ])
+
+  await page.getByRole('button', { name: 'Save numbering' }).click()
+  await page.getByRole('heading', { name: 'Walk through the main flow' }).waitFor()
+  await wait(500)
+
+  await snap('00-first-run-tour', [
+    {
+      label: 1,
+      text: 'Five steps from empty books to reports',
+      locator: page.getByText('Five steps from an empty set of books', { exact: false }),
+      anchor: 'tl'
+    },
+    {
+      label: 2,
+      text: 'Open any step in the real app',
+      locator: page.getByRole('link', { name: 'Open' }).first(),
+      anchor: 'tr'
+    },
+    {
+      label: 3,
+      text: 'Skip and return from the dashboard',
+      locator: page.getByRole('button', { name: 'Skip the tour' })
+    }
+  ])
+
+  await page.getByRole('button', { name: 'Skip the tour' }).click()
+  await page.getByText('Good ', { exact: false }).first().waitFor()
   await wait(700)
 
   // --------------------------------------------------------------- demo data
   const data = await page.evaluate(async () => {
     const api = window.api
-    const units = await api.units.list()
+    const units = await api.units.list({ includeInactive: false })
     const nos = units.find((unit) => /^nos$/i.test(unit.name) || /^nos$/i.test(unit.symbol))
 
     const party = (input) => api.parties.create(input)
@@ -508,7 +655,7 @@ try {
     {
       label: 1,
       text: 'Four numbers for today',
-      locator: page.getByText('Receivables', { exact: true }).first(),
+      locator: page.locator('main').getByText('Receivables', { exact: true }),
       anchor: 'tl'
     },
     {
@@ -544,7 +691,7 @@ try {
     {
       label: 2,
       text: 'Search by name, phone or GSTIN',
-      locator: page.getByLabel('Search parties'),
+      locator: page.locator('#party-search'),
       anchor: 'tl'
     },
     {
@@ -556,60 +703,57 @@ try {
     {
       label: 4,
       text: 'Current balance: positive means they owe you',
-      locator: page.getByRole('cell', { name: /31,398.00/ }).first(),
+      locator: page.getByRole('columnheader', { name: 'Balance' }),
       anchor: 'tl'
     }
   ])
 
   await page.getByRole('button', { name: 'New party' }).first().click()
   await page.getByRole('dialog').waitFor()
-  await page.getByLabel('Name', { exact: true }).fill('Gupta Traders')
-  await page.getByLabel('Phone', { exact: true }).fill('9820011122')
-  await page.getByLabel('Email', { exact: true }).fill('accounts@guptatraders.in')
-  await page.getByLabel('GSTIN', { exact: true }).fill('27AABCG7788H1Z3')
-  await page.getByLabel('State code').fill('27')
-  await page.getByLabel('Billing address').fill('12, MG Road, Pune 411001')
-  await page.getByLabel('Credit days').fill('21')
-  await page.getByLabel('Credit limit (INR)').fill('200000')
-  await page.getByLabel('Supplier').click()
-  await snapDialog('03-party-form', page.getByRole('dialog'), [
-    {
-      label: 1,
-      text: 'Legal or trading name',
-      locator: page.getByLabel('Name', { exact: true }),
-      anchor: 'tl'
-    },
-    {
-      label: 2,
-      text: 'GSTIN and state code control the tax type',
-      locator: page.getByLabel('GSTIN', { exact: true }),
-      anchor: 'tl'
-    },
-    {
-      label: 3,
-      text: 'Credit days set the default due date',
-      locator: page.getByLabel('Credit days'),
-      anchor: 'tl'
-    },
-    {
-      label: 5,
-      text: 'Customer, supplier, or both',
-      locator: page.getByLabel('Customer'),
-      anchor: 'tl'
-    },
-    {
-      label: 4,
-      text: 'Opening balance is posted later, once',
-      locator: page.getByLabel('Opening balance (INR)'),
-      anchor: 'tl'
-    },
-    {
-      label: 6,
-      text: 'Save the party',
-      locator: page.getByRole('button', { name: 'Add party' }),
-      anchor: 'tl'
-    }
-  ])
+  await page.locator('#name').fill('Gupta Traders')
+  await page.locator('#phone').fill('9820011122')
+  await page.locator('#email').fill('accounts@guptatraders.in')
+  await page.locator('#gstin').fill('27AABCG7788H1Z3')
+  await page.locator('#stateCode').fill('27')
+  await page.locator('#billingAddress').fill('12, MG Road, Pune 411001')
+  await page.locator('#creditDays').fill('21')
+  await page.locator('#creditLimit').fill('200000')
+  await page.locator('#isSupplier').click()
+  await snapDialog(
+    '03-party-form',
+    page.getByRole('dialog'),
+    [
+      {
+        label: 1,
+        text: 'Legal or trading name',
+        locator: page.locator('#name'),
+        anchor: 'tl',
+        dx: -22
+      },
+      {
+        label: 2,
+        text: 'GSTIN and state code control the tax type',
+        locator: page.locator('#gstin'),
+        anchor: 'tl',
+        dx: -22
+      },
+      {
+        label: 3,
+        text: 'Credit days set the default due date',
+        locator: page.locator('#creditDays'),
+        anchor: 'tl',
+        dx: -22
+      },
+      {
+        label: 4,
+        text: 'Opening balance is posted later, once',
+        locator: page.locator('#openingBalance'),
+        anchor: 'tl',
+        dx: -22
+      }
+    ],
+    { pad: 44 }
+  )
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click()
   await wait()
 
@@ -639,51 +783,62 @@ try {
 
   await page.getByRole('button', { name: 'New item' }).first().click()
   await page.getByRole('dialog').waitFor()
-  await page.getByLabel('Name', { exact: true }).fill('Wireless Keyboard')
-  await page.getByLabel('SKU').fill('KBD-WL')
-  await page.getByLabel(/HSN/).fill('8471')
+  await page.locator('#name').fill('Wireless Keyboard')
+  await page.locator('#sku').fill('KBD-WL')
+  await page.locator('#hsnSac').fill('8471')
   await page.locator('#item-unit').click()
   await page.getByRole('option', { name: /Nos/ }).click()
   await page.locator('#item-gst').click()
   await page.getByRole('option', { name: '18%' }).click()
-  await page.getByLabel('Sale price (INR)').fill('1899')
-  await page.getByLabel('Purchase price (INR)').fill('1250')
-  await page.getByLabel('Opening qty').fill('12')
-  await page.getByLabel('Opening rate (INR)').fill('1250')
-  await page.getByLabel('Reorder level').fill('5')
-  await snapDialog('05-item-form', page.getByRole('dialog'), [
-    {
-      label: 1,
-      text: 'Name, SKU and HSN or SAC',
-      locator: page.getByLabel('Name', { exact: true }),
-      anchor: 'tl'
-    },
-    { label: 2, text: 'Unit and GST rate', locator: page.getByLabel('Unit'), anchor: 'tl' },
-    {
-      label: 3,
-      text: 'Tick for services, which never hold stock',
-      locator: page.getByLabel('Service item (no stock)'),
-      anchor: 'tl'
-    },
-    {
-      label: 4,
-      text: 'Default sale and purchase prices',
-      locator: page.getByLabel('Sale price (INR)'),
-      anchor: 'tl'
-    },
-    {
-      label: 5,
-      text: 'Opening stock and cost',
-      locator: page.getByLabel('Opening qty'),
-      anchor: 'tl'
-    },
-    {
-      label: 6,
-      text: 'Save the item',
-      locator: page.getByRole('button', { name: 'Add item' }),
-      anchor: 'tl'
-    }
-  ])
+  await page.locator('#salePrice').fill('1899')
+  await page.locator('#purchasePrice').fill('1250')
+  await page.locator('#openingQty').fill('12')
+  await page.locator('#openingRate').fill('1250')
+  await page.locator('#reorderLevel').fill('5')
+  await snapDialog(
+    '05-item-form',
+    page.getByRole('dialog'),
+    [
+      {
+        label: 1,
+        text: 'Name, SKU and HSN or SAC',
+        locator: page.locator('#name'),
+        anchor: 'tl',
+        dx: -22
+      },
+      {
+        label: 2,
+        text: 'Unit and GST rate',
+        locator: page.locator('#item-unit'),
+        anchor: 'tl',
+        dx: -22,
+        dy: -28
+      },
+      {
+        label: 3,
+        text: 'Tick for services, which never hold stock',
+        locator: page.locator('#isService'),
+        anchor: 'tl',
+        dx: -22,
+        dy: -28
+      },
+      {
+        label: 4,
+        text: 'Default sale and purchase prices',
+        locator: page.locator('#salePrice'),
+        anchor: 'tl',
+        dx: -22
+      },
+      {
+        label: 5,
+        text: 'Opening stock and cost',
+        locator: page.locator('#openingQty'),
+        anchor: 'tl',
+        dx: -22
+      }
+    ],
+    { pad: 44 }
+  )
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click()
   await wait()
 
@@ -695,45 +850,42 @@ try {
       label: 1,
       text: 'Identity printed on invoices',
       locator: page.getByText('Identity', { exact: true }),
-      anchor: 'tl'
+      anchor: 'tl',
+      dx: -38
     },
     {
       label: 2,
       text: 'Financial year and books begin date',
       locator: page.getByText('Financial year', { exact: true }).first(),
-      anchor: 'tl'
-    },
-    {
-      label: 3,
-      text: 'Stock costing and invoice rounding',
-      locator: page.getByText('Stock and rounding', { exact: true }),
-      anchor: 'tl'
+      anchor: 'tl',
+      dx: -38
     }
   ])
 
-  const opening = page.getByText('Opening balances', { exact: true }).first()
-  await opening.scrollIntoViewIfNeeded()
-  await wait()
-  await snap('07-opening-balances', [
-    {
-      label: 1,
-      text: 'One opening voucher for parties, accounts and stock',
-      locator: page.getByText(/Party, account and stock opening balances/),
-      anchor: 'tl'
-    },
-    {
-      label: 2,
-      text: 'Usually the first day of the books',
-      locator: page.getByLabel('Opening date'),
-      anchor: 'tl'
-    },
-    {
-      label: 3,
-      text: 'Runs once; corrections go through a journal',
-      locator: page.getByRole('button', { name: 'Post opening balances' }),
-      anchor: 'tl'
-    }
-  ])
+  const opening = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'Opening balances', exact: true }) })
+  await snapElement(
+    '07-opening-balances',
+    opening,
+    [
+      {
+        label: 4,
+        text: 'Usually the first day of the books',
+        locator: page.getByLabel('Opening date'),
+        anchor: 'tl',
+        dx: -22
+      },
+      {
+        label: 5,
+        text: 'Runs once; corrections go through a journal',
+        locator: page.getByRole('button', { name: 'Post opening balances' }),
+        anchor: 'tl',
+        dx: -22
+      }
+    ],
+    { padX: 32, padTop: 0, padBottom: 12 }
+  )
 
   // ---------------------------------------------------------------- accounts
   await goto('#/masters/accounts')
@@ -761,18 +913,23 @@ try {
 
   // --------------------------------------------------------------- purchase
   await goto('#/purchases/new')
-  await page.getByLabel('Party').selectOption(String(data.supplierId))
-  await page.getByLabel('Item for line 1').selectOption(String(data.ssdId))
+  await chooseParty('supplier', 'TechConnect Distributors')
+  await chooseItem(1, 'SSD 256GB')
   await page.getByLabel('Qty for line 1').fill('10')
   await page.getByLabel('Rate for line 1').fill('3000')
   await page.getByRole('button', { name: 'Add line' }).click()
-  await page.getByLabel('Item for line 2').selectOption(String(data.hubId))
+  await chooseItem(2, 'USB-C Hub')
   await page.getByLabel('Qty for line 2').fill('5')
   await page.getByLabel('Rate for line 2').fill('1800')
   await page.getByLabel('Reference').fill('TC/26-27/604')
   await page.getByLabel('Narration').fill('Replenishment for October')
   await snap('09-purchase-entry', [
-    { label: 1, text: 'Choose the supplier', locator: page.getByLabel('Party'), anchor: 'tl' },
+    {
+      label: 1,
+      text: 'Choose the supplier',
+      locator: page.getByRole('combobox', { name: 'Select supplier' }),
+      anchor: 'tl'
+    },
     {
       label: 2,
       text: 'Bill date and due date',
@@ -918,16 +1075,21 @@ try {
 
   // ------------------------------------------------------------------- sale
   await goto('#/sales/new')
-  await page.getByLabel('Party').selectOption(String(data.customerId))
-  await page.getByLabel('Item for line 1').selectOption(String(data.ssdId))
+  await chooseParty('customer', 'Sharma Electronics')
+  await chooseItem(1, 'SSD 256GB')
   await page.getByLabel('Qty for line 1').fill('3')
   await page.getByRole('button', { name: 'Add line' }).click()
-  await page.getByLabel('Item for line 2').selectOption(String(data.hubId))
+  await chooseItem(2, 'USB-C Hub')
   await page.getByLabel('Qty for line 2').fill('1')
   await page.getByLabel('Reference').fill('PO-1088')
   await page.getByLabel('Narration').fill('Supply against purchase order 1088')
   await snap('13-sales-entry', [
-    { label: 1, text: 'Choose the customer', locator: page.getByLabel('Party'), anchor: 'tl' },
+    {
+      label: 1,
+      text: 'Choose the customer',
+      locator: page.getByRole('combobox', { name: 'Select customer' }),
+      anchor: 'tl'
+    },
     {
       label: 2,
       text: 'Invoice date and due date',
@@ -949,8 +1111,9 @@ try {
     {
       label: 5,
       text: 'CGST + SGST, or IGST, calculated from the place of supply',
-      locator: page.getByText(/Intra-state|Inter-state/).first(),
-      anchor: 'tl'
+      locator: page.getByText('CGST', { exact: true }).last(),
+      anchor: 'tl',
+      dx: -30
     },
     {
       label: 6,
@@ -1009,30 +1172,40 @@ try {
       height: printBox.height + 30
     }
     await page.screenshot({ path: join(shotsDir, '15-invoice-print.png'), clip })
+    // The printed page has almost no margin, so the callouts sit in the white
+    // space beside each block instead of on top of the text.
     const printMarks = [
       {
         label: 1,
-        text: 'Invoice number and date',
+        text: 'Invoice number, date and reference',
         locator: page.getByText('INV/0001').first(),
-        anchor: 'tl'
+        anchor: 'tl',
+        dx: 392, // after the date and reference line
+        dy: 48
       },
       {
         label: 2,
         text: 'Customer and GSTIN',
         locator: page.getByText('Sharma Electronics').first(),
-        anchor: 'tl'
+        anchor: 'tl',
+        dx: -51, // left of the customer block
+        dy: 9
       },
       {
         label: 3,
-        text: 'Items, quantity, rate and tax',
+        text: 'Line items with HSN, quantity, rate and tax',
         locator: page.getByRole('columnheader', { name: 'Tax', exact: true }),
-        anchor: 'tl'
+        anchor: 'tl',
+        dx: -795, // into the gap between the description and quantity columns
+        dy: 60
       },
       {
         label: 4,
         text: 'Tax split and total',
         locator: page.getByText('51,398.00', { exact: false }).last(),
-        anchor: 'tl'
+        anchor: 'tl',
+        dx: -266, // left of the TOTAL label
+        dy: 15
       }
     ]
     const placedPrint = []
@@ -1043,10 +1216,16 @@ try {
         label: mark.label,
         text: mark.text,
         xPct: Number(
-          Math.min(97, Math.max(2, ((box.x + 2 - clip.x) / clip.width) * 100)).toFixed(2)
+          Math.min(
+            97,
+            Math.max(2, ((box.x + 2 + (mark.dx ?? 0) - clip.x) / clip.width) * 100)
+          ).toFixed(2)
         ),
         yPct: Number(
-          Math.min(97, Math.max(2, ((box.y + 2 - clip.y) / clip.height) * 100)).toFixed(2)
+          Math.min(
+            97,
+            Math.max(2, ((box.y + 2 + (mark.dy ?? 0) - clip.y) / clip.height) * 100)
+          ).toFixed(2)
         )
       })
     }
@@ -1230,26 +1409,26 @@ try {
   await snap('22-trial-balance', [
     {
       label: 1,
+      text: 'The books balance',
+      locator: page.getByText('The books balance'),
+      anchor: 'tl'
+    },
+    {
+      label: 2,
       text: 'Every account with a balance',
       locator: page.getByRole('columnheader', { name: 'Account' }),
       anchor: 'tl'
     },
     {
-      label: 2,
+      label: 3,
       text: 'Debit and credit columns',
       locator: page.getByRole('columnheader', { name: 'Debit' }),
-      anchor: 'tl'
-    },
-    {
-      label: 3,
-      text: 'The proof: debits equal credits',
-      locator: page.getByText('Debits equal credits.'),
       anchor: 'tl'
     }
   ])
 
   await goto('#/reports/profit-loss')
-  await page.getByText('Net profit').waitFor()
+  await page.getByText('Net profit').first().waitFor()
   await snap('23-profit-loss', [
     {
       label: 1,
@@ -1272,7 +1451,7 @@ try {
     {
       label: 4,
       text: 'Net profit for the period',
-      locator: page.getByText('Net profit', { exact: true }),
+      locator: page.getByText('Net profit', { exact: true }).nth(1),
       anchor: 'tl'
     }
   ])
@@ -1308,26 +1487,36 @@ try {
 
   await goto('#/day-book')
   await page.getByText('RCT/0001').first().waitFor()
-  await snap('25-day-book', [
-    {
-      label: 1,
-      text: 'Filter by date, status or text',
-      locator: page.getByLabel('From'),
-      anchor: 'tl'
-    },
-    {
-      label: 2,
-      text: 'Click a number to open the voucher',
-      locator: page.getByRole('link', { name: 'RCT/0001' }),
-      anchor: 'tl'
-    },
-    {
-      label: 3,
-      text: 'Party and total',
-      locator: page.getByRole('columnheader', { name: 'Total' }),
-      anchor: 'tl'
-    }
-  ])
+  await snap(
+    '25-day-book',
+    [
+      {
+        label: 1,
+        text: 'Filter by date, status or text',
+        locator: page.getByRole('group', { name: 'Period presets' }),
+        anchor: 'tl'
+      },
+      {
+        label: 2,
+        text: 'Click a number to open the voucher',
+        locator: page.getByRole('link', { name: 'RCT/0001' }),
+        anchor: 'tl'
+      },
+      {
+        label: 3,
+        text: 'Party and total',
+        locator: page.getByRole('columnheader', { name: 'Total' }),
+        anchor: 'tl'
+      },
+      {
+        label: 4,
+        text: 'Posted or cancelled',
+        locator: page.getByRole('columnheader', { name: 'Status' }),
+        anchor: 'tl'
+      }
+    ],
+    { scroll: 'bottom' }
+  )
 
   // --------------------------------------------------------------- journals
   await goto('#/journals')
@@ -1336,31 +1525,51 @@ try {
   const journalSelects = page.locator('div.fixed select')
   await journalSelects.nth(0).selectOption({ label: data.expenseName })
   await journalSelects.nth(1).selectOption({ label: data.cashName })
-  await page.locator('div.fixed input[placeholder="Debit"]').first().fill('2500')
-  await page.locator('div.fixed input[placeholder="Credit"]').nth(1).fill('2500')
-  await page.locator('div.fixed input').last().fill('Office expenses paid in cash')
-  await snapDialog('26-journal-dialog', page.locator('div.fixed > div').first(), [
-    {
-      label: 1,
-      text: 'Date of the adjustment',
-      locator: page.locator('div.fixed input[type="date"]'),
-      anchor: 'tl'
-    },
-    { label: 2, text: 'Debit the expense', locator: journalSelects.nth(0), anchor: 'tl' },
-    { label: 3, text: 'Credit cash or bank', locator: journalSelects.nth(1), anchor: 'tl' },
-    {
-      label: 4,
-      text: 'Debits must equal credits',
-      locator: page.getByText('Balanced', { exact: true }),
-      anchor: 'tl'
-    },
-    {
-      label: 5,
-      text: 'Post the journal',
-      locator: page.getByRole('button', { name: 'Post', exact: true }),
-      anchor: 'tl'
-    }
-  ])
+  await page.locator('#journal-debit-0').fill('2500')
+  await page.locator('#journal-credit-1').fill('2500')
+  await page.locator('#journal-narration').fill('Office expenses paid in cash')
+  await snapDialog(
+    '26-journal-dialog',
+    page.locator('div.fixed > div').first(),
+    [
+      {
+        label: 1,
+        text: 'Date of the adjustment',
+        locator: page.locator('div.fixed input[type="date"]'),
+        anchor: 'tl',
+        dx: -26
+      },
+      {
+        label: 2,
+        text: 'Debit the expense',
+        locator: journalSelects.nth(0),
+        anchor: 'tl',
+        dx: -26
+      },
+      {
+        label: 3,
+        text: 'Credit cash or bank',
+        locator: journalSelects.nth(1),
+        anchor: 'tl',
+        dx: -26
+      },
+      {
+        label: 4,
+        text: 'Debits must equal credits',
+        locator: page.getByText('Balanced', { exact: true }),
+        anchor: 'tl',
+        dy: -35
+      },
+      {
+        label: 5,
+        text: 'Post the journal',
+        locator: page.getByRole('button', { name: 'Post', exact: true }),
+        anchor: 'tc',
+        dy: -26
+      }
+    ],
+    { pad: 44 }
+  )
   await page.getByRole('button', { name: 'Post', exact: true }).click()
   await wait(700)
 
@@ -1370,19 +1579,45 @@ try {
   await contraSelects.nth(0).selectOption({ label: data.cashName })
   await contraSelects.nth(1).selectOption({ label: data.bankName })
   await page.locator('div.fixed input[type="date"]').fill('2026-10-18')
-  await page.getByLabel('Amount').fill('5000')
-  await page.locator('div.fixed input').last().fill('Cash deposited into the bank')
-  await snapDialog('27-contra-dialog', page.locator('div.fixed > div').first(), [
-    { label: 1, text: 'From account, usually Cash', locator: contraSelects.nth(0), anchor: 'tl' },
-    { label: 2, text: 'To account, usually Bank', locator: contraSelects.nth(1), anchor: 'tl' },
-    { label: 3, text: 'Amount moved', locator: page.getByLabel('Amount'), anchor: 'tl' },
-    {
-      label: 4,
-      text: 'Post the transfer',
-      locator: page.getByRole('button', { name: 'Post', exact: true }),
-      anchor: 'tl'
-    }
-  ])
+  await page.locator('#contra-amount').fill('5000')
+  await page.locator('#journal-narration').fill('Cash deposited into the bank')
+  await snapDialog(
+    '27-contra-dialog',
+    page.locator('div.fixed > div').first(),
+    [
+      {
+        label: 1,
+        text: 'From account, usually Cash',
+        locator: contraSelects.nth(0),
+        anchor: 'tl',
+        dx: -26,
+        dy: -48
+      },
+      {
+        label: 2,
+        text: 'To account, usually Bank',
+        locator: contraSelects.nth(1),
+        anchor: 'tl',
+        dx: -26,
+        dy: -48
+      },
+      {
+        label: 3,
+        text: 'Amount moved',
+        locator: page.locator('#contra-amount'),
+        anchor: 'tl',
+        dx: -26
+      },
+      {
+        label: 4,
+        text: 'Post the transfer',
+        locator: page.getByRole('button', { name: 'Post', exact: true }),
+        anchor: 'tc',
+        dy: -26
+      }
+    ],
+    { pad: 44 }
+  )
   await page.getByRole('button', { name: 'Post', exact: true }).click()
   await wait(700)
 
@@ -1402,7 +1637,7 @@ try {
     {
       label: 3,
       text: 'Posted journals and transfers',
-      locator: page.getByRole('columnheader', { name: 'Type' }),
+      locator: page.getByRole('columnheader', { name: 'Entry' }),
       anchor: 'tl'
     }
   ])
@@ -1411,21 +1646,26 @@ try {
   await goto(`#/vouchers/${data.sale2}`)
   await page.getByRole('button', { name: 'Cancel voucher' }).click()
   await page.getByLabel('Reason').fill('Customer cancelled the order')
-  await snapDialog('29-cancel-dialog', page.getByRole('dialog'), [
-    { label: 1, text: 'A reason is required', locator: page.getByLabel('Reason'), anchor: 'tl' },
-    {
-      label: 2,
-      text: 'The voucher stays, marked cancelled',
-      locator: page.getByRole('button', { name: 'Cancel voucher' }).last(),
-      anchor: 'tl'
-    },
-    {
-      label: 3,
-      text: 'Back out without changing anything',
-      locator: page.getByRole('button', { name: 'Keep voucher' }),
-      anchor: 'tl'
-    }
-  ])
+  await snapDialog(
+    '29-cancel-dialog',
+    page.getByRole('dialog'),
+    [
+      {
+        label: 3,
+        text: 'A reason is required',
+        locator: page.getByLabel('Reason'),
+        anchor: 'tl',
+        dx: -26
+      },
+      {
+        label: 4,
+        text: 'The voucher stays, marked cancelled',
+        locator: page.getByRole('button', { name: 'Cancel voucher' }).last(),
+        anchor: 'tl'
+      }
+    ],
+    { pad: 44 }
+  )
   await page.getByRole('button', { name: 'Keep voucher' }).click()
   await wait()
 
@@ -1445,14 +1685,8 @@ try {
     },
     {
       label: 2,
-      text: 'Restore is done outside the app, with it closed',
-      locator: page.getByText(/Restoring is manual/),
-      anchor: 'tl'
-    },
-    {
-      label: 3,
       text: 'Every backup with its timestamp and size',
-      locator: page.getByRole('columnheader', { name: 'File' }),
+      locator: page.getByRole('cell', { name: /crown-books-.*\.db/ }),
       anchor: 'tl'
     }
   ])

@@ -10,7 +10,7 @@
           the books clean.
         </p>
         <div class="chapter-in">
-          <strong>In this chapter</strong>Shortcuts · Voucher series · Messages · Glossary ·
+          <strong>In this chapter</strong>Shortcuts · Voucher series · Roles · Messages · Glossary ·
           Routines · Not in this edition · Help
         </div>
       </header>
@@ -27,6 +27,19 @@
           </thead>
           <tbody>
             <tr>
+              <td class="mono">Ctrl + K</td>
+              <td>Anywhere in the app</td>
+              <td>
+                Opens the search box. It finds parties, items, vouchers, accounts and screens. Type
+                to narrow, then press <span class="mono">Enter</span>.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">F4</td>
+              <td>Sales and purchase entry</td>
+              <td>Opens the party picker without using the mouse.</td>
+            </tr>
+            <tr>
               <td class="mono">Alt + A</td>
               <td>Sales and purchase entry</td>
               <td>Adds a new line.</td>
@@ -39,17 +52,12 @@
             <tr>
               <td class="mono">Esc</td>
               <td>Sales and purchase entry</td>
-              <td>Goes back without posting.</td>
+              <td>Goes back without posting. In a dialog it closes the dialog.</td>
             </tr>
             <tr>
               <td class="mono">Tab</td>
               <td>Every form</td>
               <td>Moves to the next field.</td>
-            </tr>
-            <tr>
-              <td class="mono">Ctrl + P</td>
-              <td>Voucher detail</td>
-              <td>Opens the print dialog. The Print button is safer.</td>
             </tr>
           </tbody>
         </table>
@@ -118,7 +126,78 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.3</span>Messages and fixes</h2>
+        <h2><span class="num">10.3</span>People, roles and permissions</h2>
+        <p>
+          Every person signs in with their own email and password. A role is a named bundle of
+          permissions; a person gets exactly one role. Open <strong>Admin → Users and Roles</strong>
+          to add people, reset a password, disable an account, or change what a role may do.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%">Role</th>
+              <th>What it can do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Owner</strong> · <strong>Admin</strong></td>
+              <td>
+                Full access, including people, roles, voucher numbering, company settings and
+                backups. Both are locked system roles; they cannot be edited or deleted. At least one
+                active Owner must remain.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Accountant</strong></td>
+              <td>
+                Parties, items, vouchers, receipts, payments, journals and reports, plus exports and
+                backups. Can cancel a voucher and edit the chart of accounts. Can see people and
+                roles but not change them.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Billing Clerk</strong></td>
+              <td>
+                Raises sales invoices and purchase bills, records receipts, and views reports. Cannot
+                cancel a voucher, edit accounts, open backups, or change company settings.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Auditor</strong></td>
+              <td>
+                Read-only. Sees parties, items, vouchers, receipts, payments, journals and every
+                report, and can export them. Cannot post, edit or delete anything.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          These four are starting points, not fixed rules. A non-system role can be edited, and a new
+          role can be created from the <strong>Roles</strong> tab. The role editor groups permissions
+          by domain: company, people, parties, items, vouchers, receipts and payments, journals,
+          reports, and backup. A person with <span class="mono">user.manage</span> can add people; a
+          person with <span class="mono">role.manage</span> can change roles.
+        </p>
+
+        <div class="callout">
+          <span class="label">Permissions are enforced in the main process</span>
+          Hiding a button is not the protection. Every command is checked again on the server side,
+          so a role without <span class="mono">voucher.cancel</span> cannot cancel a voucher even if
+          the screen is reached some other way. Nobody can change their own role or disable their own
+          account, and nobody can grant a permission they do not hold themselves.
+        </div>
+
+        <p class="small muted">
+          Changes to people and roles are written to the audit trail. Disabling a person keeps their
+          name on the vouchers they posted; it only stops them signing in.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">10.4</span>Messages and fixes</h2>
         <table>
           <thead>
             <tr>
@@ -129,7 +208,10 @@
           <tbody>
             <tr>
               <td>“Debits equal credits.”</td>
-              <td>The trial balance is consistent. No action.</td>
+              <td>
+                The banner at the bottom of the trial balance. Every posted voucher has two sides; no
+                action.
+              </td>
             </tr>
             <tr>
               <td>“The books do not balance.”</td>
@@ -144,8 +226,8 @@
             <tr>
               <td>“Choose customer, supplier, or both”</td>
               <td>
-                The party role is missing. Edit the party while it is being created; roles are fixed
-                after saving.
+                The party has no role. Tick Customer, Supplier, or both in the party form; you can
+                change it later by editing the party.
               </td>
             </tr>
             <tr>
@@ -182,7 +264,7 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.4</span>Glossary</h2>
+        <h2><span class="num">10.5</span>Glossary</h2>
         <div class="two-tight">
           <table>
             <thead>
@@ -288,7 +370,7 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.5</span>Daily, weekly and monthly routine</h2>
+        <h2><span class="num">10.6</span>Daily, weekly and monthly routine</h2>
         <table>
           <thead>
             <tr>
@@ -314,9 +396,9 @@
             <tr>
               <td><strong>Every month</strong></td>
               <td>
-                Check that the Trial Balance says “Debits equal credits.” Compare Profit and Loss
-                with last month. Explain any large Balance Sheet movement. Create a month-end backup
-                for the accountant.
+                Check that the Trial Balance shows <strong>The books balance</strong> and the banner
+                says “Debits equal credits.” Compare Profit and Loss with last month. Explain any
+                large Balance Sheet movement. Create a month-end backup for the accountant.
               </td>
             </tr>
             <tr>
@@ -331,10 +413,9 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.6</span>Not active in this edition</h2>
+        <h2><span class="num">10.7</span>Not active in this edition</h2>
         <p>
-          These items appear in the navigation or in a form but are reserved or only partly wired.
-          Do not build a process around them yet.
+          These items are reserved or only partly wired. Do not build a process around them yet.
         </p>
         <table>
           <thead>
@@ -345,24 +426,8 @@
           </thead>
           <tbody>
             <tr>
-              <td>Global search</td>
-              <td>Reserved. Use the search field on each page.</td>
-            </tr>
-            <tr>
-              <td>Tax Rates / Units</td>
-              <td>Reserved screens. GST rates are chosen on the item; units are seeded.</td>
-            </tr>
-            <tr>
-              <td>Users and Roles</td>
-              <td>Reserved. The owner account is the only active user.</td>
-            </tr>
-            <tr>
               <td>Credit / debit notes</td>
               <td>Routes exist but no screen is exposed. Cancel and re-enter for now.</td>
-            </tr>
-            <tr>
-              <td>Excel export</td>
-              <td>Not available. Use the on-screen report and the print dialog.</td>
             </tr>
             <tr>
               <td>Bank reconciliation</td>
@@ -381,7 +446,7 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.7</span>Where to get help</h2>
+        <h2><span class="num">10.8</span>Where to get help</h2>
         <div class="two">
           <div>
             <h3 style="margin-top: 0">Inside the business</h3>

@@ -30,13 +30,17 @@ try {
   await page.getByLabel('Owner email').fill('owner@crowntraders.in')
   await page.locator('input[type="password"]').first().fill('crownbooks')
   await page.getByLabel('GSTIN (optional)').fill('27AABCT1234F1Z5')
-  await page.getByLabel('Books begin').fill('2026-04-01')
+  await page.locator('#setup-books-begin').fill('2026-04-01')
   await page.getByRole('button', { name: 'Create company and sign in' }).click()
+  await page.getByRole('heading', { name: 'Number your vouchers' }).waitFor()
+  await page.getByRole('button', { name: 'Save numbering' }).click()
+  await page.getByRole('heading', { name: 'Walk through the main flow' }).waitFor()
+  await page.getByRole('button', { name: 'Skip the tour' }).click()
   await page.getByText('Good ', { exact: false }).first().waitFor()
 
   await page.evaluate(async () => {
     const api = window.api
-    const units = await api.units.list()
+    const units = await api.units.list({ includeInactive: false })
     const nos = units.find((unit) => /^nos$/i.test(unit.name) || /^nos$/i.test(unit.symbol))
     const customer = await api.parties.create({
       name: 'Sharma Electronics',

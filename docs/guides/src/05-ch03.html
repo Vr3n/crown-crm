@@ -18,8 +18,8 @@
       <h2><span class="num">3.1</span>One record per business</h2>
       <p>
         A party is a customer, a supplier, or both. Use one record for a business even if you buy
-        from and sell to them. The role is chosen when the party is created and is not changed
-        later, because the role decides which ledger accounts the party uses.
+        from and sell to them. The role decides which ledger accounts the party uses; you can change
+        it later by editing the party.
       </p>
       <p>
         The balance is shown as <strong>Dr</strong> or <strong>Cr</strong>. For a customer, Dr means
@@ -64,21 +64,22 @@
             </li>
             <li>
               <strong>Opening balance.</strong> Positive if the party owes you, negative if you owe
-              the party. Fixed after saving.
+              the party. It can be corrected until the opening voucher is posted.
             </li>
-            <li><strong>Role.</strong> Customer, Supplier, or both. Fixed after saving.</li>
+            <li>
+              <strong>Role.</strong> Customer, Supplier, or both. You can change it later by editing
+              the party.
+            </li>
             <li>Click <strong>Add party</strong>.</li>
           </ol>
 
           <figure class="figure dialog">
             <div class="shot">
               <img src="assets/screens/03-party-form.png" alt="New party form" />
-              <span class="marker" style="left: 2.8%; top: 17.24%">1</span>
-              <span class="marker" style="left: 2.8%; top: 38%">3</span>
-              <span class="marker" style="left: 2.8%; top: 58.77%">4</span>
-              <span class="marker" style="left: 2.8%; top: 69.16%">5</span>
-              <span class="marker" style="left: 2.8%; top: 83.09%">6</span>
-              <span class="marker" style="left: 91%; top: 90.76%">7</span>
+              <span class="marker" style="left: 5.65%; top: 22.6%">1</span>
+              <span class="marker" style="left: 5.65%; top: 47.7%">3</span>
+              <span class="marker" style="left: 5.65%; top: 72.81%">4</span>
+              <span class="marker" style="left: 5.65%; top: 85.37%">5</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 3.1</span> The New party form, filled for a business that
@@ -90,10 +91,11 @@
 
       <h2><span class="num">3.3</span>Edit and deactivate</h2>
       <p>
-        Use <strong>Edit</strong> on a row to correct a phone number, address, credit days or credit
-        limit. The role and the opening balance are fixed after the party is created. If a party is
-        no longer used, click <strong>Deactivate</strong>: the history stays in the books, and the
-        party stops appearing in new-entry lists.
+        Use <strong>Edit</strong> on a row to correct a phone number, address, credit days, credit
+        limit, role or opening balance. The opening balance stops being editable once the opening
+        voucher is posted; use a journal after that. If a party is no longer used, click
+        <strong>Deactivate</strong>: the history stays in the books, and the party stops appearing in
+        new-entry lists.
       </p>
       <div class="callout tip">
         <span class="label">Tip</span>
@@ -102,17 +104,17 @@
       </div>
 
       <h2><span class="num">3.4</span>Read the party list</h2>
-      <figure class="figure report">
+      <figure class="figure wide">
         <div class="shot">
-          <img src="assets/screens/02-parties-detail.png" alt="Parties list" />
-          <span class="marker" style="left: 91.5%; top: 12.26%">1</span>
-          <span class="marker" style="left: 15.3%; top: 36.14%">2</span>
-          <span class="marker" style="left: 75%; top: 30.36%">3</span>
-          <span class="marker" style="left: 70.5%; top: 76.22%">4</span>
+          <img src="assets/screens/02-parties.png" alt="Parties list" />
+          <span class="marker" style="left: 90.43%; top: 10.5%">1</span>
+          <span class="marker" style="left: 17.84%; top: 78.97%">2</span>
+          <span class="marker" style="left: 74.2%; top: 78.97%">3</span>
+          <span class="marker" style="left: 51.22%; top: 85.88%">4</span>
         </div>
         <figcaption>
-          <span class="fig-no">Figure 3.2</span> The parties list. The balance column is the net
-          position across all posted vouchers.
+          <span class="fig-no">Figure 3.2</span> The parties list. The cards and charts summarise the
+          ledger; the balance column is the net position across all posted vouchers.
         </figcaption>
         <ol class="figure-key">
           <li><span class="k">1</span>Create a customer or supplier</li>
@@ -122,6 +124,14 @@
         </ol>
       </figure>
 
+      <p>
+        The top of the page answers three questions before you scroll: how much is owed to you, how
+        much is overdue, and which customers are over their credit limit. The
+        <strong>Open bills by age</strong> chart splits receivables and payables into
+        <strong>Not due</strong>, <strong>1–30</strong>, <strong>31–60</strong>, <strong>61–90</strong>
+        and <strong>90+</strong> days. <strong>Top receivables</strong> ranks the largest outstanding
+        balances, so a single customer holding most of the money is obvious.
+      </p>
       <p>
         Search matches name, phone and GSTIN. The role buttons filter to All, Customers or
         Suppliers.

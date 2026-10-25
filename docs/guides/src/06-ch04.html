@@ -62,7 +62,7 @@
             </li>
             <li>
               <strong>Opening qty</strong> and <strong>Opening rate.</strong> Only for goods you
-              already hold. Fixed after saving.
+              already hold. Editable until the item has stock movements.
             </li>
             <li>
               <strong>Reorder level.</strong> A reference for purchasing; it does not create an
@@ -74,12 +74,11 @@
           <figure class="figure dialog">
             <div class="shot">
               <img src="assets/screens/05-item-form.png" alt="New item form" />
-              <span class="marker" style="left: 2.6%; top: 18.84%">1</span>
-              <span class="marker" style="left: 49%; top: 30.19%">3</span>
-              <span class="marker" style="left: 49%; top: 42.52%">4</span>
-              <span class="marker" style="left: 2.6%; top: 52.24%">5</span>
-              <span class="marker" style="left: 2.6%; top: 63.59%">6</span>
-              <span class="marker" style="left: 92%; top: 89.91%">8</span>
+              <span class="marker" style="left: 5.49%; top: 22.6%">1</span>
+              <span class="marker" style="left: 47.42%; top: 31.63%">3</span>
+              <span class="marker" style="left: 47.42%; top: 44.78%">4</span>
+              <span class="marker" style="left: 5.49%; top: 59.76%">5</span>
+              <span class="marker" style="left: 5.49%; top: 72.31%">6</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 4.1</span> The New item form, filled for a goods item with
@@ -105,12 +104,12 @@
       </div>
 
       <h2><span class="num">4.4</span>The item list</h2>
-      <figure class="figure report">
+      <figure class="figure wide">
         <div class="shot">
-          <img src="assets/screens/04-items-detail.png" alt="Item list" />
-          <span class="marker" style="left: 91.5%; top: 12.34%">1</span>
-          <span class="marker" style="left: 48.8%; top: 44.98%">2</span>
-          <span class="marker" style="left: 55%; top: 44.98%">3</span>
+          <img src="assets/screens/04-items.png" alt="Item list" />
+          <span class="marker" style="left: 91.44%; top: 10.5%">1</span>
+          <span class="marker" style="left: 38.28%; top: 72.3%">2</span>
+          <span class="marker" style="left: 42.86%; top: 72.3%">3</span>
         </div>
         <figcaption>
           <span class="fig-no">Figure 4.2</span> The item list. Stock and prices are shown per item;
@@ -123,6 +122,13 @@
         </ol>
       </figure>
 
+      <p>
+        The four cards across the top are inventory value at cost, the number of items, how many are
+        at or below their reorder level, and how many are out of stock.
+        <strong>Stock value by item</strong> ranks the largest inventory balances, so the item
+        holding most of your money is visible before you read the table. The
+        <strong>Quick filters</strong> jump straight to low stock, out of stock or services.
+      </p>
       <p>
         The list shows HSN or SAC, unit, GST rate, stock on hand, sale price and purchase price. Use
         the search box for name, SKU or HSN. <strong>Edit</strong> changes the descriptive fields
@@ -137,12 +143,12 @@
           screen. It reads every posted purchase, sale and return.
         </p>
 
-        <figure class="figure report">
+        <figure class="figure wide">
           <div class="shot">
-            <img src="assets/screens/19-stock-detail.png" alt="Stock summary" />
-            <span class="marker" style="left: 52%; top: 36.28%">1</span>
-            <span class="marker" style="left: 71.5%; top: 36.28%">2</span>
-            <span class="marker" style="left: 15%; top: 85.68%">3</span>
+            <img src="assets/screens/19-stock.png" alt="Stock summary" />
+            <span class="marker" style="left: 45.71%; top: 64.44%">1</span>
+            <span class="marker" style="left: 77.5%; top: 64.44%">2</span>
+            <span class="marker" style="left: 17%; top: 82.85%">3</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 4.3</span> Stock on hand by item, with quantity and value at
@@ -159,6 +165,12 @@
           Quantity is what is left. Value is quantity multiplied by the weighted average cost of the
           item. The total at the bottom is the inventory value that appears on the balance sheet.
           Services are not shown because they hold no stock.
+        </p>
+        <p>
+          The <strong>Stock value by item</strong> chart ranks the largest balances, and
+          <strong>Value concentration</strong> shows how much of the total each top item represents.
+          Both read the same rows as the table, so they move together after every posted purchase or
+          sale.
         </p>
       </div>
 

@@ -2,7 +2,7 @@
 
 The PDF is written for the people who use the application, not for developers.
 
-- **Full guide:** [`crown-books-user-guide.pdf`](crown-books-user-guide.pdf) — 34 pages, 10 chapters, 30 figures.
+- **Full guide:** [`crown-books-user-guide.pdf`](crown-books-user-guide.pdf) — 10 chapters, 32 figures.
 - **Quick start:** [`crown-books-10-minute-quick-start.pdf`](crown-books-10-minute-quick-start.pdf) — seven pages, one form per page.
 - **Built HTML:** [`crown-books-user-guide.html`](crown-books-user-guide.html)
 - **Source:** [`src/`](src/) — one partial per chapter, plus `guide.css` and `template.html`.
@@ -16,7 +16,7 @@ The PDF is written for the people who use the application, not for developers.
   block moves to the next page rather than splitting the instructions from the picture.
 - The red number on a screenshot is the step number. Steps without a marker have nothing
   specific to point at. Reference figures use a key under the caption instead.
-- Report screenshots use a 120 mm crop that ends just below the table, so the numbers stay
+- Report screenshots use a 150 mm crop that ends just below the table, so the numbers stay
   readable instead of shrinking into a mostly empty app window.
 - Chapter openers always start a new page. Section headings are never left alone at the bottom
   of a page, and tables are kept with their heading.
@@ -30,6 +30,7 @@ The screenshots come from the real Electron build.
 npx electron-vite build
 node scripts/guide/capture-guide.mjs
 python scripts/guide/crop-guide-assets.py
+node scripts/guide/sync-annotations.mjs
 node scripts/guide/build-guide.mjs
 node scripts/guide/render-guide-pdf.mjs
 node scripts/guide/render-guide-pdf.mjs docs/guides/crown-books-10-minute-quick-start.html docs/guides/crown-books-10-minute-quick-start.pdf --quick
@@ -38,7 +39,9 @@ node scripts/guide/render-guide-pdf.mjs docs/guides/crown-books-10-minute-quick-
 `capture-guide.mjs` creates a throwaway company, posts a month of purchases, sales, receipts,
 payments and adjustments, captures the screens and writes the callout coordinates. It removes
 the throwaway database when it finishes. `crop-guide-assets.py` makes the compact report crops
-used by the guide; run it after any recapture.
+used by the guide. `sync-annotations.mjs` copies the measured marker positions into the chapter
+partials (matching markers in order) and writes `assets/annotations.js` for the quick start; run it
+after cropping.
 
 `build-guide.mjs` assembles the partials into the built HTML and checks that every screenshot
 referenced by the guide exists. `render-guide-pdf.mjs` prints the PDF twice: the first pass finds

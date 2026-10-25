@@ -16,7 +16,7 @@ for index, page in enumerate(doc):
     squashed = "".join(page.get_text().lower().split())
     for number in range(1, 11):
         key = f"ch{number:02d}"
-        if key not in pages and f"chapter{number:02d}" in squashed:
+        if key not in pages and f"chapter{number:02d}crownbooks" in squashed:
             pages[key] = index + 1
 
 json.dump(pages, open(out, "w", encoding="utf-8"), indent=2)

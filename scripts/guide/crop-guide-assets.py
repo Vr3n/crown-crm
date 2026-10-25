@@ -17,17 +17,13 @@ SCREENS = ROOT / "docs/guides/assets/screens"
 
 # Source name -> crop height in pixels (the source captures are 1785 x 1043).
 CROPS = {
-    "02-parties": 536,
-    "04-items": 524,
-    "12-payables": 389,
-    "17-receivables": 389,
-    "18-ageing": 389,
-    "19-stock": 437,
-    "20-sales-register": 389,
-    "21-purchase-register": 389,
-    "25-day-book": 557,
-    "28-journals": 389,
-    "30-backup": 406,
+    "12-payables": 620,
+    "17-receivables": 620,
+    "18-ageing": 620,
+    "20-sales-register": 650,
+    "21-purchase-register": 630,
+    "28-journals": 620,
+    "30-backup": 620,
 }
 
 for name, height in CROPS.items():
@@ -39,10 +35,12 @@ for name, height in CROPS.items():
     image.crop((0, 0, image.width, height)).save(target)
     print(f"{target.name}  {image.width} x {height}")
 
-# The opening-balances section sits at the bottom of the company page, and the
-# left navigation rail is not useful in such a short strip.
-source = SCREENS / "07-opening-balances.png"
+# First run: the form sits on the right of the splash. Crop the marketing panel
+# away so the fields stay legible at print size.
+source = SCREENS / "00-first-run.png"
 image = Image.open(source)
-crop = image.crop((int(image.width * 0.155), int(image.height * 0.70), image.width, image.height))
-crop.save(SCREENS / "07-opening-balances-detail.png")
-print(f"07-opening-balances-detail.png  {crop.width} x {crop.height}")
+left = int(image.width * 0.5686)
+crop = image.crop((left, 0, image.width, image.height))
+crop.save(SCREENS / "00-first-run-form.png")
+print(f"00-first-run-form.png  {crop.width} x {crop.height}")
+

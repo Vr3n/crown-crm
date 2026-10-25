@@ -47,7 +47,7 @@ can be opened without running the build.
 - `break-inside: avoid` is applied to the whole procedure block, so the heading, steps and
   screenshot cannot be split. A block is kept below one page height so it always fits.
 - Chapter openers force a page break. Section headings and tables are wrapped in `.keep` blocks.
-- Report figures use a 120 mm width and a compact crop. Wide figures (the printed invoice,
+- Report figures use a 150 mm width and a compact crop. Wide figures (the printed invoice,
   the opening-balance strip) use the full 176 mm column.
 
 ### Content
@@ -69,13 +69,19 @@ can be opened without running the build.
 `capture-guide.mjs` still captures the full 1785 x 1043 app window. `crop-guide-assets.py` creates
 the report crops used by the guide:
 
-- parties, items, payables, receivables, ageing, stock, both registers, journals, backup and the
-  day book are cropped just below the table;
+- parties, items, payables, receivables, ageing, stock, both registers, journals and backup are
+  cropped just below the table;
 - the first-run screen is cropped to the form (the left marketing panel is gone);
-- the opening-balances section is cropped to the section itself.
+- the opening-balances section is cropped to the section itself, with side margins for the
+  callouts and no top margin, so the section above it does not leak into the figure.
 
-Marker percentages were remeasured for each crop. If a crop height changes, marker tops must be
-multiplied by `1043 / newHeight`; the script header documents this.
+Marker percentages are measured against the capture, then `sync-annotations.mjs` rewrites them
+into the partials by marker order and remaps the crops (`CROPS` in both scripts must agree). A
+crop height change therefore needs no manual arithmetic.
+
+Callouts sit in white space, not on top of the interface text: dialog forms keep a 44 px crop
+margin and pull the marker into the left margin (`dx: -26`), and the printed invoice places each
+marker beside its block because the page has almost no margin of its own.
 
 ### PDF finishing
 
@@ -89,8 +95,8 @@ document metadata.
 
 ## Result
 
-- 52 pages to 32 pages.
-- 30 figures, all with captions; 113 callout markers.
+- 52 pages to 41 pages.
+- 32 figures, all with captions; 123 callout markers.
 - No procedure is split across pages; no section heading is orphaned at the bottom of a page.
 - Page numbers in the contents match the final PDF.
 - Chapter bookmarks work in any PDF reader.
@@ -100,7 +106,7 @@ document metadata.
 - Keep a procedure block under one printed page. If it grows past that, cut text or move a
   supporting table to its own section; do not remove the `break-inside: avoid`.
 - Marker numbers must match step numbers. Renumber both together.
-- Keep report figures cropped below the last table row. A full app window at 120 mm makes the
+- Keep report figures cropped below the last table row. A full app window at 150 mm makes the
   numbers unreadable.
 - After adding a chapter, update the contents partial; the bookmark list is generated from the
   `.chapter` elements automatically.

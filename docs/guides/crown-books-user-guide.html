@@ -1173,14 +1173,14 @@
           <div class="kicker">Contents</div>
           <h1>What is where</h1>
         </div>
-        <div class="edition">10 chapters · 30 figures</div>
+        <div class="edition">10 chapters · 32 figures</div>
       </div>
 
       <div class="toc-grid">
         <a class="toc-row" href="#ch01">
           <span class="n">01</span>
           <span class="t"
-            >Start here<span class="s">First run, sign in and the voucher pattern.</span></span
+            >Start here<span class="s">First run, numbering, the tour and the voucher pattern.</span></span
           >
           <span class="dots"></span><span class="pg" data-page="ch01"></span>
         </a>
@@ -1257,7 +1257,7 @@
         <a class="toc-row" href="#ch10">
           <span class="n">10</span>
           <span class="t"
-            >Reference<span class="s">Shortcuts, series, messages, glossary, routines.</span></span
+            >Reference<span class="s">Shortcuts, series, roles, messages, glossary, routines.</span></span
           >
           <span class="dots"></span><span class="pg" data-page="ch10"></span>
         </a>
@@ -1320,8 +1320,8 @@
 
       <div class="callout tip">
         <span class="label">Ten minutes</span>
-        Read 1.2, 1.5, 3.2, 4.2, 5.2 and 6.2, then post one purchase and one sale. That is enough to
-        understand the whole application.
+        Read 1.2 to 1.4, 3.2, 4.2, 5.2 and 6.2, then post one purchase and one sale. That is enough
+        to understand the whole application.
       </div>
     </section>
 
@@ -1333,12 +1333,13 @@
           <h1>Start here</h1>
         </div>
         <p class="chapter-lead">
-          Open the app, create the company, sign in, and learn the one pattern every voucher
-          follows. By the end of this chapter you will know where everything lives.
+          Open the app, create the company, set the voucher numbers, and walk the five steps from
+          empty books to a balanced trial balance. By the end of this chapter you will know where
+          everything lives.
         </p>
         <div class="chapter-in">
-          <strong>In this chapter</strong>Open · First run · Sign in · The screen · Voucher anatomy
-          · First five steps
+          <strong>In this chapter</strong>Open · First run · Numbering · The tour · Sign in · The
+          screen · Voucher anatomy · First five steps
         </div>
       </header>
 
@@ -1390,12 +1391,12 @@
           <figure class="figure dialog">
             <div class="shot">
               <img src="assets/screens/00-first-run-form.png" alt="First-run setup form" />
-              <span class="marker" style="left: 18.6%; top: 24.26%">1</span>
-              <span class="marker" style="left: 18.6%; top: 42.63%">2</span>
-              <span class="marker" style="left: 18.6%; top: 51.82%">3</span>
-              <span class="marker" style="left: 18.6%; top: 63.82%">4</span>
-              <span class="marker" style="left: 18.6%; top: 73%">5</span>
-              <span class="marker" style="left: 84%; top: 86.31%">6</span>
+              <span class="marker" style="left: 8.18%; top: 24.26%">1</span>
+              <span class="marker" style="left: 8.18%; top: 42.63%">2</span>
+              <span class="marker" style="left: 8.18%; top: 51.82%">3</span>
+              <span class="marker" style="left: 8.18%; top: 63.82%">4</span>
+              <span class="marker" style="left: 8.18%; top: 73%">5</span>
+              <span class="marker" style="left: 8.18%; top: 84.39%">6</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 1.1</span> The first-run screen. The company and owner are
@@ -1413,7 +1414,136 @@
         the financial year is still the current April-to-March year.
       </div>
 
-      <h2><span class="num">1.3</span>Sign in again</h2>
+      <div class="procedure">
+        <h2><span class="num">1.3</span>Number your vouchers</h2>
+        <p>
+          The company is created and you are signed in. Before the dashboard, step 1 of 2 asks you to
+          confirm the numbering. Every document type has its own row: sales invoice, purchase bill,
+          receipt, payment, credit note, debit note and journal.
+        </p>
+
+        <figure class="figure wide">
+          <div class="shot">
+            <img src="assets/screens/00-first-run-numbering.png" alt="Voucher numbering" />
+            <span class="marker" style="left: 23.27%; top: 54.87%">1</span>
+            <span class="marker" style="left: 81.03%; top: 55.78%">2</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 1.2</span> Voucher numbering. The <strong>Next</strong> column
+            shows exactly what the next posted document will be called.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Each document has its own series</li>
+            <li><span class="k">2</span>The next number is previewed live</li>
+          </ol>
+        </figure>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%">Column</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Series</strong></td>
+              <td>
+                The short code stored on the voucher, for example <span class="mono">INV</span>.
+                Changing it starts a new series; older vouchers keep theirs.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Prefix / Suffix</strong></td>
+              <td>
+                Text around the number, for example <span class="mono">INV/</span>. Both may
+                contain date tokens.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Width</strong></td>
+              <td>How many digits the number uses, from 1 to 8. A larger value is never cut.</td>
+            </tr>
+            <tr>
+              <td><strong>Start</strong></td>
+              <td>The first number in a new series or financial year.</td>
+            </tr>
+            <tr>
+              <td><strong>Reset</strong></td>
+              <td>Yearly, monthly or never. Yearly restarts on 1 April.</td>
+            </tr>
+            <tr>
+              <td><strong>Manual</strong></td>
+              <td>
+                Allows typing the number when posting. It must still be higher than the last one
+                used.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Next</strong></td>
+              <td>
+                A live preview from the same formatter the posting engine uses, with the GST limit of
+                16 characters.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          The date tokens are <span class="mono">{YYYY}</span>, <span class="mono">{YY}</span>,
+          <span class="mono">{MM}</span>, <span class="mono">{DD}</span>,
+          <span class="mono">{YYYYMM}</span>, <span class="mono">{FY}</span> and
+          <span class="mono">{FY_SHORT}</span>. A prefix of
+          <span class="mono">INV/{YYYYMM}</span> with width 3 produces
+          <span class="mono">INV/202607001</span>.
+        </p>
+        <p>
+          Numbers are assigned when a voucher is posted, not when the entry form is opened. Changing
+          a prefix or width affects the next number only; a posted voucher keeps the number it was
+          given. Click <strong>Save numbering</strong> to continue, or open
+          <strong>Admin → Voucher numbering</strong> later.
+        </p>
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">1.4</span>The guided tour</h2>
+        <p>
+          Step 2 of 2 is a checklist, not a simulation. It lists the five steps from empty books to
+          a balanced trial balance, and each <strong>Open</strong> button goes to the real screen.
+        </p>
+
+        <figure class="figure wide">
+          <div class="shot">
+            <img src="assets/screens/00-first-run-tour.png" alt="Guided tour" />
+            <span class="marker" style="left: 9.8%; top: 20.28%">1</span>
+            <span class="marker" style="left: 89.02%; top: 42.11%">2</span>
+            <span class="marker" style="left: 13.33%; top: 88.18%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 1.3</span> The guided tour. Progress is read from your real
+            records, so nothing ticks until a document is posted.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Five steps from empty books to reports</li>
+            <li><span class="k">2</span>Open any step in the real app</li>
+            <li><span class="k">3</span>Skip and return from the dashboard</li>
+          </ol>
+        </figure>
+
+        <p>
+          The counter and progress bar read the same rows as the dashboard. A step is ticked only
+          after you add a party, add an item, post a purchase or post a sale. The last step, reading
+          the trial balance, is a pointer rather than a stored tick.
+        </p>
+        <p>
+          Click <strong>Skip the tour</strong> to go straight to the dashboard, or
+          <strong>Finish and open dashboard</strong> when you are done. The
+          <strong>Set up the books</strong> card on the dashboard keeps the same checklist, with the
+          next step and a <strong>Continue</strong> link.
+        </p>
+      </div>
+
+      <h2><span class="num">1.5</span>Sign in again</h2>
       <p>
         After setup, every launch shows the sign-in screen. Enter the owner email and password and
         click
@@ -1422,7 +1552,7 @@
         in the database.
       </p>
 
-      <h2><span class="num">1.4</span>The screen</h2>
+      <h2><span class="num">1.6</span>The screen</h2>
       <p>
         Every page has the same frame: a dark navigation rail on the left, a thin top bar, and the
         page itself. The rail is grouped by the work you are doing, not by database tables.
@@ -1431,20 +1561,20 @@
       <figure class="figure wide">
         <div class="shot">
           <img src="assets/screens/01-dashboard.png" alt="Dashboard with the navigation rail" />
-          <span class="marker" style="left: 6.6%; top: 79.69%">1</span>
-          <span class="marker" style="left: 94%; top: 14.72%">2</span>
-          <span class="marker" style="left: 6.6%; top: 6.95%">3</span>
-          <span class="marker" style="left: 24.5%; top: 3.4%">4</span>
+          <span class="marker" style="left: 18.12%; top: 27.58%">1</span>
+          <span class="marker" style="left: 87.91%; top: 17.12%">2</span>
+          <span class="marker" style="left: 1.8%; top: 6.95%">3</span>
+          <span class="marker" style="left: 22.91%; top: 1.95%">4</span>
         </div>
         <figcaption>
-          <span class="fig-no">Figure 1.2</span> The dashboard for Crown Traders, with the
+          <span class="fig-no">Figure 1.4</span> The dashboard for Crown Traders, with the
           navigation rail and the four headline numbers.
         </figcaption>
         <ol class="figure-key">
           <li><span class="k">1</span>Four numbers for today</li>
           <li><span class="k">2</span>Quick actions</li>
           <li><span class="k">3</span>The modules live in this rail</li>
-          <li><span class="k">4</span>Current financial year and account</li>
+          <li><span class="k">4</span>Current financial year</li>
         </ol>
       </figure>
 
@@ -1458,7 +1588,7 @@
         <tbody>
           <tr>
             <td><strong>Dashboard</strong></td>
-            <td>Receivables, payables, cash and bank, and vouchers posted.</td>
+            <td>Receivables, payables, cash and bank, vouchers posted, and the setup checklist.</td>
           </tr>
           <tr>
             <td><strong>Books</strong></td>
@@ -1474,26 +1604,38 @@
           </tr>
           <tr>
             <td><strong>Reports</strong></td>
-            <td>Receivables, Payables, Ageing, Trial Balance, Profit and Loss, Balance Sheet.</td>
+            <td>
+              Receivables, Payables, Ageing, Trial Balance, Profit and Loss, Balance Sheet. The sales
+              and purchase registers open from their list pages.
+            </td>
           </tr>
           <tr>
             <td><strong>Masters</strong></td>
-            <td>Chart of Accounts. Tax Rates and Units are reserved for a later edition.</td>
+            <td>Chart of Accounts, Tax Rates and Units.</td>
           </tr>
           <tr>
             <td><strong>Admin</strong></td>
-            <td>Company, Users and Roles (reserved), and Backup.</td>
+            <td>Voucher numbering, Company, Users and Roles, and Backup.</td>
           </tr>
         </tbody>
       </table>
 
       <p>
-        The top bar shows the page name, the current financial year, and your account. The theme
-        button switches between the paper and dark palettes. The search box in the top bar is
-        reserved; use the search field on each page instead.
+        The top bar shows the page name and the current financial year. The search box in the middle
+        finds parties, items, vouchers, accounts and screens from anywhere: click it or press
+        <span class="mono">Ctrl+K</span>. The theme button switches between the paper and dark
+        palettes, and the account menu at the right holds the signed-in user and
+        <strong>Sign out</strong>.
+      </p>
+      <p>
+        Rail items are gated by the signed-in user’s role. A Billing Clerk, for example, does not see
+        <strong>Admin</strong> at all, and sees only <strong>Tax Rates</strong> and
+        <strong>Units</strong> under <strong>Masters</strong>. Typing a protected address such as
+        Company or Users sends them back to the dashboard. The owner account created at first run can
+        see and do everything. Chapter 10 lists the seeded roles and what each one can reach.
       </p>
 
-      <h2><span class="num">1.5</span>The anatomy of a voucher</h2>
+      <h2><span class="num">1.7</span>The anatomy of a voucher</h2>
       <p>
         A voucher is any document that changes the books: an invoice, a bill, a receipt, a payment,
         a journal or a contra. Every entry screen uses the same four-part pattern. Once you know
@@ -1522,7 +1664,16 @@
         </div>
       </div>
 
-      <h2><span class="num">1.6</span>Your first five steps</h2>
+      <p>
+        The party field on a sale or purchase is a search box, not a plain list. Click it or press
+        <span class="mono">F4</span> and type part of the name, phone number or GSTIN. The same
+        applies to the item on each line: choosing an item fills its description, HSN, unit, rate
+        and GST rate. The footer of the entry screen lists the other keys:
+        <span class="mono">Alt+A</span> adds a line, <span class="mono">Ctrl+Enter</span> posts, and
+        <span class="mono">Esc</span> goes back.
+      </p>
+
+      <h2><span class="num">1.8</span>Your first five steps</h2>
       <p>
         For a complete cycle, do these five things in order. The rest of the guide explains each one
         in detail.
@@ -1530,7 +1681,7 @@
       <ol class="steps compact">
         <li>
           <strong>Create the company</strong> in first-run setup. Use 1 April as books begin if you
-          are starting a fresh year.
+          are starting a fresh year. Confirm the voucher numbers and skip or follow the tour.
         </li>
         <li>
           <strong>Add a customer and a supplier</strong> under Parties. One record each is enough to
@@ -1547,7 +1698,7 @@
         </li>
       </ol>
 
-      <h2><span class="num">1.7</span>Where do I…?</h2>
+      <h2><span class="num">1.9</span>Where do I…?</h2>
       <p>Every task starts from the navigation rail. This is the short version.</p>
       <table>
         <thead>
@@ -1557,6 +1708,10 @@
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <td>Find a party, item, voucher or screen</td>
+            <td><strong>Search</strong> in the top bar, or <span class="mono">Ctrl+K</span></td>
+          </tr>
           <tr>
             <td>Record a sale</td>
             <td><strong>Books → Sales → New invoice</strong></td>
@@ -1594,6 +1749,18 @@
             <td><strong>Reports → Trial Balance</strong></td>
           </tr>
           <tr>
+            <td>Change voucher numbers</td>
+            <td><strong>Admin → Voucher numbering</strong></td>
+          </tr>
+          <tr>
+            <td>Add a tax rate or a unit</td>
+            <td><strong>Masters → Tax Rates</strong> or <strong>Units</strong></td>
+          </tr>
+          <tr>
+            <td>Add a user or change a role</td>
+            <td><strong>Admin → Users and Roles</strong></td>
+          </tr>
+          <tr>
             <td>Back up</td>
             <td><strong>Admin → Backup → Create backup</strong></td>
           </tr>
@@ -1628,8 +1795,8 @@
       <figure class="figure wide">
         <div class="shot">
           <img src="assets/screens/06-company.png" alt="Company settings" />
-          <span class="marker" style="left: 26.6%; top: 18.81%">1</span>
-          <span class="marker" style="left: 26.6%; top: 82.03%">2</span>
+          <span class="marker" style="left: 26.05%; top: 58.21%">1</span>
+          <span class="marker" style="left: 57.51%; top: 27.84%">2</span>
         </div>
         <figcaption>
           <span class="fig-no">Figure 2.1</span> Company settings. Identity is printed on documents;
@@ -1755,35 +1922,54 @@
           set so you do not have to create one from scratch.
         </p>
 
-        <div class="procedure-grid">
-          <ol class="steps">
-            <li>Click <strong>New account</strong>.</li>
-            <li>Enter a <strong>Name</strong>, for example Office Expenses.</li>
-            <li>
-              Choose a <strong>Group</strong>. It decides the nature, for example Indirect Expenses.
-            </li>
-            <li>Check the <strong>Type</strong>. It follows the group but can be adjusted.</li>
-            <li>
-              Leave the opening balance at zero unless you are setting up the opening position.
-            </li>
-            <li>Click <strong>Add account</strong>.</li>
+        <figure class="figure wide">
+          <div class="shot">
+            <img src="assets/screens/08-accounts.png" alt="Chart of accounts" />
+            <span class="marker" style="left: 89.23%; top: 10.5%">1</span>
+            <span class="marker" style="left: 74.24%; top: 79.78%">2</span>
+            <span class="marker" style="left: 91.98%; top: 95.9%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 2.2</span> The chart of accounts. The cards and the
+            <strong>Balance by group</strong> chart show where the ledger's value sits; rows marked
+            Reserved are used by the posting engine.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Add a ledger</li>
+            <li><span class="k">2</span>Filter by account group</li>
+            <li><span class="k">3</span>Reserved rows cannot be deactivated</li>
           </ol>
+        </figure>
 
-          <figure class="figure">
-            <div class="shot">
-              <img src="assets/screens/08-accounts.png" alt="Chart of accounts" />
-              <span class="marker" style="left: 93.5%; top: 6.6%">1</span>
-            </div>
-            <figcaption>
-              <span class="fig-no">Figure 2.2</span> The chart of accounts. Rows marked Reserved are
-              used by the posting engine and cannot be deactivated.
-            </figcaption>
-          </figure>
-        </div>
+        <p>
+          The four cards split the ledger into <strong>Assets</strong>, <strong>Liabilities</strong>,
+          <strong>Income</strong> and <strong>Expenses</strong>. The
+          <strong>Balance by group</strong> chart ranks the groups by value, so a large balance in an
+          unexpected group is visible before you read the rows. It reads the same accounts as the
+          table below.
+        </p>
+
+        <ol class="steps compact">
+          <li>Click <strong>New account</strong>.</li>
+          <li>Enter a <strong>Name</strong>, for example Office Expenses.</li>
+          <li>
+            Choose a <strong>Group</strong>. It decides the nature, for example Indirect Expenses.
+          </li>
+          <li>Check the <strong>Type</strong>. It follows the group but can be adjusted.</li>
+          <li>
+            Leave the opening balance at zero unless you are setting up the opening position.
+          </li>
+          <li>Click <strong>Add account</strong>.</li>
+        </ol>
         <p class="small muted">
           Reserved ledgers have a fixed job: sales, purchases, GST, inventory, cost of goods sold,
           round off and the opening difference. Add your own ledgers for rent, salaries or travel
           without touching them.
+        </p>
+        <p class="small muted">
+          The chart is gated by the <span class="mono">company.view</span> permission. A user without
+          it does not see <strong>Masters</strong> in the rail, and the page cannot be opened by
+          typing its address.
         </p>
       </div>
 
@@ -1816,11 +2002,11 @@
         <figure class="figure wide">
           <div class="shot">
             <img
-              src="assets/screens/07-opening-balances-detail.png"
+              src="assets/screens/07-opening-balances.png"
               alt="Opening balances section in company settings"
             />
-            <span class="marker" style="left: 4.5%; top: 69.9%">4</span>
-            <span class="marker" style="left: 50.7%; top: 71.5%">5</span>
+            <span class="marker" style="left: 3.14%; top: 72%">4</span>
+            <span class="marker" style="left: 24.98%; top: 73.79%">5</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 2.3</span> The opening balances section. It runs once,
@@ -1871,8 +2057,8 @@
       <h2><span class="num">3.1</span>One record per business</h2>
       <p>
         A party is a customer, a supplier, or both. Use one record for a business even if you buy
-        from and sell to them. The role is chosen when the party is created and is not changed
-        later, because the role decides which ledger accounts the party uses.
+        from and sell to them. The role decides which ledger accounts the party uses; you can change
+        it later by editing the party.
       </p>
       <p>
         The balance is shown as <strong>Dr</strong> or <strong>Cr</strong>. For a customer, Dr means
@@ -1917,21 +2103,22 @@
             </li>
             <li>
               <strong>Opening balance.</strong> Positive if the party owes you, negative if you owe
-              the party. Fixed after saving.
+              the party. It can be corrected until the opening voucher is posted.
             </li>
-            <li><strong>Role.</strong> Customer, Supplier, or both. Fixed after saving.</li>
+            <li>
+              <strong>Role.</strong> Customer, Supplier, or both. You can change it later by editing
+              the party.
+            </li>
             <li>Click <strong>Add party</strong>.</li>
           </ol>
 
           <figure class="figure dialog">
             <div class="shot">
               <img src="assets/screens/03-party-form.png" alt="New party form" />
-              <span class="marker" style="left: 2.8%; top: 17.24%">1</span>
-              <span class="marker" style="left: 2.8%; top: 38%">3</span>
-              <span class="marker" style="left: 2.8%; top: 58.77%">4</span>
-              <span class="marker" style="left: 2.8%; top: 69.16%">5</span>
-              <span class="marker" style="left: 2.8%; top: 83.09%">6</span>
-              <span class="marker" style="left: 91%; top: 90.76%">7</span>
+              <span class="marker" style="left: 5.65%; top: 22.6%">1</span>
+              <span class="marker" style="left: 5.65%; top: 47.7%">3</span>
+              <span class="marker" style="left: 5.65%; top: 72.81%">4</span>
+              <span class="marker" style="left: 5.65%; top: 85.37%">5</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 3.1</span> The New party form, filled for a business that
@@ -1943,10 +2130,11 @@
 
       <h2><span class="num">3.3</span>Edit and deactivate</h2>
       <p>
-        Use <strong>Edit</strong> on a row to correct a phone number, address, credit days or credit
-        limit. The role and the opening balance are fixed after the party is created. If a party is
-        no longer used, click <strong>Deactivate</strong>: the history stays in the books, and the
-        party stops appearing in new-entry lists.
+        Use <strong>Edit</strong> on a row to correct a phone number, address, credit days, credit
+        limit, role or opening balance. The opening balance stops being editable once the opening
+        voucher is posted; use a journal after that. If a party is no longer used, click
+        <strong>Deactivate</strong>: the history stays in the books, and the party stops appearing in
+        new-entry lists.
       </p>
       <div class="callout tip">
         <span class="label">Tip</span>
@@ -1955,17 +2143,17 @@
       </div>
 
       <h2><span class="num">3.4</span>Read the party list</h2>
-      <figure class="figure report">
+      <figure class="figure wide">
         <div class="shot">
-          <img src="assets/screens/02-parties-detail.png" alt="Parties list" />
-          <span class="marker" style="left: 91.5%; top: 12.26%">1</span>
-          <span class="marker" style="left: 15.3%; top: 36.14%">2</span>
-          <span class="marker" style="left: 75%; top: 30.36%">3</span>
-          <span class="marker" style="left: 70.5%; top: 76.22%">4</span>
+          <img src="assets/screens/02-parties.png" alt="Parties list" />
+          <span class="marker" style="left: 90.43%; top: 10.5%">1</span>
+          <span class="marker" style="left: 17.84%; top: 78.97%">2</span>
+          <span class="marker" style="left: 74.2%; top: 78.97%">3</span>
+          <span class="marker" style="left: 51.22%; top: 85.88%">4</span>
         </div>
         <figcaption>
-          <span class="fig-no">Figure 3.2</span> The parties list. The balance column is the net
-          position across all posted vouchers.
+          <span class="fig-no">Figure 3.2</span> The parties list. The cards and charts summarise the
+          ledger; the balance column is the net position across all posted vouchers.
         </figcaption>
         <ol class="figure-key">
           <li><span class="k">1</span>Create a customer or supplier</li>
@@ -1975,6 +2163,14 @@
         </ol>
       </figure>
 
+      <p>
+        The top of the page answers three questions before you scroll: how much is owed to you, how
+        much is overdue, and which customers are over their credit limit. The
+        <strong>Open bills by age</strong> chart splits receivables and payables into
+        <strong>Not due</strong>, <strong>1–30</strong>, <strong>31–60</strong>, <strong>61–90</strong>
+        and <strong>90+</strong> days. <strong>Top receivables</strong> ranks the largest outstanding
+        balances, so a single customer holding most of the money is obvious.
+      </p>
       <p>
         Search matches name, phone and GSTIN. The role buttons filter to All, Customers or
         Suppliers.
@@ -2087,7 +2283,7 @@
             </li>
             <li>
               <strong>Opening qty</strong> and <strong>Opening rate.</strong> Only for goods you
-              already hold. Fixed after saving.
+              already hold. Editable until the item has stock movements.
             </li>
             <li>
               <strong>Reorder level.</strong> A reference for purchasing; it does not create an
@@ -2099,12 +2295,11 @@
           <figure class="figure dialog">
             <div class="shot">
               <img src="assets/screens/05-item-form.png" alt="New item form" />
-              <span class="marker" style="left: 2.6%; top: 18.84%">1</span>
-              <span class="marker" style="left: 49%; top: 30.19%">3</span>
-              <span class="marker" style="left: 49%; top: 42.52%">4</span>
-              <span class="marker" style="left: 2.6%; top: 52.24%">5</span>
-              <span class="marker" style="left: 2.6%; top: 63.59%">6</span>
-              <span class="marker" style="left: 92%; top: 89.91%">8</span>
+              <span class="marker" style="left: 5.49%; top: 22.6%">1</span>
+              <span class="marker" style="left: 47.42%; top: 31.63%">3</span>
+              <span class="marker" style="left: 47.42%; top: 44.78%">4</span>
+              <span class="marker" style="left: 5.49%; top: 59.76%">5</span>
+              <span class="marker" style="left: 5.49%; top: 72.31%">6</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 4.1</span> The New item form, filled for a goods item with
@@ -2130,12 +2325,12 @@
       </div>
 
       <h2><span class="num">4.4</span>The item list</h2>
-      <figure class="figure report">
+      <figure class="figure wide">
         <div class="shot">
-          <img src="assets/screens/04-items-detail.png" alt="Item list" />
-          <span class="marker" style="left: 91.5%; top: 12.34%">1</span>
-          <span class="marker" style="left: 48.8%; top: 44.98%">2</span>
-          <span class="marker" style="left: 55%; top: 44.98%">3</span>
+          <img src="assets/screens/04-items.png" alt="Item list" />
+          <span class="marker" style="left: 91.44%; top: 10.5%">1</span>
+          <span class="marker" style="left: 38.28%; top: 72.3%">2</span>
+          <span class="marker" style="left: 42.86%; top: 72.3%">3</span>
         </div>
         <figcaption>
           <span class="fig-no">Figure 4.2</span> The item list. Stock and prices are shown per item;
@@ -2148,6 +2343,13 @@
         </ol>
       </figure>
 
+      <p>
+        The four cards across the top are inventory value at cost, the number of items, how many are
+        at or below their reorder level, and how many are out of stock.
+        <strong>Stock value by item</strong> ranks the largest inventory balances, so the item
+        holding most of your money is visible before you read the table. The
+        <strong>Quick filters</strong> jump straight to low stock, out of stock or services.
+      </p>
       <p>
         The list shows HSN or SAC, unit, GST rate, stock on hand, sale price and purchase price. Use
         the search box for name, SKU or HSN. <strong>Edit</strong> changes the descriptive fields
@@ -2162,12 +2364,12 @@
           screen. It reads every posted purchase, sale and return.
         </p>
 
-        <figure class="figure report">
+        <figure class="figure wide">
           <div class="shot">
-            <img src="assets/screens/19-stock-detail.png" alt="Stock summary" />
-            <span class="marker" style="left: 52%; top: 36.28%">1</span>
-            <span class="marker" style="left: 71.5%; top: 36.28%">2</span>
-            <span class="marker" style="left: 15%; top: 85.68%">3</span>
+            <img src="assets/screens/19-stock.png" alt="Stock summary" />
+            <span class="marker" style="left: 45.71%; top: 64.44%">1</span>
+            <span class="marker" style="left: 77.5%; top: 64.44%">2</span>
+            <span class="marker" style="left: 17%; top: 82.85%">3</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 4.3</span> Stock on hand by item, with quantity and value at
@@ -2184,6 +2386,12 @@
           Quantity is what is left. Value is quantity multiplied by the weighted average cost of the
           item. The total at the bottom is the inventory value that appears on the balance sheet.
           Services are not shown because they hold no stock.
+        </p>
+        <p>
+          The <strong>Stock value by item</strong> chart ranks the largest balances, and
+          <strong>Value concentration</strong> shows how much of the total each top item represents.
+          Both read the same rows as the table, so they move together after every posted purchase or
+          sale.
         </p>
       </div>
 
@@ -2292,8 +2500,9 @@
         <div class="procedure-grid">
           <ol class="steps">
             <li>
-              <strong>Party.</strong> Choose the supplier. The list shows the current balance and
-              credit days.
+              <strong>Party.</strong> Click the supplier box, or press <span class="mono">F4</span>,
+              and type part of the name, phone or GSTIN. The selected supplier shows the current
+              balance and credit days.
             </li>
             <li>
               <strong>Date</strong> and <strong>Due date.</strong> The bill date decides the
@@ -2329,12 +2538,12 @@
           <figure class="figure">
             <div class="shot">
               <img src="assets/screens/09-purchase-entry.png" alt="New purchase bill" />
-              <span class="marker" style="left: 19.6%; top: 24.23%">1</span>
-              <span class="marker" style="left: 61.5%; top: 29.6%">2</span>
-              <span class="marker" style="left: 91.7%; top: 40.7%">5</span>
-              <span class="marker" style="left: 56.5%; top: 48.2%">6</span>
-              <span class="marker" style="left: 76.5%; top: 60.8%">7</span>
-              <span class="marker" style="left: 92.5%; top: 90.4%">9</span>
+              <span class="marker" style="left: 18.12%; top: 33.41%">1</span>
+              <span class="marker" style="left: 80.21%; top: 33.17%">2</span>
+              <span class="marker" style="left: 91.43%; top: 51%">5</span>
+              <span class="marker" style="left: 56.58%; top: 60.97%">6</span>
+              <span class="marker" style="left: 75.15%; top: 78.79%">7</span>
+              <span class="marker" style="left: 92.56%; top: 94.92%">9</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 5.1</span> A new purchase bill with two item lines. The
@@ -2393,7 +2602,8 @@
         <div class="procedure-grid">
           <ol class="steps">
             <li>
-              <strong>Party.</strong> Choose the supplier. The screen shows the current balance.
+              <strong>Party.</strong> Choose the supplier from the list. Each row shows the current
+              balance, and the line under the list repeats it.
             </li>
             <li><strong>Date.</strong> The date money left, not the bill date.</li>
             <li><strong>Amount.</strong> The total paid, for example 25,000.</li>
@@ -2418,12 +2628,12 @@
           <figure class="figure">
             <div class="shot">
               <img src="assets/screens/11-payment-entry.png" alt="Supplier payment" />
-              <span class="marker" style="left: 19.6%; top: 24.23%">1</span>
-              <span class="marker" style="left: 19.6%; top: 34.97%">4</span>
-              <span class="marker" style="left: 14.4%; top: 50.67%">5</span>
-              <span class="marker" style="left: 74.2%; top: 55.2%">6</span>
-              <span class="marker" style="left: 85.3%; top: 61.3%">7</span>
-              <span class="marker" style="left: 94%; top: 70.47%">8</span>
+              <span class="marker" style="left: 24.43%; top: 24.23%">1</span>
+              <span class="marker" style="left: 24.43%; top: 34.97%">4</span>
+              <span class="marker" style="left: 18.26%; top: 50.67%">5</span>
+              <span class="marker" style="left: 74.24%; top: 57.51%">6</span>
+              <span class="marker" style="left: 85.31%; top: 63.6%">7</span>
+              <span class="marker" style="left: 90.27%; top: 70.47%">8</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 5.2</span> A supplier payment. The amount is 25,000, of
@@ -2484,11 +2694,11 @@
         <figure class="figure report">
           <div class="shot">
             <img src="assets/screens/12-payables-detail.png" alt="Payables report" />
-            <span class="marker" style="left: 81.3%; top: 24.67%">1</span>
-            <span class="marker" style="left: 91.9%; top: 24.67%">2</span>
-            <span class="marker" style="left: 46%; top: 41.83%">3</span>
-            <span class="marker" style="left: 58.7%; top: 41.83%">4</span>
-            <span class="marker" style="left: 78.6%; top: 41.83%">5</span>
+            <span class="marker" style="left: 81.29%; top: 21.92%">1</span>
+            <span class="marker" style="left: 91.9%; top: 21.92%">2</span>
+            <span class="marker" style="left: 45.99%; top: 64.95%">3</span>
+            <span class="marker" style="left: 58.74%; top: 64.95%">4</span>
+            <span class="marker" style="left: 78.57%; top: 64.95%">5</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 5.3</span> Payables as on 22 October 2026. Both suppliers
@@ -2521,9 +2731,9 @@
         <figure class="figure report">
           <div class="shot">
             <img src="assets/screens/21-purchase-register-detail.png" alt="Purchase register" />
-            <span class="marker" style="left: 27%; top: 41.83%">1</span>
-            <span class="marker" style="left: 66%; top: 41.83%">2</span>
-            <span class="marker" style="left: 15%; top: 83.92%">3</span>
+            <span class="marker" style="left: 27.04%; top: 63.92%">1</span>
+            <span class="marker" style="left: 65.96%; top: 63.92%">2</span>
+            <span class="marker" style="left: 17%; top: 85.84%">3</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 5.4</span> The purchase register for the financial year.
@@ -2598,8 +2808,9 @@
         <div class="procedure-grid">
           <ol class="steps">
             <li>
-              <strong>Party.</strong> Choose the customer. The screen shows their balance, credit
-              days and GSTIN.
+              <strong>Party.</strong> Click the customer box, or press <span class="mono">F4</span>,
+              and type part of the name, phone or GSTIN. The selected customer shows their balance,
+              credit days and GSTIN.
             </li>
             <li>
               <strong>Date</strong> and <strong>Due date.</strong> The invoice date decides the
@@ -2610,8 +2821,8 @@
               gives CGST + SGST; a different state gives IGST.
             </li>
             <li>
-              <strong>Add line</strong> for each item. Choose the saved item or type a free-text
-              description.
+              <strong>Add line</strong> for each item. Pick a saved item to fill its description, HSN,
+              unit, rate and GST rate, or type a free-text description.
             </li>
             <li>
               Enter <strong>Qty</strong>, <strong>Rate</strong>, <strong>Disc %</strong> and
@@ -2627,11 +2838,12 @@
           <figure class="figure">
             <div class="shot">
               <img src="assets/screens/13-sales-entry.png" alt="New sales invoice" />
-              <span class="marker" style="left: 19.6%; top: 24.23%">1</span>
-              <span class="marker" style="left: 53.8%; top: 27.8%">2</span>
-              <span class="marker" style="left: 53.8%; top: 37.2%">3</span>
-              <span class="marker" style="left: 56.5%; top: 48.2%">5</span>
-              <span class="marker" style="left: 97.2%; top: 90.4%">7</span>
+              <span class="marker" style="left: 18.12%; top: 33.41%">1</span>
+              <span class="marker" style="left: 80.21%; top: 33.17%">2</span>
+              <span class="marker" style="left: 80.21%; top: 41.45%">3</span>
+              <span class="marker" style="left: 56.58%; top: 60.97%">5</span>
+              <span class="marker" style="left: 73.05%; top: 81.88%">6</span>
+              <span class="marker" style="left: 90.81%; top: 94.92%">7</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 6.1</span> A new sales invoice for a Maharashtra customer,
@@ -2695,21 +2907,31 @@
         <figure class="figure wide">
           <div class="shot">
             <img src="assets/screens/15-invoice-print.png" alt="Printed invoice" />
+            <span class="marker" style="left: 28.57%; top: 31.86%">1</span>
+            <span class="marker" style="left: 84.49%; top: 26.61%">2</span>
+            <span class="marker" style="left: 17.66%; top: 48.75%">3</span>
+            <span class="marker" style="left: 72.19%; top: 88.81%">4</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 6.2</span> What the printed invoice looks like. The
             navigation and top bar are hidden on paper.
           </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Invoice number, date and reference</li>
+            <li><span class="k">2</span>Customer and GSTIN</li>
+            <li><span class="k">3</span>Line items with HSN, quantity, rate and tax</li>
+            <li><span class="k">4</span>Tax split and total</li>
+          </ol>
         </figure>
 
         <figure class="figure medium">
           <div class="shot">
             <img src="assets/screens/14-sales-detail.png" alt="Posted sales invoice" />
-            <span class="marker" style="left: 19.8%; top: 19.17%">1</span>
-            <span class="marker" style="left: 80.4%; top: 20.62%">2</span>
-            <span class="marker" style="left: 79.2%; top: 6.4%">3</span>
-            <span class="marker" style="left: 75%; top: 25.4%">4</span>
-            <span class="marker" style="left: 73.5%; top: 55%">5</span>
+            <span class="marker" style="left: 22.32%; top: 19.17%">1</span>
+            <span class="marker" style="left: 83.88%; top: 20.77%">2</span>
+            <span class="marker" style="left: 79.23%; top: 8.87%">3</span>
+            <span class="marker" style="left: 75%; top: 27.61%">4</span>
+            <span class="marker" style="left: 73.47%; top: 57.2%">5</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 6.3</span> The posted invoice screen. Print and Cancel
@@ -2750,7 +2972,8 @@
         <div class="procedure-grid">
           <ol class="steps">
             <li>
-              <strong>Party.</strong> Choose the customer. The screen shows the current balance.
+              <strong>Party.</strong> Choose the customer from the list. Each row shows the current
+              balance, and the line under the list repeats it.
             </li>
             <li><strong>Date.</strong> The date money was received.</li>
             <li><strong>Amount.</strong> The total received.</li>
@@ -2773,12 +2996,12 @@
           <figure class="figure">
             <div class="shot">
               <img src="assets/screens/16-receipt-entry.png" alt="Customer receipt" />
-              <span class="marker" style="left: 19.6%; top: 24.23%">1</span>
-              <span class="marker" style="left: 19.6%; top: 34.97%">4</span>
-              <span class="marker" style="left: 14.4%; top: 50.67%">5</span>
-              <span class="marker" style="left: 74.2%; top: 55.2%">6</span>
-              <span class="marker" style="left: 85.3%; top: 61.3%">7</span>
-              <span class="marker" style="left: 94%; top: 70.47%">8</span>
+              <span class="marker" style="left: 24.43%; top: 24.23%">1</span>
+              <span class="marker" style="left: 24.43%; top: 34.97%">4</span>
+              <span class="marker" style="left: 18.26%; top: 50.67%">5</span>
+              <span class="marker" style="left: 73.96%; top: 57.51%">6</span>
+              <span class="marker" style="left: 87.64%; top: 63.6%">7</span>
+              <span class="marker" style="left: 91.08%; top: 70.47%">8</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 6.4</span> A customer receipt. 10,000 is received and
@@ -2805,10 +3028,10 @@
         <figure class="figure report">
           <div class="shot">
             <img src="assets/screens/17-receivables-detail.png" alt="Receivables report" />
-            <span class="marker" style="left: 81.3%; top: 24.67%">1</span>
-            <span class="marker" style="left: 43.8%; top: 41.83%">2</span>
-            <span class="marker" style="left: 58.6%; top: 41.83%">3</span>
-            <span class="marker" style="left: 78.5%; top: 41.83%">4</span>
+            <span class="marker" style="left: 81.29%; top: 21.92%">1</span>
+            <span class="marker" style="left: 43.77%; top: 64.95%">2</span>
+            <span class="marker" style="left: 58.56%; top: 64.95%">3</span>
+            <span class="marker" style="left: 78.48%; top: 64.95%">4</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 6.5</span> Receivables as on 22 October 2026. The overdue
@@ -2834,9 +3057,9 @@
         <figure class="figure report">
           <div class="shot">
             <img src="assets/screens/18-ageing-detail.png" alt="Ageing report" />
-            <span class="marker" style="left: 17%; top: 41.83%">1</span>
-            <span class="marker" style="left: 49.7%; top: 41.83%">2</span>
-            <span class="marker" style="left: 75.9%; top: 41.83%">3</span>
+            <span class="marker" style="left: 17%; top: 64.95%">1</span>
+            <span class="marker" style="left: 49.74%; top: 64.95%">2</span>
+            <span class="marker" style="left: 75.88%; top: 64.95%">3</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 6.6</span> Bills are grouped into 0–30, 31–60, 61–90, 91–180
@@ -2867,9 +3090,9 @@
         <figure class="figure report">
           <div class="shot">
             <img src="assets/screens/20-sales-register-detail.png" alt="Sales register" />
-            <span class="marker" style="left: 81.3%; top: 24.67%">1</span>
-            <span class="marker" style="left: 65.1%; top: 41.83%">2</span>
-            <span class="marker" style="left: 15.5%; top: 83.92%">3</span>
+            <span class="marker" style="left: 77.79%; top: 20.91%">1</span>
+            <span class="marker" style="left: 65.11%; top: 61.95%">2</span>
+            <span class="marker" style="left: 17%; top: 83.2%">3</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 6.7</span> The sales register for the financial year, with
@@ -2937,8 +3160,8 @@
           <figure class="figure small-dialog">
             <div class="shot">
               <img src="assets/screens/29-cancel-dialog.png" alt="Cancel voucher dialog" />
-              <span class="marker" style="left: 4%; top: 45.72%">3</span>
-              <span class="marker" style="left: 66.9%; top: 73.5%">4</span>
+              <span class="marker" style="left: 6.72%; top: 46.4%">3</span>
+              <span class="marker" style="left: 65.14%; top: 73.59%">4</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 7.1</span> Cancelling a voucher. The reason is required;
@@ -2994,11 +3217,11 @@
           <figure class="figure">
             <div class="shot">
               <img src="assets/screens/26-journal-dialog.png" alt="Journal dialog" />
-              <span class="marker" style="left: 2.2%; top: 21.75%">1</span>
-              <span class="marker" style="left: 2.2%; top: 35.57%">2</span>
-              <span class="marker" style="left: 2.2%; top: 44.07%">3</span>
-              <span class="marker" style="left: 88.8%; top: 73%">5</span>
-              <span class="marker" style="left: 89.5%; top: 84.5%">6</span>
+              <span class="marker" style="left: 4.34%; top: 23.34%">1</span>
+              <span class="marker" style="left: 4.34%; top: 37.07%">2</span>
+              <span class="marker" style="left: 4.34%; top: 50.22%">3</span>
+              <span class="marker" style="left: 86.24%; top: 75.37%">5</span>
+              <span class="marker" style="left: 89.77%; top: 85.88%">6</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 7.2</span> A balanced journal: Office Expenses is debited,
@@ -3085,10 +3308,10 @@
           <figure class="figure">
             <div class="shot">
               <img src="assets/screens/27-contra-dialog.png" alt="Contra dialog" />
-              <span class="marker" style="left: 35.5%; top: 29.07%">2</span>
-              <span class="marker" style="left: 66.5%; top: 29.07%">3</span>
-              <span class="marker" style="left: 2.2%; top: 47.55%">4</span>
-              <span class="marker" style="left: 89.5%; top: 80.5%">6</span>
+              <span class="marker" style="left: 33.36%; top: 21.8%">2</span>
+              <span class="marker" style="left: 62.39%; top: 21.8%">3</span>
+              <span class="marker" style="left: 4.34%; top: 49.03%">4</span>
+              <span class="marker" style="left: 89.77%; top: 81.32%">6</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 7.3</span> A contra for 5,000 from Cash to Bank. The
@@ -3110,9 +3333,9 @@
         <figure class="figure report">
           <div class="shot">
             <img src="assets/screens/28-journals-detail.png" alt="Journals list" />
-            <span class="marker" style="left: 91.5%; top: 16.62%">1</span>
-            <span class="marker" style="left: 84%; top: 16.62%">2</span>
-            <span class="marker" style="left: 30.8%; top: 41.83%">3</span>
+            <span class="marker" style="left: 89.92%; top: 17.66%">1</span>
+            <span class="marker" style="left: 81.38%; top: 17.66%">2</span>
+            <span class="marker" style="left: 29.33%; top: 65.47%">3</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 7.4</span> Posted journals and contras, with the narration
@@ -3303,21 +3526,23 @@
           to look when you cannot find a document.
         </p>
 
-        <figure class="figure report">
+        <figure class="figure wide">
           <div class="shot">
-            <img src="assets/screens/25-day-book-detail.png" alt="Day book" />
-            <span class="marker" style="left: 18.5%; top: 35.22%">1</span>
-            <span class="marker" style="left: 22.8%; top: 73.91%">2</span>
-            <span class="marker" style="left: 67%; top: 48.59%">3</span>
+            <img src="assets/screens/25-day-book.png" alt="Day book" />
+            <span class="marker" style="left: 17.84%; top: 62.04%">1</span>
+            <span class="marker" style="left: 25.55%; top: 83.66%">2</span>
+            <span class="marker" style="left: 68.94%; top: 68.94%">3</span>
+            <span class="marker" style="left: 90.03%; top: 68.94%">4</span>
           </div>
           <figcaption>
-            <span class="fig-no">Figure 8.1</span> The day book for October. Click any number to
-            open the voucher.
+            <span class="fig-no">Figure 8.1</span> The day book for October. Every document type is
+            in the same list, newest first.
           </figcaption>
           <ol class="figure-key">
-            <li><span class="k">1</span>Filter by date, status or text</li>
-            <li><span class="k">2</span>Open the voucher</li>
+            <li><span class="k">1</span>Filter by period, status or text</li>
+            <li><span class="k">2</span>Click a number to open the voucher</li>
             <li><span class="k">3</span>Party and total</li>
+            <li><span class="k">4</span>Posted or cancelled</li>
           </ol>
         </figure>
 
@@ -3339,18 +3564,18 @@
         <figure class="figure report">
           <div class="shot">
             <img src="assets/screens/22-trial-balance.png" alt="Trial balance" />
-            <span class="marker" style="left: 15%; top: 15.6%">1</span>
-            <span class="marker" style="left: 62.3%; top: 15.6%">2</span>
-            <span class="marker" style="left: 15%; top: 93.6%">3</span>
+            <span class="marker" style="left: 71.99%; top: 27.95%">1</span>
+            <span class="marker" style="left: 17%; top: 38.61%">2</span>
+            <span class="marker" style="left: 62.33%; top: 38.61%">3</span>
           </div>
           <figcaption>
-            <span class="fig-no">Figure 8.2</span> The trial balance. The green line at the bottom
-            confirms that debits equal credits.
+            <span class="fig-no">Figure 8.2</span> The trial balance. The Difference card reads
+            <strong>The books balance</strong> when the debit and credit totals agree.
           </figcaption>
           <ol class="figure-key">
-            <li><span class="k">1</span>Every account with a balance</li>
-            <li><span class="k">2</span>Debit and credit columns</li>
-            <li><span class="k">3</span>The proof: debits equal credits</li>
+            <li><span class="k">1</span>Difference: debits minus credits</li>
+            <li><span class="k">2</span>Every account with a balance</li>
+            <li><span class="k">3</span>Debit and credit columns</li>
           </ol>
         </figure>
 
@@ -3372,10 +3597,10 @@
         <figure class="figure report">
           <div class="shot">
             <img src="assets/screens/23-profit-loss.png" alt="Profit and loss" />
-            <span class="marker" style="left: 81.3%; top: 9.2%">1</span>
-            <span class="marker" style="left: 15%; top: 15.6%">2</span>
-            <span class="marker" style="left: 15%; top: 33.4%">3</span>
-            <span class="marker" style="left: 15%; top: 55.1%">4</span>
+            <span class="marker" style="left: 77.79%; top: 13.03%">1</span>
+            <span class="marker" style="left: 18.12%; top: 21.59%">2</span>
+            <span class="marker" style="left: 17%; top: 58.33%">3</span>
+            <span class="marker" style="left: 18.12%; top: 80.06%">4</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 8.3</span> Profit and loss for 1 April to 22 October 2026.
@@ -3406,10 +3631,10 @@
         <figure class="figure report">
           <div class="shot">
             <img src="assets/screens/24-balance-sheet.png" alt="Balance sheet" />
-            <span class="marker" style="left: 15%; top: 15.6%">1</span>
-            <span class="marker" style="left: 58.4%; top: 15.6%">2</span>
-            <span class="marker" style="left: 58.4%; top: 51.86%">3</span>
-            <span class="marker" style="left: 15%; top: 67.55%">4</span>
+            <span class="marker" style="left: 18.12%; top: 21.59%">1</span>
+            <span class="marker" style="left: 45.28%; top: 21.59%">2</span>
+            <span class="marker" style="left: 72.44%; top: 21.59%">3</span>
+            <span class="marker" style="left: 16.95%; top: 92.48%">4</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 8.4</span> The balance sheet. Equity includes owner capital
@@ -3473,8 +3698,8 @@
           <figure class="figure">
             <div class="shot">
               <img src="assets/screens/30-backup-detail.png" alt="Backup screen" />
-              <span class="marker" style="left: 81.5%; top: 16.18%">1</span>
-              <span class="marker" style="left: 22.2%; top: 74.53%">2</span>
+              <span class="marker" style="left: 81.55%; top: 17.66%">1</span>
+              <span class="marker" style="left: 24.43%; top: 82.65%">2</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 9.1</span> The backup screen. Each row is a full copy of
@@ -3645,7 +3870,7 @@
           the books clean.
         </p>
         <div class="chapter-in">
-          <strong>In this chapter</strong>Shortcuts · Voucher series · Messages · Glossary ·
+          <strong>In this chapter</strong>Shortcuts · Voucher series · Roles · Messages · Glossary ·
           Routines · Not in this edition · Help
         </div>
       </header>
@@ -3662,6 +3887,19 @@
           </thead>
           <tbody>
             <tr>
+              <td class="mono">Ctrl + K</td>
+              <td>Anywhere in the app</td>
+              <td>
+                Opens the search box. It finds parties, items, vouchers, accounts and screens. Type
+                to narrow, then press <span class="mono">Enter</span>.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">F4</td>
+              <td>Sales and purchase entry</td>
+              <td>Opens the party picker without using the mouse.</td>
+            </tr>
+            <tr>
               <td class="mono">Alt + A</td>
               <td>Sales and purchase entry</td>
               <td>Adds a new line.</td>
@@ -3674,17 +3912,12 @@
             <tr>
               <td class="mono">Esc</td>
               <td>Sales and purchase entry</td>
-              <td>Goes back without posting.</td>
+              <td>Goes back without posting. In a dialog it closes the dialog.</td>
             </tr>
             <tr>
               <td class="mono">Tab</td>
               <td>Every form</td>
               <td>Moves to the next field.</td>
-            </tr>
-            <tr>
-              <td class="mono">Ctrl + P</td>
-              <td>Voucher detail</td>
-              <td>Opens the print dialog. The Print button is safer.</td>
             </tr>
           </tbody>
         </table>
@@ -3753,7 +3986,78 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.3</span>Messages and fixes</h2>
+        <h2><span class="num">10.3</span>People, roles and permissions</h2>
+        <p>
+          Every person signs in with their own email and password. A role is a named bundle of
+          permissions; a person gets exactly one role. Open <strong>Admin → Users and Roles</strong>
+          to add people, reset a password, disable an account, or change what a role may do.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%">Role</th>
+              <th>What it can do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Owner</strong> · <strong>Admin</strong></td>
+              <td>
+                Full access, including people, roles, voucher numbering, company settings and
+                backups. Both are locked system roles; they cannot be edited or deleted. At least one
+                active Owner must remain.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Accountant</strong></td>
+              <td>
+                Parties, items, vouchers, receipts, payments, journals and reports, plus exports and
+                backups. Can cancel a voucher and edit the chart of accounts. Can see people and
+                roles but not change them.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Billing Clerk</strong></td>
+              <td>
+                Raises sales invoices and purchase bills, records receipts, and views reports. Cannot
+                cancel a voucher, edit accounts, open backups, or change company settings.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Auditor</strong></td>
+              <td>
+                Read-only. Sees parties, items, vouchers, receipts, payments, journals and every
+                report, and can export them. Cannot post, edit or delete anything.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          These four are starting points, not fixed rules. A non-system role can be edited, and a new
+          role can be created from the <strong>Roles</strong> tab. The role editor groups permissions
+          by domain: company, people, parties, items, vouchers, receipts and payments, journals,
+          reports, and backup. A person with <span class="mono">user.manage</span> can add people; a
+          person with <span class="mono">role.manage</span> can change roles.
+        </p>
+
+        <div class="callout">
+          <span class="label">Permissions are enforced in the main process</span>
+          Hiding a button is not the protection. Every command is checked again on the server side,
+          so a role without <span class="mono">voucher.cancel</span> cannot cancel a voucher even if
+          the screen is reached some other way. Nobody can change their own role or disable their own
+          account, and nobody can grant a permission they do not hold themselves.
+        </div>
+
+        <p class="small muted">
+          Changes to people and roles are written to the audit trail. Disabling a person keeps their
+          name on the vouchers they posted; it only stops them signing in.
+        </p>
+      </div>
+
+      <div class="keep">
+        <h2><span class="num">10.4</span>Messages and fixes</h2>
         <table>
           <thead>
             <tr>
@@ -3764,7 +4068,10 @@
           <tbody>
             <tr>
               <td>“Debits equal credits.”</td>
-              <td>The trial balance is consistent. No action.</td>
+              <td>
+                The banner at the bottom of the trial balance. Every posted voucher has two sides; no
+                action.
+              </td>
             </tr>
             <tr>
               <td>“The books do not balance.”</td>
@@ -3779,8 +4086,8 @@
             <tr>
               <td>“Choose customer, supplier, or both”</td>
               <td>
-                The party role is missing. Edit the party while it is being created; roles are fixed
-                after saving.
+                The party has no role. Tick Customer, Supplier, or both in the party form; you can
+                change it later by editing the party.
               </td>
             </tr>
             <tr>
@@ -3817,7 +4124,7 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.4</span>Glossary</h2>
+        <h2><span class="num">10.5</span>Glossary</h2>
         <div class="two-tight">
           <table>
             <thead>
@@ -3923,7 +4230,7 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.5</span>Daily, weekly and monthly routine</h2>
+        <h2><span class="num">10.6</span>Daily, weekly and monthly routine</h2>
         <table>
           <thead>
             <tr>
@@ -3949,9 +4256,9 @@
             <tr>
               <td><strong>Every month</strong></td>
               <td>
-                Check that the Trial Balance says “Debits equal credits.” Compare Profit and Loss
-                with last month. Explain any large Balance Sheet movement. Create a month-end backup
-                for the accountant.
+                Check that the Trial Balance shows <strong>The books balance</strong> and the banner
+                says “Debits equal credits.” Compare Profit and Loss with last month. Explain any
+                large Balance Sheet movement. Create a month-end backup for the accountant.
               </td>
             </tr>
             <tr>
@@ -3966,10 +4273,9 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.6</span>Not active in this edition</h2>
+        <h2><span class="num">10.7</span>Not active in this edition</h2>
         <p>
-          These items appear in the navigation or in a form but are reserved or only partly wired.
-          Do not build a process around them yet.
+          These items are reserved or only partly wired. Do not build a process around them yet.
         </p>
         <table>
           <thead>
@@ -3980,24 +4286,8 @@
           </thead>
           <tbody>
             <tr>
-              <td>Global search</td>
-              <td>Reserved. Use the search field on each page.</td>
-            </tr>
-            <tr>
-              <td>Tax Rates / Units</td>
-              <td>Reserved screens. GST rates are chosen on the item; units are seeded.</td>
-            </tr>
-            <tr>
-              <td>Users and Roles</td>
-              <td>Reserved. The owner account is the only active user.</td>
-            </tr>
-            <tr>
               <td>Credit / debit notes</td>
               <td>Routes exist but no screen is exposed. Cancel and re-enter for now.</td>
-            </tr>
-            <tr>
-              <td>Excel export</td>
-              <td>Not available. Use the on-screen report and the print dialog.</td>
             </tr>
             <tr>
               <td>Bank reconciliation</td>
@@ -4016,7 +4306,7 @@
       </div>
 
       <div class="keep">
-        <h2><span class="num">10.7</span>Where to get help</h2>
+        <h2><span class="num">10.8</span>Where to get help</h2>
         <div class="two">
           <div>
             <h3 style="margin-top: 0">Inside the business</h3>

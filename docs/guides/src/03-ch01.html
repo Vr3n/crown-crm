@@ -6,12 +6,13 @@
           <h1>Start here</h1>
         </div>
         <p class="chapter-lead">
-          Open the app, create the company, sign in, and learn the one pattern every voucher
-          follows. By the end of this chapter you will know where everything lives.
+          Open the app, create the company, set the voucher numbers, and walk the five steps from
+          empty books to a balanced trial balance. By the end of this chapter you will know where
+          everything lives.
         </p>
         <div class="chapter-in">
-          <strong>In this chapter</strong>Open · First run · Sign in · The screen · Voucher anatomy
-          · First five steps
+          <strong>In this chapter</strong>Open · First run · Numbering · The tour · Sign in · The
+          screen · Voucher anatomy · First five steps
         </div>
       </header>
 
@@ -63,12 +64,12 @@
           <figure class="figure dialog">
             <div class="shot">
               <img src="assets/screens/00-first-run-form.png" alt="First-run setup form" />
-              <span class="marker" style="left: 18.6%; top: 24.26%">1</span>
-              <span class="marker" style="left: 18.6%; top: 42.63%">2</span>
-              <span class="marker" style="left: 18.6%; top: 51.82%">3</span>
-              <span class="marker" style="left: 18.6%; top: 63.82%">4</span>
-              <span class="marker" style="left: 18.6%; top: 73%">5</span>
-              <span class="marker" style="left: 84%; top: 86.31%">6</span>
+              <span class="marker" style="left: 8.18%; top: 24.26%">1</span>
+              <span class="marker" style="left: 8.18%; top: 42.63%">2</span>
+              <span class="marker" style="left: 8.18%; top: 51.82%">3</span>
+              <span class="marker" style="left: 8.18%; top: 63.82%">4</span>
+              <span class="marker" style="left: 8.18%; top: 73%">5</span>
+              <span class="marker" style="left: 8.18%; top: 84.39%">6</span>
             </div>
             <figcaption>
               <span class="fig-no">Figure 1.1</span> The first-run screen. The company and owner are
@@ -86,7 +87,136 @@
         the financial year is still the current April-to-March year.
       </div>
 
-      <h2><span class="num">1.3</span>Sign in again</h2>
+      <div class="procedure">
+        <h2><span class="num">1.3</span>Number your vouchers</h2>
+        <p>
+          The company is created and you are signed in. Before the dashboard, step 1 of 2 asks you to
+          confirm the numbering. Every document type has its own row: sales invoice, purchase bill,
+          receipt, payment, credit note, debit note and journal.
+        </p>
+
+        <figure class="figure wide">
+          <div class="shot">
+            <img src="assets/screens/00-first-run-numbering.png" alt="Voucher numbering" />
+            <span class="marker" style="left: 23.27%; top: 54.87%">1</span>
+            <span class="marker" style="left: 81.03%; top: 55.78%">2</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 1.2</span> Voucher numbering. The <strong>Next</strong> column
+            shows exactly what the next posted document will be called.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Each document has its own series</li>
+            <li><span class="k">2</span>The next number is previewed live</li>
+          </ol>
+        </figure>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 20%">Column</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Series</strong></td>
+              <td>
+                The short code stored on the voucher, for example <span class="mono">INV</span>.
+                Changing it starts a new series; older vouchers keep theirs.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Prefix / Suffix</strong></td>
+              <td>
+                Text around the number, for example <span class="mono">INV/</span>. Both may
+                contain date tokens.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Width</strong></td>
+              <td>How many digits the number uses, from 1 to 8. A larger value is never cut.</td>
+            </tr>
+            <tr>
+              <td><strong>Start</strong></td>
+              <td>The first number in a new series or financial year.</td>
+            </tr>
+            <tr>
+              <td><strong>Reset</strong></td>
+              <td>Yearly, monthly or never. Yearly restarts on 1 April.</td>
+            </tr>
+            <tr>
+              <td><strong>Manual</strong></td>
+              <td>
+                Allows typing the number when posting. It must still be higher than the last one
+                used.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Next</strong></td>
+              <td>
+                A live preview from the same formatter the posting engine uses, with the GST limit of
+                16 characters.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          The date tokens are <span class="mono">{YYYY}</span>, <span class="mono">{YY}</span>,
+          <span class="mono">{MM}</span>, <span class="mono">{DD}</span>,
+          <span class="mono">{YYYYMM}</span>, <span class="mono">{FY}</span> and
+          <span class="mono">{FY_SHORT}</span>. A prefix of
+          <span class="mono">INV/{YYYYMM}</span> with width 3 produces
+          <span class="mono">INV/202607001</span>.
+        </p>
+        <p>
+          Numbers are assigned when a voucher is posted, not when the entry form is opened. Changing
+          a prefix or width affects the next number only; a posted voucher keeps the number it was
+          given. Click <strong>Save numbering</strong> to continue, or open
+          <strong>Admin → Voucher numbering</strong> later.
+        </p>
+      </div>
+
+      <div class="procedure">
+        <h2><span class="num">1.4</span>The guided tour</h2>
+        <p>
+          Step 2 of 2 is a checklist, not a simulation. It lists the five steps from empty books to
+          a balanced trial balance, and each <strong>Open</strong> button goes to the real screen.
+        </p>
+
+        <figure class="figure wide">
+          <div class="shot">
+            <img src="assets/screens/00-first-run-tour.png" alt="Guided tour" />
+            <span class="marker" style="left: 9.8%; top: 20.28%">1</span>
+            <span class="marker" style="left: 89.02%; top: 42.11%">2</span>
+            <span class="marker" style="left: 13.33%; top: 88.18%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 1.3</span> The guided tour. Progress is read from your real
+            records, so nothing ticks until a document is posted.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Five steps from empty books to reports</li>
+            <li><span class="k">2</span>Open any step in the real app</li>
+            <li><span class="k">3</span>Skip and return from the dashboard</li>
+          </ol>
+        </figure>
+
+        <p>
+          The counter and progress bar read the same rows as the dashboard. A step is ticked only
+          after you add a party, add an item, post a purchase or post a sale. The last step, reading
+          the trial balance, is a pointer rather than a stored tick.
+        </p>
+        <p>
+          Click <strong>Skip the tour</strong> to go straight to the dashboard, or
+          <strong>Finish and open dashboard</strong> when you are done. The
+          <strong>Set up the books</strong> card on the dashboard keeps the same checklist, with the
+          next step and a <strong>Continue</strong> link.
+        </p>
+      </div>
+
+      <h2><span class="num">1.5</span>Sign in again</h2>
       <p>
         After setup, every launch shows the sign-in screen. Enter the owner email and password and
         click
@@ -95,7 +225,7 @@
         in the database.
       </p>
 
-      <h2><span class="num">1.4</span>The screen</h2>
+      <h2><span class="num">1.6</span>The screen</h2>
       <p>
         Every page has the same frame: a dark navigation rail on the left, a thin top bar, and the
         page itself. The rail is grouped by the work you are doing, not by database tables.
@@ -104,20 +234,20 @@
       <figure class="figure wide">
         <div class="shot">
           <img src="assets/screens/01-dashboard.png" alt="Dashboard with the navigation rail" />
-          <span class="marker" style="left: 6.6%; top: 79.69%">1</span>
-          <span class="marker" style="left: 94%; top: 14.72%">2</span>
-          <span class="marker" style="left: 6.6%; top: 6.95%">3</span>
-          <span class="marker" style="left: 24.5%; top: 3.4%">4</span>
+          <span class="marker" style="left: 18.12%; top: 27.58%">1</span>
+          <span class="marker" style="left: 87.91%; top: 17.12%">2</span>
+          <span class="marker" style="left: 1.8%; top: 6.95%">3</span>
+          <span class="marker" style="left: 22.91%; top: 1.95%">4</span>
         </div>
         <figcaption>
-          <span class="fig-no">Figure 1.2</span> The dashboard for Crown Traders, with the
+          <span class="fig-no">Figure 1.4</span> The dashboard for Crown Traders, with the
           navigation rail and the four headline numbers.
         </figcaption>
         <ol class="figure-key">
           <li><span class="k">1</span>Four numbers for today</li>
           <li><span class="k">2</span>Quick actions</li>
           <li><span class="k">3</span>The modules live in this rail</li>
-          <li><span class="k">4</span>Current financial year and account</li>
+          <li><span class="k">4</span>Current financial year</li>
         </ol>
       </figure>
 
@@ -131,7 +261,7 @@
         <tbody>
           <tr>
             <td><strong>Dashboard</strong></td>
-            <td>Receivables, payables, cash and bank, and vouchers posted.</td>
+            <td>Receivables, payables, cash and bank, vouchers posted, and the setup checklist.</td>
           </tr>
           <tr>
             <td><strong>Books</strong></td>
@@ -147,26 +277,38 @@
           </tr>
           <tr>
             <td><strong>Reports</strong></td>
-            <td>Receivables, Payables, Ageing, Trial Balance, Profit and Loss, Balance Sheet.</td>
+            <td>
+              Receivables, Payables, Ageing, Trial Balance, Profit and Loss, Balance Sheet. The sales
+              and purchase registers open from their list pages.
+            </td>
           </tr>
           <tr>
             <td><strong>Masters</strong></td>
-            <td>Chart of Accounts. Tax Rates and Units are reserved for a later edition.</td>
+            <td>Chart of Accounts, Tax Rates and Units.</td>
           </tr>
           <tr>
             <td><strong>Admin</strong></td>
-            <td>Company, Users and Roles (reserved), and Backup.</td>
+            <td>Voucher numbering, Company, Users and Roles, and Backup.</td>
           </tr>
         </tbody>
       </table>
 
       <p>
-        The top bar shows the page name, the current financial year, and your account. The theme
-        button switches between the paper and dark palettes. The search box in the top bar is
-        reserved; use the search field on each page instead.
+        The top bar shows the page name and the current financial year. The search box in the middle
+        finds parties, items, vouchers, accounts and screens from anywhere: click it or press
+        <span class="mono">Ctrl+K</span>. The theme button switches between the paper and dark
+        palettes, and the account menu at the right holds the signed-in user and
+        <strong>Sign out</strong>.
+      </p>
+      <p>
+        Rail items are gated by the signed-in user’s role. A Billing Clerk, for example, does not see
+        <strong>Admin</strong> at all, and sees only <strong>Tax Rates</strong> and
+        <strong>Units</strong> under <strong>Masters</strong>. Typing a protected address such as
+        Company or Users sends them back to the dashboard. The owner account created at first run can
+        see and do everything. Chapter 10 lists the seeded roles and what each one can reach.
       </p>
 
-      <h2><span class="num">1.5</span>The anatomy of a voucher</h2>
+      <h2><span class="num">1.7</span>The anatomy of a voucher</h2>
       <p>
         A voucher is any document that changes the books: an invoice, a bill, a receipt, a payment,
         a journal or a contra. Every entry screen uses the same four-part pattern. Once you know
@@ -195,7 +337,16 @@
         </div>
       </div>
 
-      <h2><span class="num">1.6</span>Your first five steps</h2>
+      <p>
+        The party field on a sale or purchase is a search box, not a plain list. Click it or press
+        <span class="mono">F4</span> and type part of the name, phone number or GSTIN. The same
+        applies to the item on each line: choosing an item fills its description, HSN, unit, rate
+        and GST rate. The footer of the entry screen lists the other keys:
+        <span class="mono">Alt+A</span> adds a line, <span class="mono">Ctrl+Enter</span> posts, and
+        <span class="mono">Esc</span> goes back.
+      </p>
+
+      <h2><span class="num">1.8</span>Your first five steps</h2>
       <p>
         For a complete cycle, do these five things in order. The rest of the guide explains each one
         in detail.
@@ -203,7 +354,7 @@
       <ol class="steps compact">
         <li>
           <strong>Create the company</strong> in first-run setup. Use 1 April as books begin if you
-          are starting a fresh year.
+          are starting a fresh year. Confirm the voucher numbers and skip or follow the tour.
         </li>
         <li>
           <strong>Add a customer and a supplier</strong> under Parties. One record each is enough to
@@ -220,7 +371,7 @@
         </li>
       </ol>
 
-      <h2><span class="num">1.7</span>Where do I…?</h2>
+      <h2><span class="num">1.9</span>Where do I…?</h2>
       <p>Every task starts from the navigation rail. This is the short version.</p>
       <table>
         <thead>
@@ -230,6 +381,10 @@
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <td>Find a party, item, voucher or screen</td>
+            <td><strong>Search</strong> in the top bar, or <span class="mono">Ctrl+K</span></td>
+          </tr>
           <tr>
             <td>Record a sale</td>
             <td><strong>Books → Sales → New invoice</strong></td>
@@ -265,6 +420,18 @@
           <tr>
             <td>Check that the books balance</td>
             <td><strong>Reports → Trial Balance</strong></td>
+          </tr>
+          <tr>
+            <td>Change voucher numbers</td>
+            <td><strong>Admin → Voucher numbering</strong></td>
+          </tr>
+          <tr>
+            <td>Add a tax rate or a unit</td>
+            <td><strong>Masters → Tax Rates</strong> or <strong>Units</strong></td>
+          </tr>
+          <tr>
+            <td>Add a user or change a role</td>
+            <td><strong>Admin → Users and Roles</strong></td>
           </tr>
           <tr>
             <td>Back up</td>

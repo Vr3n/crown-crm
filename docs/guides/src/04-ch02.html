@@ -25,8 +25,8 @@
       <figure class="figure wide">
         <div class="shot">
           <img src="assets/screens/06-company.png" alt="Company settings" />
-          <span class="marker" style="left: 26.6%; top: 18.81%">1</span>
-          <span class="marker" style="left: 26.6%; top: 82.03%">2</span>
+          <span class="marker" style="left: 26.05%; top: 58.21%">1</span>
+          <span class="marker" style="left: 57.51%; top: 27.84%">2</span>
         </div>
         <figcaption>
           <span class="fig-no">Figure 2.1</span> Company settings. Identity is printed on documents;
@@ -152,35 +152,54 @@
           set so you do not have to create one from scratch.
         </p>
 
-        <div class="procedure-grid">
-          <ol class="steps">
-            <li>Click <strong>New account</strong>.</li>
-            <li>Enter a <strong>Name</strong>, for example Office Expenses.</li>
-            <li>
-              Choose a <strong>Group</strong>. It decides the nature, for example Indirect Expenses.
-            </li>
-            <li>Check the <strong>Type</strong>. It follows the group but can be adjusted.</li>
-            <li>
-              Leave the opening balance at zero unless you are setting up the opening position.
-            </li>
-            <li>Click <strong>Add account</strong>.</li>
+        <figure class="figure wide">
+          <div class="shot">
+            <img src="assets/screens/08-accounts.png" alt="Chart of accounts" />
+            <span class="marker" style="left: 89.23%; top: 10.5%">1</span>
+            <span class="marker" style="left: 74.24%; top: 79.78%">2</span>
+            <span class="marker" style="left: 91.98%; top: 95.9%">3</span>
+          </div>
+          <figcaption>
+            <span class="fig-no">Figure 2.2</span> The chart of accounts. The cards and the
+            <strong>Balance by group</strong> chart show where the ledger's value sits; rows marked
+            Reserved are used by the posting engine.
+          </figcaption>
+          <ol class="figure-key">
+            <li><span class="k">1</span>Add a ledger</li>
+            <li><span class="k">2</span>Filter by account group</li>
+            <li><span class="k">3</span>Reserved rows cannot be deactivated</li>
           </ol>
+        </figure>
 
-          <figure class="figure">
-            <div class="shot">
-              <img src="assets/screens/08-accounts.png" alt="Chart of accounts" />
-              <span class="marker" style="left: 93.5%; top: 6.6%">1</span>
-            </div>
-            <figcaption>
-              <span class="fig-no">Figure 2.2</span> The chart of accounts. Rows marked Reserved are
-              used by the posting engine and cannot be deactivated.
-            </figcaption>
-          </figure>
-        </div>
+        <p>
+          The four cards split the ledger into <strong>Assets</strong>, <strong>Liabilities</strong>,
+          <strong>Income</strong> and <strong>Expenses</strong>. The
+          <strong>Balance by group</strong> chart ranks the groups by value, so a large balance in an
+          unexpected group is visible before you read the rows. It reads the same accounts as the
+          table below.
+        </p>
+
+        <ol class="steps compact">
+          <li>Click <strong>New account</strong>.</li>
+          <li>Enter a <strong>Name</strong>, for example Office Expenses.</li>
+          <li>
+            Choose a <strong>Group</strong>. It decides the nature, for example Indirect Expenses.
+          </li>
+          <li>Check the <strong>Type</strong>. It follows the group but can be adjusted.</li>
+          <li>
+            Leave the opening balance at zero unless you are setting up the opening position.
+          </li>
+          <li>Click <strong>Add account</strong>.</li>
+        </ol>
         <p class="small muted">
           Reserved ledgers have a fixed job: sales, purchases, GST, inventory, cost of goods sold,
           round off and the opening difference. Add your own ledgers for rent, salaries or travel
           without touching them.
+        </p>
+        <p class="small muted">
+          The chart is gated by the <span class="mono">company.view</span> permission. A user without
+          it does not see <strong>Masters</strong> in the rail, and the page cannot be opened by
+          typing its address.
         </p>
       </div>
 
@@ -213,11 +232,11 @@
         <figure class="figure wide">
           <div class="shot">
             <img
-              src="assets/screens/07-opening-balances-detail.png"
+              src="assets/screens/07-opening-balances.png"
               alt="Opening balances section in company settings"
             />
-            <span class="marker" style="left: 4.5%; top: 69.9%">4</span>
-            <span class="marker" style="left: 50.7%; top: 71.5%">5</span>
+            <span class="marker" style="left: 3.14%; top: 72%">4</span>
+            <span class="marker" style="left: 24.98%; top: 73.79%">5</span>
           </div>
           <figcaption>
             <span class="fig-no">Figure 2.3</span> The opening balances section. It runs once,
