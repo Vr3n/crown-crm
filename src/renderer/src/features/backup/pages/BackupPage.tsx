@@ -32,8 +32,10 @@ export function BackupPage(): React.JSX.Element {
 
   const latest = data[0]
   const [now] = useState(() => Date.now())
+  // `now` is captured at mount, so a backup created a moment ago can be a few
+  // seconds in the future. Clamp it instead of showing "-1d ago".
   const ageDays = latest
-    ? Math.floor((now - new Date(latest.createdAt).getTime()) / 86_400_000)
+    ? Math.max(0, Math.floor((now - new Date(latest.createdAt).getTime()) / 86_400_000))
     : null
   const totalBytes = data.reduce((sum, file) => sum + file.sizeBytes, 0)
   const fresh = ageDays !== null && ageDays <= 7

@@ -39,6 +39,7 @@ export function Topbar(): React.JSX.Element {
   const { theme, setTheme } = useTheme()
   const [signOutOpen, setSignOutOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const isMac = /Mac/i.test(navigator.userAgent)
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
@@ -72,7 +73,7 @@ export function Topbar(): React.JSX.Element {
         <Search className="size-3.5" strokeWidth={1.75} />
         <span className="flex-1 truncate text-left">Search parties, items, vouchers</span>
         <kbd className="hidden items-center gap-0.5 border border-border bg-muted px-1 py-0.5 font-mono text-[0.6875rem] sm:flex">
-          <Command className="size-2.5" />K
+          {isMac ? <Command className="size-2.5" /> : 'Ctrl'}+K
         </kbd>
       </button>
 
