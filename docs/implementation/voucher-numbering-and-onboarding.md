@@ -27,15 +27,15 @@ reads the setting, resolves the financial year, and keeps the counter in
 
 Prefix and suffix may contain tokens that expand from the voucher date:
 
-| Token | Example on 2026-07-13 | Meaning |
-|---|---|---|
-| `{YYYY}` | 2026 | Four digit year |
-| `{YY}` | 26 | Two digit year |
-| `{MM}` | 07 | Month |
-| `{DD}` | 13 | Day |
-| `{YYYYMM}` | 202607 | Year and month |
-| `{FY}` | 2026-27 | Financial year with start month |
-| `{FY_SHORT}` | 26-27 | Short financial year |
+| Token        | Example on 2026-07-13 | Meaning                         |
+| ------------ | --------------------- | ------------------------------- |
+| `{YYYY}`     | 2026                  | Four digit year                 |
+| `{YY}`       | 26                    | Two digit year                  |
+| `{MM}`       | 07                    | Month                           |
+| `{DD}`       | 13                    | Day                             |
+| `{YYYYMM}`   | 202607                | Year and month                  |
+| `{FY}`       | 2026-27               | Financial year with start month |
+| `{FY_SHORT}` | 26-27                 | Short financial year            |
 
 `INV/{YYYYMM}` with width 3 produces `INV/202607001`. Tokens resolve at posting
 time, so a January bill and a February bill carry their own month even when
@@ -77,21 +77,24 @@ Rules:
 ## API
 
 - `numbering:list` returns every type with its next preview and posted count.
-- `numbering:update` validates, upserts, marks numbering complete and returns
-  the fresh list.
-- `onboarding:complete` marks the tour done.
-- All three require `settings.manage`.
+- `numbering:update` validates, upserts, marks numbering complete and marks first
+  run finished, then returns the fresh list. Saving numbering is the end of the
+  wizard, so there is no separate `onboarding:complete` channel.
+- Both require `settings.manage`.
 
 ## Screens
 
 - `/settings/numbering` is the editable table with a live preview per type.
-- First run routes company creation to `/setup/numbering`, then
-  `/setup/tour`, then the dashboard.
-- The tour is a five step checklist driven by real rows (party, item, purchase,
-  sale, trial balance). It can be skipped and revisited from the URL.
-- `AppLayout` guards the app: no numbering means the wizard; numbering without
-  a finished tour redirects the dashboard to the tour once. Other pages stay
-  reachable, so "Open" links work during the tour.
+- First run routes company creation to `/setup/numbering`, then straight to the
+  dashboard. `SetupShell` is a single-step shell.
+- The dashboard's "Set up the books" checklist is the onboarding guide. Each open
+  step links at the action itself (`/parties?action=new`, `/items?action=new`,
+  `/settings/company?action=opening`, `/purchases/new`, `/sales/new`) and the
+  panel disappears once every step is done.
+- Saving a party or item that was opened from the checklist returns to the
+  dashboard, so the tick and the next step are visible.
+- `AppLayout` guards the app: no numbering means the wizard. There is no tour
+  redirect; other pages stay reachable.
 
 ## Tests
 
@@ -99,7 +102,10 @@ Rules:
   periods, padding, the start floor and setting validation.
 - `tests/main/application/numbering.test.ts` covers prefixes, width changes,
   series changes, yearly, monthly and never resets, the year-month example,
-  manual high-water rules, setup markers and validation.
+  manual high-water rules, setup markers and validation. It also asserts that
+  saving numbering marks onboarding complete.
+- `tests/renderer/setup-checklist.test.tsx` covers the checklist: it hides when
+  complete, links an open step at its action, and never links a done step.
 - `tests/db/migrations.test.ts` covers the new table and migration version.
-- Playwright covers first run, changing a prefix, the tour and the resulting
-  dashboard progress.
+- Playwright covers first run, the checklist step opening the party dialog,
+  saving back to the dashboard, and changing a prefix.
