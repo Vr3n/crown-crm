@@ -16,6 +16,7 @@ import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contra
 import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { ExportCsvInput, ExportResult, ExportTableInput } from '../shared/contracts/export'
+import type { BackupDestinations, BackupFile, BackupPathInput } from '../shared/contracts/backup'
 import type { SearchInput, SearchOutput } from '../shared/contracts/search'
 import type {
   CreateRoleInput,
@@ -167,8 +168,12 @@ declare global {
         status: () => Promise<LicenseStatus>
       }
       backup: {
-        create: () => Promise<{ name: string; sizeBytes: number; createdAt: string }>
-        list: () => Promise<{ name: string; sizeBytes: number; createdAt: string }[]>
+        create: () => Promise<BackupFile>
+        list: () => Promise<BackupFile[]>
+        destinations: () => Promise<BackupDestinations>
+        addDestination: () => Promise<BackupDestinations | null>
+        removeDestination: (input: BackupPathInput) => Promise<BackupDestinations>
+        revealFolder: (input: BackupPathInput) => Promise<void>
       }
       exportPdf: (filename: string) => Promise<{ saved: boolean; filePath?: string }>
       exportXlsx: (input: ExportTableInput) => Promise<ExportResult>

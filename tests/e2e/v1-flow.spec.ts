@@ -5,7 +5,7 @@ import {
   type ElectronApplication,
   type Page
 } from '@playwright/test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -117,7 +117,7 @@ test('first run creates the company and opens the dashboard', async () => {
   await page.locator('#name').fill('Setup Customer')
   await page.getByRole('button', { name: 'Add party' }).click()
   await page.getByText('Set up the books').waitFor()
-  expect(page.getByRole('link', { name: /Add parties/ })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: /Add parties/ })).toHaveCount(0)
 })
 test('masters, purchase, sale, receipt and reports flow end to end', async () => {
   const ids = await page.evaluate(async () => {
@@ -277,4 +277,30 @@ test('data survives an app restart', async () => {
   await expect(page.getByText(/Receivables/).first()).toBeVisible()
   await goto('#/reports/receivables')
   await expect(page.getByText(/3,050\.00/).first()).toBeVisible()
+})
+
+test('a backup is written to an extra folder and the folder can be removed', async () => {
+  const extra = mkdtempSync(join(tmpdir(), 'crown-books-extra-'))
+  try {
+    // Playwright cannot click a Windows folder dialog, so the main process
+    // picker is replaced with the temp folder for this test.
+    await app.evaluate(async ({ dialog }, folder) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [folder] })
+    }, extra)
+
+    await goto('#/settings/backup')
+    await page.getByRole('button', { name: 'Add folder' }).click()
+    await expect(page.getByText(extra, { exact: true })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Create backup' }).click()
+    await expect(page.getByText('Backup written to 2 folders')).toBeVisible()
+    expect(readdirSync(extra).filter((name) => name.endsWith('.db'))).toHaveLength(1)
+
+    await page.getByRole('button', { name: 'Remove' }).click()
+    await page.getByRole('button', { name: 'Remove folder' }).click()
+    await expect(page.getByText(extra, { exact: true })).toHaveCount(0)
+    await expect(page.getByText('One folder, on this computer')).toBeVisible()
+  } finally {
+    rmSync(extra, { recursive: true, force: true })
+  }
 })

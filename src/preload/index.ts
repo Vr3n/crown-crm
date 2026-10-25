@@ -55,6 +55,7 @@ import type {
 } from '../shared/contracts/vouchers'
 import type { IpcResult } from '../shared/contracts/errors'
 import type { ExportCsvInput, ExportResult, ExportTableInput } from '../shared/contracts/export'
+import type { BackupDestinations, BackupFile, BackupPathInput } from '../shared/contracts/backup'
 import type { SearchInput, SearchOutput } from '../shared/contracts/search'
 import type {
   AgeingRow,
@@ -220,10 +221,14 @@ const api = {
   },
 
   backup: {
-    create: (): Promise<{ name: string; sizeBytes: number; createdAt: string }> =>
-      call(IPC_CHANNELS.BACKUP_CREATE),
-    list: (): Promise<{ name: string; sizeBytes: number; createdAt: string }[]> =>
-      call(IPC_CHANNELS.BACKUP_LIST)
+    create: (): Promise<BackupFile> => call(IPC_CHANNELS.BACKUP_CREATE),
+    list: (): Promise<BackupFile[]> => call(IPC_CHANNELS.BACKUP_LIST),
+    destinations: (): Promise<BackupDestinations> => call(IPC_CHANNELS.BACKUP_DESTINATIONS),
+    addDestination: (): Promise<BackupDestinations | null> =>
+      call(IPC_CHANNELS.BACKUP_ADD_DESTINATION),
+    removeDestination: (input: BackupPathInput): Promise<BackupDestinations> =>
+      call(IPC_CHANNELS.BACKUP_REMOVE_DESTINATION, input),
+    revealFolder: (input: BackupPathInput): Promise<void> => call(IPC_CHANNELS.BACKUP_REVEAL, input)
   },
 
   exportPdf: (filename: string): Promise<{ saved: boolean; filePath?: string }> =>

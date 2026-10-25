@@ -94,7 +94,11 @@ export const IPC_CHANNELS = {
 
   // Backup
   BACKUP_CREATE: 'backup:create',
-  BACKUP_LIST: 'backup:list'
+  BACKUP_LIST: 'backup:list',
+  BACKUP_DESTINATIONS: 'backup:destinations',
+  BACKUP_ADD_DESTINATION: 'backup:addDestination',
+  BACKUP_REMOVE_DESTINATION: 'backup:removeDestination',
+  BACKUP_REVEAL: 'backup:reveal'
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
