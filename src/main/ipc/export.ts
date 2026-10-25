@@ -1,9 +1,14 @@
 import { BrowserWindow, dialog } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { z } from 'zod'
-import { exportTableSchema, type ExportResult } from '../../shared/contracts/export'
+import {
+  exportCsvSchema,
+  exportTableSchema,
+  type ExportResult
+} from '../../shared/contracts/export'
 import { IPC_CHANNELS } from '../../shared/contracts/ipc.channels'
 import { buildXlsx } from '../export/xlsx'
+import { revealSavedFile } from '../export/reveal'
 import { handle } from './handle'
 
 const exportPdfInputSchema = z.object({
@@ -43,6 +48,7 @@ export function registerExportIpc(): void {
     if (target.canceled || !target.filePath) return { saved: false as const }
 
     await writeFile(target.filePath, pdf)
+    revealSavedFile(target.filePath)
     return { saved: true as const, filePath: target.filePath }
   })
 
@@ -63,6 +69,32 @@ export function registerExportIpc(): void {
 
     const workbook = await buildXlsx(input)
     await writeFile(target.filePath, workbook)
+    revealSavedFile(target.filePath)
     return { saved: true, filePath: target.filePath }
   })
+
+  /**
+   * CSV used to be handed to a hidden anchor, which meant the app never learned
+   * where the file landed. Saving it here keeps the BOM, the dialog and the
+   * reveal behaviour identical to the other two formats.
+   */
+  handle(
+    IPC_CHANNELS.EXPORT_CSV,
+    exportCsvSchema,
+    async ({ filename, csv }): Promise<ExportResult> => {
+      const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+      if (!window) return { saved: false }
+
+      const target = await dialog.showSaveDialog(window, {
+        title: 'Save CSV',
+        defaultPath: `${safeFilename(filename)}.csv`,
+        filters: [{ name: 'CSV', extensions: ['csv'] }]
+      })
+      if (target.canceled || !target.filePath) return { saved: false }
+
+      await writeFile(target.filePath, csv, 'utf8')
+      revealSavedFile(target.filePath)
+      return { saved: true, filePath: target.filePath }
+    }
+  )
 }

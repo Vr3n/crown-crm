@@ -22,6 +22,17 @@ export const exportTableSchema = z.object({
 export type ExportTableInput = z.input<typeof exportTableSchema>
 export type ExportTable = z.output<typeof exportTableSchema>
 
+/**
+ * CSV is built in the renderer (it already has the display strings) but saved
+ * by the main process, so the app knows the path and can reveal the file.
+ */
+export const exportCsvSchema = z.object({
+  filename: z.string().min(1).max(120),
+  csv: z.string().min(1).max(8_000_000)
+})
+
+export type ExportCsvInput = z.input<typeof exportCsvSchema>
+
 export interface ExportResult {
   saved: boolean
   filePath?: string

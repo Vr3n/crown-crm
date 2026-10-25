@@ -54,7 +54,7 @@ import type {
   VoucherListRow
 } from '../shared/contracts/vouchers'
 import type { IpcResult } from '../shared/contracts/errors'
-import type { ExportResult, ExportTableInput } from '../shared/contracts/export'
+import type { ExportCsvInput, ExportResult, ExportTableInput } from '../shared/contracts/export'
 import type { SearchInput, SearchOutput } from '../shared/contracts/search'
 import type {
   AgeingRow,
@@ -229,7 +229,8 @@ const api = {
   exportPdf: (filename: string): Promise<{ saved: boolean; filePath?: string }> =>
     call(IPC_CHANNELS.EXPORT_PDF, { filename }),
   exportXlsx: (input: ExportTableInput): Promise<ExportResult> =>
-    call(IPC_CHANNELS.EXPORT_XLSX, input)
+    call(IPC_CHANNELS.EXPORT_XLSX, input),
+  exportCsv: (input: ExportCsvInput): Promise<ExportResult> => call(IPC_CHANNELS.EXPORT_CSV, input)
 }
 
 export type Api = typeof api

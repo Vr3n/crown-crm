@@ -642,8 +642,17 @@ function Table({
     return <EmptyState icon={FileText} title={emptyTitle} description={emptyText} />
   }
 
-  function saveCsv(): void {
-    downloadCsv(safeFilename(exportName), head, footer ? [...rows, footer] : rows)
+  async function saveCsv(): Promise<void> {
+    try {
+      const result = await downloadCsv(
+        safeFilename(exportName),
+        head,
+        footer ? [...rows, footer] : rows
+      )
+      if (result.saved) toast.success('CSV saved')
+    } catch {
+      toast.error('Could not save the CSV')
+    }
   }
 
   async function saveXlsx(): Promise<void> {
@@ -679,7 +688,7 @@ function Table({
           {rows.length} row{rows.length === 1 ? '' : 's'}
         </span>
         <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="xs" onClick={saveCsv}>
+          <Button variant="ghost" size="xs" onClick={() => void saveCsv()}>
             <Download className="size-3.5" strokeWidth={2} />
             CSV
           </Button>

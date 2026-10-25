@@ -115,18 +115,23 @@ export function VoucherListPage({
     [s]
   )
 
-  function exportCsv(): void {
-    downloadCsv(
-      safeFilename(`${title}-${range.from}-${range.to}`),
-      ['Date', 'Number', 'Party', 'Total', 'Status'],
-      rows.map((row) => [
-        row.date,
-        row.number,
-        row.partyName ?? '',
-        (row.totalMinor / 100).toFixed(2),
-        row.status
-      ])
-    )
+  async function exportCsv(): Promise<void> {
+    try {
+      const result = await downloadCsv(
+        safeFilename(`${title}-${range.from}-${range.to}`),
+        ['Date', 'Number', 'Party', 'Total', 'Status'],
+        rows.map((row) => [
+          row.date,
+          row.number,
+          row.partyName ?? '',
+          (row.totalMinor / 100).toFixed(2),
+          row.status
+        ])
+      )
+      if (result.saved) toast.success('CSV saved')
+    } catch {
+      toast.error('Could not save the CSV')
+    }
   }
 
   async function exportXlsx(): Promise<void> {
@@ -159,7 +164,12 @@ export function VoucherListPage({
         description={type ? DESCRIPTION[type] : 'Every document in date order, across all types.'}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportCsv} disabled={rows.length === 0}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void exportCsv()}
+              disabled={rows.length === 0}
+            >
               <Download className="size-3.5" strokeWidth={2} />
               CSV
             </Button>

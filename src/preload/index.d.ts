@@ -15,7 +15,7 @@ import type { NumberingRow, UpdateNumberingInput } from '../shared/contracts/num
 import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contracts/summaries'
 import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
-import type { ExportResult, ExportTableInput } from '../shared/contracts/export'
+import type { ExportCsvInput, ExportResult, ExportTableInput } from '../shared/contracts/export'
 import type { SearchInput, SearchOutput } from '../shared/contracts/search'
 import type {
   CreateRoleInput,
@@ -172,6 +172,7 @@ declare global {
       }
       exportPdf: (filename: string) => Promise<{ saved: boolean; filePath?: string }>
       exportXlsx: (input: ExportTableInput) => Promise<ExportResult>
+      exportCsv: (input: ExportCsvInput) => Promise<ExportResult>
     }
   }
 }
