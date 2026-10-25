@@ -10,8 +10,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 /**
- * The UX refresh flow: first run numbering, the tour, reactive forms, the new
- * purchase bill pickers and a dashboard that reflects real rows.
+ * The UX refresh flow: first run numbering, the dashboard checklist, reactive
+ * forms, the new purchase bill pickers and a dashboard that reflects real rows.
  */
 
 const userData = mkdtempSync(join(tmpdir(), 'crown-books-ux-'))
@@ -50,7 +50,7 @@ test.afterAll(async () => {
   rmSync(userData, { recursive: true, force: true })
 })
 
-test('first run numbers the books and finishes the tour', async () => {
+test('first run numbers the books and opens the dashboard', async () => {
   await page.getByText('Set up the books').waitFor()
   await page.getByLabel('Business name').fill('Acme Distributors')
   await page.getByLabel('Owner name').fill('Viren Patel')
@@ -67,9 +67,9 @@ test('first run numbers the books and finishes the tour', async () => {
   await expect(page.getByText(`PUR/${YEAR_MONTH}001`).first()).toBeVisible()
 
   await page.getByRole('button', { name: 'Save numbering' }).click()
-  await page.getByRole('heading', { name: 'Walk through the main flow' }).waitFor()
 
-  await page.getByRole('button', { name: 'Skip the tour' }).click()
+  // Numbering is the only first-run screen. The dashboard checklist is the
+  // guide now, so saving lands straight on it with the first step ticked.
   await page.getByText('Set up the books').waitFor()
   await expect(page.getByText('What this version does')).toHaveCount(0)
   await expect(page.getByText('A note on data')).toHaveCount(0)
@@ -151,7 +151,10 @@ test('global search opens with the keyboard and lands on a party', async () => {
   const input = page.getByPlaceholder('Search parties, items, vouchers and accounts')
   await expect(input).toBeVisible()
   await input.fill('Sharma')
-  await page.getByRole('option', { name: /Sharma Traders/ }).first().click()
+  await page
+    .getByRole('option', { name: /Sharma Traders/ })
+    .first()
+    .click()
   await expect(
     page.getByRole('main').getByRole('heading', { name: 'Sharma Traders', exact: true })
   ).toBeVisible()
