@@ -33,7 +33,7 @@ async function go(hash: string): Promise<void> {
   await page.waitForTimeout(300)
 }
 
-/** Finish first run without walking the wizard, so the phase screenshots stay focused. */
+/** Finish first run (numbering) so the phase screenshots stay focused. */
 async function completeOnboarding(): Promise<void> {
   await page.waitForFunction(() =>
     Boolean((window as unknown as { api?: { numbering?: unknown } }).api?.numbering)
@@ -43,12 +43,10 @@ async function completeOnboarding(): Promise<void> {
       numbering: {
         list: () => Promise<Record<string, unknown>[]>
         update: (input: Record<string, unknown>) => Promise<unknown>
-        completeOnboarding: () => Promise<unknown>
       }
     }
     const rows = await api.numbering.list()
     await api.numbering.update({ requestId: `e2e-${Date.now()}`, items: rows })
-    await api.numbering.completeOnboarding()
   })
   await page.reload()
   await page.waitForLoadState('domcontentloaded')

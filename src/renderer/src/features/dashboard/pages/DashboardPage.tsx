@@ -3,10 +3,8 @@ import { Link } from 'react-router-dom'
 import {
   AlertTriangle,
   ArrowDownLeft,
-  ArrowRight,
   ArrowUpRight,
   CalendarClock,
-  Check,
   ChevronRight,
   Info,
   Landmark,
@@ -17,6 +15,7 @@ import {
 import { useSession } from '@/context/session-context'
 import { formatMinor } from '@/lib/money'
 import { AgeingChart, MonthlyFlowChart } from '@/components/charts/dashboard-charts'
+import { SetupChecklist } from '../components/setup-checklist'
 import type {
   AttentionItem,
   DashboardSummary,
@@ -53,23 +52,24 @@ function longDate(date = new Date()): string {
   })
 }
 
-const TONE: Record<AttentionItem['tone'], { icon: typeof Info; className: string; label: string }> = {
-  destructive: {
-    icon: AlertTriangle,
-    className: 'border-destructive/35 bg-destructive/5 text-destructive',
-    label: 'Attention'
-  },
-  warning: {
-    icon: AlertTriangle,
-    className: 'border-warning/40 bg-warning-soft/60 text-warning',
-    label: 'Due soon'
-  },
-  info: {
-    icon: Info,
-    className: 'border-success/30 bg-success-soft/60 text-success',
-    label: 'Clear'
+const TONE: Record<AttentionItem['tone'], { icon: typeof Info; className: string; label: string }> =
+  {
+    destructive: {
+      icon: AlertTriangle,
+      className: 'border-destructive/35 bg-destructive/5 text-destructive',
+      label: 'Attention'
+    },
+    warning: {
+      icon: AlertTriangle,
+      className: 'border-warning/40 bg-warning-soft/60 text-warning',
+      label: 'Due soon'
+    },
+    info: {
+      icon: Info,
+      className: 'border-success/30 bg-success-soft/60 text-success',
+      label: 'Clear'
+    }
   }
-}
 
 /**
  * Books dashboard. The four money questions, a setup checklist driven by real
@@ -85,8 +85,10 @@ export function DashboardPage(): React.JSX.Element {
 
   const firstName = session.userFullName.split(' ')[0]
   const money = (minor: number | undefined): string => formatMinor(minor ?? 0, 'INR')
-  const nextStep = data?.setup.steps.find((step) => !step.done)
-  const progress = data ? Math.round((data.setup.done / data.setup.total) * 100) : 0
+  const setupComplete = data ? data.setup.done >= data.setup.total : false
+  // Once setup is finished the checklist is gone and the two side panels share
+  // the full width instead of leaving a hole where it used to be.
+  const compact = !data || setupComplete
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5 p-6">
@@ -105,7 +107,7 @@ export function DashboardPage(): React.JSX.Element {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              to="/parties"
+              to="/parties?action=new"
               className="ui-press flex h-8 items-center gap-1.5 border border-border bg-card px-3 text-[0.875rem] font-medium hover:border-rule-strong"
             >
               <Users className="size-3.5" strokeWidth={1.75} />
@@ -155,95 +157,16 @@ export function DashboardPage(): React.JSX.Element {
         />
       </section>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.45fr_1fr]">
-        <section className="border border-border bg-card">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <div>
-              <h2 className="text-[0.9375rem] font-semibold">Set up the books</h2>
-              <p className="text-[0.875rem] text-muted-foreground">
-                {data
-                  ? `${data.setup.done} of ${data.setup.total} steps done. Everything here is read from your records.`
-                  : 'Reading your records...'}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[0.75rem] tabular-nums text-muted-foreground">
-                {progress}%
-              </span>
-              <div className="h-1.5 w-24 overflow-hidden bg-muted" aria-hidden>
-                <div
-                  className="h-full bg-success transition-[width] duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          </div>
-          <ol>
-            {data?.setup.steps.map((step) => (
-              <li
-                key={step.id}
-                className="flex items-start gap-3 border-b border-border px-4 py-2.5 last:border-b-0"
-              >
-                <span
-                  className={
-                    step.done
-                      ? 'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-success text-white'
-                      : 'mt-0.5 size-4 shrink-0 rounded-full border border-rule-strong'
-                  }
-                  aria-hidden="true"
-                >
-                  {step.done ? <Check className="size-2.5" strokeWidth={3} /> : null}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={
-                        step.done
-                          ? 'text-[0.9375rem] text-muted-foreground line-through decoration-border'
-                          : 'text-[0.9375rem] font-medium'
-                      }
-                    >
-                      {step.label}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-[0.75rem] leading-relaxed text-muted-foreground">
-                    {step.detail}
-                  </p>
-                </div>
-                {!step.done ? (
-                  <Link
-                    to={step.href}
-                    className="flex shrink-0 items-center gap-1 text-[0.8125rem] font-medium text-primary hover:underline"
-                  >
-                    Open <ChevronRight className="size-3.5" />
-                  </Link>
-                ) : null}
-              </li>
-            ))}
-          </ol>
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/40 px-4 py-2.5">
-            <span className="text-[0.875rem] text-muted-foreground">
-              {nextStep ? `Next: ${nextStep.label}` : 'Setup is complete. The books are live.'}
-            </span>
-            {nextStep ? (
-              <Link
-                to={nextStep.href}
-                className="flex items-center gap-1 text-[0.875rem] font-medium text-primary hover:underline"
-              >
-                Continue <ArrowRight className="size-3.5" />
-              </Link>
-            ) : (
-              <Link
-                to="/reports/trial-balance"
-                className="flex items-center gap-1 text-[0.875rem] font-medium text-primary hover:underline"
-              >
-                Open trial balance <ChevronRight className="size-3.5" />
-              </Link>
-            )}
-          </div>
-        </section>
+      <div
+        className={
+          compact
+            ? 'grid grid-cols-1 gap-5 xl:grid-cols-2'
+            : 'grid grid-cols-1 gap-5 xl:grid-cols-[1.45fr_1fr]'
+        }
+      >
+        {data ? <SetupChecklist setup={data.setup} /> : null}
 
-        <section className="flex flex-col gap-5">
+        <div className={compact ? 'contents' : 'flex flex-col gap-5'}>
           <div className="border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h2 className="text-[0.9375rem] font-semibold">What needs attention</h2>
@@ -309,7 +232,7 @@ export function DashboardPage(): React.JSX.Element {
               </div>
             )}
           </div>
-        </section>
+        </div>
       </div>
 
       <section className="grid gap-5 border border-border bg-card p-4 xl:grid-cols-2">

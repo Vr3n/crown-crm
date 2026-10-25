@@ -37,7 +37,6 @@ import { NumberingPage } from '@/features/numbering/pages/NumberingPage'
 import { UnitsPage } from '@/features/settings/pages/UnitsPage'
 import { TaxRatesPage } from '@/features/settings/pages/TaxRatesPage'
 import { UsersRolesPage } from '@/features/settings/pages/UsersRolesPage'
-import { SetupTourPage } from '@/features/onboarding/pages/SetupTourPage'
 import { SetupNumberingPage } from '@/features/onboarding/pages/SetupNumberingPage'
 import { VoucherListPage } from '@/features/vouchers/pages/VoucherListPage'
 import { VoucherEntryPage } from '@/features/vouchers/pages/VoucherEntryPage'
@@ -224,14 +223,6 @@ export function AppRoutes(): React.JSX.Element {
         element={
           <Protected code="settings.manage">
             <SetupNumberingPage />
-          </Protected>
-        }
-      />
-      <Route
-        path="setup/tour"
-        element={
-          <Protected code="settings.manage">
-            <SetupTourPage />
           </Protected>
         }
       />

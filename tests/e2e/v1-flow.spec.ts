@@ -51,7 +51,7 @@ async function waitForApi(): Promise<void> {
   await page.waitForFunction(() => Boolean((window as unknown as { api?: unknown }).api))
 }
 
-/** Finish first run without walking the wizard, so the rest of the flow can run. */
+/** Finish first run (numbering) without walking the setup checklist. */
 async function completeOnboarding(): Promise<void> {
   await page.waitForFunction(() =>
     Boolean((window as unknown as { api?: { numbering?: unknown } }).api?.numbering)
@@ -61,12 +61,10 @@ async function completeOnboarding(): Promise<void> {
       numbering: {
         list: () => Promise<Record<string, unknown>[]>
         update: (input: Record<string, unknown>) => Promise<unknown>
-        completeOnboarding: () => Promise<unknown>
       }
     }
     const rows = await api.numbering.list()
     await api.numbering.update({ requestId: `e2e-${Date.now()}`, items: rows })
-    await api.numbering.completeOnboarding()
   })
   await page.reload()
   await page.waitForLoadState('domcontentloaded')
@@ -111,8 +109,16 @@ test('first run creates the company and opens the dashboard', async () => {
   await page.getByRole('heading', { name: 'Number your vouchers' }).waitFor()
   await completeOnboarding()
   await page.getByText('Set up the books').waitFor()
-})
 
+  // The dashboard checklist is the onboarding guide now: the step opens the
+  // real dialog, and saving returns to the dashboard with the step ticked.
+  await page.getByRole('link', { name: /Add parties/ }).click()
+  await page.getByRole('heading', { name: 'New party' }).waitFor()
+  await page.locator('#name').fill('Setup Customer')
+  await page.getByRole('button', { name: 'Add party' }).click()
+  await page.getByText('Set up the books').waitFor()
+  expect(page.getByRole('link', { name: /Add parties/ })).toHaveCount(0)
+})
 test('masters, purchase, sale, receipt and reports flow end to end', async () => {
   const ids = await page.evaluate(async () => {
     const api = (window as unknown as { api: E2EApi }).api

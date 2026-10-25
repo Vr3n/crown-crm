@@ -6,7 +6,6 @@ import { Topbar } from '@/components/layout/Topbar'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 function OnboardingGate({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const location = useLocation()
   const profile = useQuery({
     queryKey: ['company', 'profile'],
     queryFn: () => window.api.identity.company(),
@@ -15,13 +14,6 @@ function OnboardingGate({ children }: { children: React.ReactNode }): React.JSX.
 
   if (profile.data && !profile.data.numberingSetupAt) {
     return <Navigate to="/setup/numbering" replace />
-  }
-  if (
-    profile.data?.numberingSetupAt &&
-    !profile.data.onboardingCompletedAt &&
-    location.pathname === '/'
-  ) {
-    return <Navigate to="/setup/tour" replace />
   }
   return <>{children}</>
 }

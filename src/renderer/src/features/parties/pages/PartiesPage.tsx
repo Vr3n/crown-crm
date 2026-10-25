@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
@@ -102,13 +102,27 @@ export function PartiesPage(): React.JSX.Element {
   const meta = SCOPE[scope]
 
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const query = useDebouncedValue(search, 250)
   const [role, setRole] = useState<PartyRole>(meta.role)
   const [includeInactive, setIncludeInactive] = useState(false)
-  const [open, setOpen] = useState(false)
+  // The dashboard checklist links here with ?action=new so the create dialog is
+  // already open. Capture it once, then drop the parameter from the URL.
+  const [openedFromSetup] = useState(() => params.get('action') === 'new')
+  const [open, setOpen] = useState(openedFromSetup)
   const [editing, setEditing] = useState<PartyRow | null>(null)
   const [target, setTarget] = useState<PartyRow | null>(null)
+
+  useEffect(() => {
+    if (!openedFromSetup) return
+    const next = new URLSearchParams(params)
+    next.delete('action')
+    setParams(next, { replace: true })
+    // Run once: the flag is captured at mount and the parameter is disposable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const effectiveRole = scope === 'ALL' ? role : meta.role
 
@@ -150,6 +164,10 @@ export function PartiesPage(): React.JSX.Element {
     setOpen(false)
     void queryClient.invalidateQueries({ queryKey: ['parties'] })
     void queryClient.invalidateQueries({ queryKey: ['parties', 'summary'] })
+    void queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] })
+    // Opened from the setup checklist: return to the dashboard so the tick and
+    // the next step are visible.
+    if (openedFromSetup) navigate('/', { replace: true })
   }
 
   const money = (minor: number | undefined): string => formatMinor(minor ?? 0, 'INR')

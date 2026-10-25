@@ -106,8 +106,7 @@ const api = {
       call(IPC_CHANNELS.IDENTITY_ROLE_CREATE, input),
     updateRole: (input: UpdateRoleInput): Promise<RoleOutput> =>
       call(IPC_CHANNELS.IDENTITY_ROLE_UPDATE, input),
-    deleteRole: (id: number): Promise<boolean> =>
-      call(IPC_CHANNELS.IDENTITY_ROLE_DELETE, { id })
+    deleteRole: (id: number): Promise<boolean> => call(IPC_CHANNELS.IDENTITY_ROLE_DELETE, { id })
   },
 
   parties: {
@@ -141,12 +140,9 @@ const api = {
 
   units: {
     list: (input: UnitListInput): Promise<UnitRow[]> => call(IPC_CHANNELS.UNITS_LIST, input),
-    create: (input: CreateUnitInput): Promise<UnitRow> =>
-      call(IPC_CHANNELS.UNITS_CREATE, input),
-    update: (input: UpdateUnitInput): Promise<UnitRow> =>
-      call(IPC_CHANNELS.UNITS_UPDATE, input),
-    deactivate: (id: number): Promise<UnitRow> =>
-      call(IPC_CHANNELS.UNITS_DEACTIVATE, { id })
+    create: (input: CreateUnitInput): Promise<UnitRow> => call(IPC_CHANNELS.UNITS_CREATE, input),
+    update: (input: UpdateUnitInput): Promise<UnitRow> => call(IPC_CHANNELS.UNITS_UPDATE, input),
+    deactivate: (id: number): Promise<UnitRow> => call(IPC_CHANNELS.UNITS_DEACTIVATE, { id })
   },
 
   taxRates: {
@@ -183,8 +179,7 @@ const api = {
   },
 
   search: {
-    query: (input: SearchInput): Promise<SearchOutput> =>
-      call(IPC_CHANNELS.SEARCH_QUERY, input)
+    query: (input: SearchInput): Promise<SearchOutput> => call(IPC_CHANNELS.SEARCH_QUERY, input)
   },
 
   summaries: {
@@ -197,9 +192,7 @@ const api = {
   numbering: {
     list: (): Promise<NumberingRow[]> => call(IPC_CHANNELS.NUMBERING_LIST),
     update: (input: UpdateNumberingInput): Promise<NumberingRow[]> =>
-      call(IPC_CHANNELS.NUMBERING_UPDATE, input),
-    completeOnboarding: (): Promise<{ onboardingCompletedAt: string | null }> =>
-      call(IPC_CHANNELS.ONBOARDING_COMPLETE)
+      call(IPC_CHANNELS.NUMBERING_UPDATE, input)
   },
 
   reports: {

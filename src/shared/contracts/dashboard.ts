@@ -6,7 +6,10 @@ export interface SetupStep {
   id: 'numbering' | 'parties' | 'items' | 'opening' | 'purchase' | 'sale'
   label: string
   detail: string
+  /** Points at the action itself, not just the page that owns it. */
   href: string
+  /** Verb shown on the row, e.g. "Add a party". */
+  cta: string
   done: boolean
 }
 

@@ -39,14 +39,9 @@ export function updateNumbering(input: UpdateNumberingInput): NumberingRow[] {
   return withTransaction(() => {
     numberingRepo.update(companyId, items)
     numberingRepo.markSetupComplete(companyId)
+    // Saving numbering is the end of first run. The dashboard checklist, not a
+    // separate tour screen, carries the rest of onboarding from here.
+    numberingRepo.markOnboardingComplete(companyId)
     return numberingRepo.list(companyId)
   })
-}
-
-/** Marks the guided tour finished or skipped. */
-export function completeOnboarding(): { onboardingCompletedAt: string | null } {
-  requirePermission(PERMISSIONS.SETTINGS_MANAGE)
-  const companyId = currentCompanyId()
-  numberingRepo.markOnboardingComplete(companyId)
-  return { onboardingCompletedAt: numberingRepo.setupState(companyId).onboardingCompletedAt }
 }

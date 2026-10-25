@@ -150,7 +150,6 @@ declare global {
       numbering: {
         list: () => Promise<NumberingRow[]>
         update: (input: UpdateNumberingInput) => Promise<NumberingRow[]>
-        completeOnboarding: () => Promise<{ onboardingCompletedAt: string | null }>
       }
       reports: {
         trialBalance: () => Promise<TrialBalanceRow[]>

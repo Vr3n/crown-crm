@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Building2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
@@ -570,11 +570,25 @@ function OpeningBalances({ defaultDate }: { defaultDate: string }): React.JSX.El
 }
 
 export function CompanyPage(): React.JSX.Element {
+  const [params, setParams] = useSearchParams()
   const profile = useQuery({
     queryKey: ['company', 'profile'],
     queryFn: () => window.api.identity.company(),
     staleTime: 60_000
   })
+
+  // The dashboard checklist links here with ?action=opening: scroll to the
+  // one-time posting section and put the cursor on its date.
+  useEffect(() => {
+    if (!profile.data || params.get('action') !== 'opening') return
+    document.getElementById('opening-balances')?.scrollIntoView({ block: 'start' })
+    document.getElementById('opening-date')?.focus({ preventScroll: true })
+    const next = new URLSearchParams(params)
+    next.delete('action')
+    setParams(next, { replace: true })
+    // Run once the profile has rendered; the parameter is disposable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile.data])
 
   return (
     <div className="mx-auto flex w-full max-w-[900px] flex-col gap-4 p-6">
@@ -623,7 +637,9 @@ export function CompanyPage(): React.JSX.Element {
             </div>
           </Section>
           <CompanyEditor key={profile.data.id} profile={profile.data} />
-          <OpeningBalances defaultDate={profile.data.booksBeginDate} />
+          <div id="opening-balances">
+            <OpeningBalances defaultDate={profile.data.booksBeginDate} />
+          </div>
         </>
       ) : (
         <EmptyState

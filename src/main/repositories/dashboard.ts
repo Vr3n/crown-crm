@@ -107,12 +107,9 @@ export const dashboardRepo = {
       .get(companyId) as { amount: number } | undefined
 
     const company = db
-      .prepare(
-        'SELECT numbering_setup_at, onboarding_completed_at FROM companies WHERE id = ?'
-      )
+      .prepare('SELECT numbering_setup_at, onboarding_completed_at FROM companies WHERE id = ?')
       .get(companyId) as
-      | { numbering_setup_at: string | null; onboarding_completed_at: string | null }
-      | undefined
+      { numbering_setup_at: string | null; onboarding_completed_at: string | null } | undefined
 
     const partyCount = count('parties')
     const itemCount = count('items')
@@ -126,27 +123,31 @@ export const dashboardRepo = {
         label: 'Number your vouchers',
         detail: 'Series and starting numbers are set.',
         href: '/settings/numbering',
+        cta: 'Open numbering',
         done: Boolean(company?.numbering_setup_at)
       },
       {
         id: 'parties',
         label: 'Add parties',
         detail: 'Customers, suppliers and their credit terms.',
-        href: '/parties',
+        href: '/parties?action=new',
+        cta: 'Add a party',
         done: partyCount > 0
       },
       {
         id: 'items',
         label: 'Add items',
         detail: 'HSN, unit, GST rate and selling price.',
-        href: '/items',
+        href: '/items?action=new',
+        cta: 'Add an item',
         done: itemCount > 0
       },
       {
         id: 'opening',
         label: 'Post opening balances',
         detail: 'What the books carried in on day one.',
-        href: '/settings/company',
+        href: '/settings/company?action=opening',
+        cta: 'Post opening',
         done: openingCount > 0
       },
       {
@@ -154,6 +155,7 @@ export const dashboardRepo = {
         label: 'Post a purchase bill',
         detail: 'Stock in, ledger written, payable recorded.',
         href: '/purchases/new',
+        cta: 'New bill',
         done: purchaseCount > 0
       },
       {
@@ -161,6 +163,7 @@ export const dashboardRepo = {
         label: 'Post a sales invoice',
         detail: 'Stock out, GST recorded, receivable created.',
         href: '/sales/new',
+        cta: 'New invoice',
         done: salesCount > 0
       }
     ]

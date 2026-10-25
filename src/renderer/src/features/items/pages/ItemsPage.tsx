@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Boxes, CircleSlash, Package, Plus, Search } from 'lucide-react'
@@ -39,11 +39,7 @@ import { FIELD_HELP } from '@/lib/form-help'
 import { formatMinor, formatRate, minorToMajor } from '@/lib/money'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { errorMessage } from '../../../../../shared/contracts/errors'
-import type {
-  CreateItemInput,
-  ItemRow,
-  TaxRateRow
-} from '../../../../../shared/contracts/masters'
+import type { CreateItemInput, ItemRow, TaxRateRow } from '../../../../../shared/contracts/masters'
 
 const TH =
   'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
@@ -240,13 +236,27 @@ const TEXT_FIELDS: Record<
 
 export function ItemsPage(): React.JSX.Element {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const query = useDebouncedValue(search, 250)
   const [includeInactive, setIncludeInactive] = useState(false)
   const [filter, setFilter] = useState<'ALL' | 'LOW' | 'OUT' | 'SERVICE'>('ALL')
-  const [open, setOpen] = useState(false)
+  // The dashboard checklist links here with ?action=new so the create dialog is
+  // already open. Capture it once, then drop the parameter from the URL.
+  const [openedFromSetup] = useState(() => params.get('action') === 'new')
+  const [open, setOpen] = useState(openedFromSetup)
   const [editing, setEditing] = useState<ItemRow | null>(null)
   const [target, setTarget] = useState<ItemRow | null>(null)
+
+  useEffect(() => {
+    if (!openedFromSetup) return
+    const next = new URLSearchParams(params)
+    next.delete('action')
+    setParams(next, { replace: true })
+    // Run once: the flag is captured at mount and the parameter is disposable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const list = useQuery({
     queryKey: ['items', query, includeInactive],
@@ -292,6 +302,16 @@ export function ItemsPage(): React.JSX.Element {
   function show(next: ItemRow | null): void {
     setEditing(next)
     setOpen(true)
+  }
+
+  function onSaved(): void {
+    setOpen(false)
+    void queryClient.invalidateQueries({ queryKey: ['items'] })
+    void queryClient.invalidateQueries({ queryKey: ['items', 'summary'] })
+    void queryClient.invalidateQueries({ queryKey: ['dashboard', 'summary'] })
+    // Opened from the setup checklist: return to the dashboard so the tick and
+    // the next step are visible.
+    if (openedFromSetup) navigate('/', { replace: true })
   }
 
   return (
@@ -564,7 +584,7 @@ export function ItemsPage(): React.JSX.Element {
           item={editing}
           units={units.data ?? []}
           taxRates={taxRates.data ?? []}
-          onSaved={() => setOpen(false)}
+          onSaved={onSaved}
         />
       ) : null}
 

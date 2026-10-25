@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { setupTestDb } from '../../helpers/db'
 import { setupCompany } from '../../../src/main/application/identity'
-import {
-  completeOnboarding,
-  listNumbering,
-  updateNumbering
-} from '../../../src/main/application/numbering'
+import { listNumbering, updateNumbering } from '../../../src/main/application/numbering'
 import { numberingRepo } from '../../../src/main/repositories/numbering'
 import { voucherRepo } from '../../../src/main/repositories/vouchers'
 import { getDb } from '../../../src/main/db/connection'
@@ -189,9 +185,8 @@ describe('voucher numbering settings', () => {
 
     update('PURCHASE', { prefix: 'PUR/' })
     expect(numberingRepo.setupState(companyId).numberingSetupAt).not.toBeNull()
-
-    expect(numberingRepo.setupState(companyId).onboardingCompletedAt).toBeNull()
-    completeOnboarding()
+    // Saving numbering ends first run: the dashboard checklist takes over, so
+    // there is no separate tour step to complete.
     expect(numberingRepo.setupState(companyId).onboardingCompletedAt).not.toBeNull()
   })
 })
