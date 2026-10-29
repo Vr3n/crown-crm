@@ -676,6 +676,7 @@ function Table({
     try {
       const result = await window.api.exportPdf(exportName)
       if (result.saved) toast.success('PDF saved')
+      else if (result.printed) toast.success('Print dialog opened — choose Save as PDF')
     } catch {
       toast.error('Could not create the PDF')
     }

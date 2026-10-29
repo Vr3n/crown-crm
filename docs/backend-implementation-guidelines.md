@@ -1,6 +1,23 @@
 # Backend implementation guidelines
 
-Applies to: `src/main/**`, `src/preload/**`, `src/shared/contracts/**`
+> **Tauri migration (2026).** The backend now lives in `src-tauri/src/**` and is
+> written in Rust. The layering below still describes the product, but the
+> concrete mechanics changed:
+>
+> | This document | Now |
+> |---|---|
+> | `preload` | `src/renderer/src/api/index.ts` (`window.api`) |
+> | `ipc handler` | the single `rpc` command in `src-tauri/src/lib.rs` |
+> | `application` | `src-tauri/src/<domain>/mod.rs` |
+> | `domain` | free functions in the same module (`posting.rs`, `settlement.rs`, …) |
+> | `repository` (Drizzle) | `src-tauri/src/<domain>/repo.rs` with `rusqlite` |
+> | `node:sqlite` | `rusqlite` (bundled SQLite) |
+>
+> Read `19-tauri-migration.md` and `src-tauri/PORTING.md` before this file. The
+> table, column names, money units, error codes and transaction rules below are
+> unchanged.
+
+Applies to: `src-tauri/src/**`, `src/shared/contracts/**`, `src/renderer/src/api/**`
 Read with: `02-database-schema.md`, `03-voucher-posting-rules.md`
 
 ## 1. Layers and what each may do
@@ -27,20 +44,20 @@ Hard rules:
 2. A domain function never touches the database. It receives plain data and returns plain data.
 3. An IPC handler never contains business logic. Validate, delegate, map errors.
 4. The renderer never computes money that will be stored. It may preview, but the posted value is computed on the server side and returned.
-5. No SQL string building. Use Drizzle or parameterised statements.
-6. No `any`. If a shape is unknown, define a schema.
+5. No SQL string building. Use `rusqlite` parameters (`params![]`, `params_from_iter`).
+6. No `unwrap`/`expect` on request data. Return `AppError`.
 
 ## 2. Adding a feature, in order
 
 1. Write the contract in `src/shared/contracts/<domain>.ts`: input schema, output type, error codes.
 2. Add the channel name to `ipc.channels.ts`.
-3. Write the domain rule and its tests first. For posting, the test asserts the exact ledger lines.
-4. Add the repository query. Keep it a query, not a decision.
-5. Add the application use case. One transaction, explicit preconditions, explicit postconditions.
-6. Add the IPC handler with the Zod schema.
-7. Add the preload method and its type in `index.d.ts`.
+3. Write the domain rule as a pure Rust function and unit-test it. For posting, the test asserts the exact ledger lines.
+4. Add the repository query in `src-tauri/src/<domain>/repo.rs`. Keep it a query, not a decision.
+5. Add the use case in `src-tauri/src/<domain>/mod.rs`. One `ctx.with_tx`, explicit preconditions, explicit postconditions.
+6. Add the `match` arm in that module's `dispatch`, with `ctx.require_permission(...)` first.
+7. Add the method to `src/renderer/src/api/index.ts` and its type to `api/window.d.ts`.
 8. Build the renderer against the returned shape.
-9. Add the integration test that goes from IPC payload to database rows.
+9. Add the integration test that goes from payload to database rows (`src-tauri/tests/rpc_flow.rs`).
 10. Update the docs listed in the phase plan.
 
 ## 3. Money and quantity
@@ -65,21 +82,28 @@ type Bps = number
 
 A use case that writes more than one row uses one transaction:
 
-```ts
-export function postVoucher(input: PostVoucherInput): Voucher {
-  return withTransaction(() => {
-    const context = loadPostingContext(input)
-    assertPostable(context)
-    const number = nextNumber(context)
-    const lines = ruleFor(context.type).ledger(context)
-    assertBalanced(lines)
-    const voucher = insertVoucher({ ...input, number })
-    insertLedgerLines(voucher, lines)
-    insertStockMovements(voucher, ruleFor(context.type).stock(context))
-    insertAllocations(voucher, input.allocations)
-    writeAudit(voucher, 'POST', input.actorId)
-    return voucher
-  })
+```rust
+pub fn post_voucher(ctx: &mut Ctx<'_>, input: &Value) -> AppResult<Value> {
+    ctx.require_permission(perm::VOUCHER_POST)?;
+    let company_id = ctx.company_id()?;
+    let user_id = ctx.user_id()?;
+    let parsed = PostInput::parse(input)?;
+
+    ctx.with_tx(|ctx| {
+        let context = load_posting_context(ctx.db(), company_id, &parsed)?;
+        assert_postable(&context)?;
+        let (number, fy, series) = numbering::allocate_number(
+            ctx.db(), company_id, &parsed.voucher_type, &parsed.date, parsed.manual_number,
+        )?;
+        let lines = ledger_for(&context, &parsed)?;
+        assert_balanced(&lines)?;
+        let voucher = repo::insert_voucher(ctx.db(), company_id, user_id, &parsed, &number)?;
+        repo::insert_ledger_lines(ctx.db(), voucher.id, &lines)?;
+        repo::insert_stock_movements(ctx.db(), voucher.id, &stock_for(&context)?)?;
+        repo::insert_allocations(ctx.db(), voucher.id, &parsed.allocations)?;
+        audit::record(ctx.db(), company_id, "VOUCHER", voucher.id, "POST", None, None, Some(user_id))?;
+        Ok(json!({ "id": voucher.id, "number": number }))
+    })
 }
 ```
 
@@ -96,12 +120,14 @@ Two levels, both required:
 
 | Level | Where | Example |
 |---|---|---|
-| Boundary | Zod schema in IPC handler | amount is a positive integer |
+| Boundary | `src-tauri/src/json.rs` helpers in the command fn | amount is a positive integer |
 | Business | Domain guard inside the transaction | allocation does not exceed outstanding |
 
 The boundary catches malformed payloads. The domain catches payloads that are well formed but wrong given the current data, which only the transaction can see.
 
-Error contract: throw a `DomainError` with a stable code. The IPC wrapper maps it to `{ ok: false, error: { code, message } }`. The renderer branches on code, never on message text.
+Error contract: return an `AppError` with a stable code. The `rpc` command maps
+it to `{ ok: false, error: { code, message } }`. The renderer branches on code,
+never on message text.
 
 ## 6. Idempotency
 
@@ -117,14 +143,14 @@ Use for: post voucher, cancel voucher, record receipt, record payment, allocate,
 
 ## 7. Numbering
 
-```ts
-const { number, fy } = allocateNumber({
-  companyId,
-  voucherType: 'SALES',
-  series: 'INV',
-  date: voucherDate,
-  fyStartMonth: company.fy_start_month
-})
+```rust
+let (number, fy, series) = numbering::allocate_number(
+    ctx.db(),
+    company_id,
+    "SALES",
+    &voucher_date,
+    manual_number,
+)?;
 ```
 
 - Allocation happens inside the posting transaction.
@@ -133,7 +159,7 @@ const { number, fy } = allocateNumber({
 
 ## 8. Reads and reports
 
-1. A report is a query function in `repositories/reports.ts`. No report writes.
+1. A report is a query function in `src-tauri/src/reports/repo.rs`. No report writes.
 2. Report functions return plain rows with numbers, not formatted strings.
 3. Grouping, subtotals and drill down identifiers are part of the row shape so the renderer does not re-derive them.
 4. Pagination is cursor or offset with a stable sort. Every list has an explicit sort.

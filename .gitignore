@@ -18,3 +18,7 @@ playwright-report/
 
 # Media processing binaries (shipped with the app via resources, not source-controlled)
 resources/ffmpeg/
+
+# Tauri
+src-tauri/target
+src-tauri/gen
