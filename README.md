@@ -41,30 +41,34 @@ Sales pipeline, memberships, plans and offers are deleted, not hidden. GST filin
 | `docs/guides/crown-books-10-minute-quick-start.pdf` | Seven-page printable quick start |
 | `docs/backend-implementation-guidelines.md` | How to add a feature |
 | `docs/form-implementation-guideline.md` | How to build a capture form |
+| `docs/18-windows-build-size.md` | Electron payload budget and the trimming that preceded the Tauri move |
+| `docs/19-tauri-migration.md` | Tauri architecture, the single RPC command, sizes, known differences |
 | `docs/presentations/` | Two stakeholder decks (HTML) |
 
 The source decks and sample bills that defined the domain stay in `docs/` as reference material.
 
 ## Built with
 
-- Electron + electron-vite
+- Tauri 2 + Rust, WebView2 on Windows
 - React 19 + TypeScript
 - Tailwind CSS + shadcn/ui
 - TanStack Query, Form and Table
-- SQLite through Node's built in `node:sqlite`, with Drizzle ORM
+- SQLite through `rusqlite` (bundled), the same schema and migrations as before
 - Zod at the IPC boundary
-- Vitest and Playwright
+- Vitest for the renderer and shared contracts; `cargo test` for the backend
 
 ## Prerequisites
 
-- Node.js 20 or newer, for `node:sqlite`
-- Windows for the packaged installer; development runs on Windows, macOS and Linux
+- Node.js 20 or newer
+- Rust 1.77+ with the MSVC toolchain
+- WebView2 runtime (installed on Windows 10/11; the installer can bootstrap it)
+- Microsoft Visual Studio Build Tools with the C++ workload, for the Windows linker
 
 ## Getting started
 
 ```bash
 npm install
-npm run dev
+npm run dev          # vite + cargo, opens the app
 ```
 
 On first launch the setup screen asks for the company profile and the owner account.
@@ -72,9 +76,8 @@ On first launch the setup screen asks for the company profile and the owner acco
 ## Building
 
 ```bash
-npm run build        # typecheck and bundle
-npm start            # run the built app
-npm run build:win    # Windows installer
+npm run build        # release binary + NSIS installer in src-tauri/target/release/bundle
+npm run build:web    # renderer bundle only, into dist/
 ```
 
 ## Testing
@@ -82,10 +85,14 @@ npm run build:win    # Windows installer
 ```bash
 npm run typecheck
 npm run lint
-npm test              # 180 unit and integration tests
-npm run test:e2e      # Playwright against the built Electron app
+npm test             # renderer and shared-contract tests
+cargo test --manifest-path src-tauri/Cargo.toml   # backend, including tests/rpc_flow.rs
+npm run smoke:win    # launches the built binary and checks the migrated database
 ```
 
 ## Data
 
-The application writes `crown-books.db` in the Electron user data folder. The previous gym database file is left untouched on disk and is not read by this application.
+The application writes `crown-books.db` to `%APPDATA%\Crown Books`, the same
+folder the Electron build used, so an in-place upgrade keeps the books. The
+previous gym database file is left untouched on disk and is not read by this
+application.

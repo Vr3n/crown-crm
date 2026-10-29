@@ -11,6 +11,8 @@ export default defineConfig(
       '**/node_modules',
       '**/dist',
       '**/out',
+      '**/target',
+      'scripts/**',
       'src/renderer/src/components/ui/**',
       'plans/**',
       'docs/**',
