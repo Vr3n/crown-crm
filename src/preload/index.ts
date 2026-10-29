@@ -55,6 +55,7 @@ import type {
 } from '../shared/contracts/vouchers'
 import type { IpcResult } from '../shared/contracts/errors'
 import type { ExportCsvInput, ExportResult, ExportTableInput } from '../shared/contracts/export'
+import type { InvoiceDocument } from '../shared/contracts/invoice'
 import type { BackupDestinations, BackupFile, BackupPathInput } from '../shared/contracts/backup'
 import type { SearchInput, SearchOutput } from '../shared/contracts/search'
 import type {
@@ -173,6 +174,11 @@ const api = {
       call(IPC_CHANNELS.VOUCHERS_OUTSTANDING, input),
     postOpening: (date: string): Promise<{ id: number; number: string }> =>
       call(IPC_CHANNELS.VOUCHERS_POST_OPENING, { date })
+  },
+
+  invoice: {
+    document: (id: number): Promise<InvoiceDocument> => call(IPC_CHANNELS.VOUCHERS_INVOICE, { id }),
+    exportPdf: (id: number): Promise<ExportResult> => call(IPC_CHANNELS.INVOICE_EXPORT_PDF, { id })
   },
 
   dashboard: {

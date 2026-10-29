@@ -57,6 +57,7 @@ export const IPC_CHANNELS = {
   VOUCHERS_CANCEL: 'vouchers:cancel',
   VOUCHERS_OUTSTANDING: 'vouchers:outstanding',
   VOUCHERS_POST_OPENING: 'vouchers:postOpening',
+  VOUCHERS_INVOICE: 'vouchers:invoice',
 
   // Global search
   SEARCH_QUERY: 'search:query',
@@ -73,6 +74,7 @@ export const IPC_CHANNELS = {
   EXPORT_PDF: 'export:pdf',
   EXPORT_XLSX: 'export:xlsx',
   EXPORT_CSV: 'export:csv',
+  INVOICE_EXPORT_PDF: 'invoice:exportPdf',
 
   // Voucher numbering and first run
   NUMBERING_LIST: 'numbering:list',

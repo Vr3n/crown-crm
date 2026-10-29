@@ -5,7 +5,7 @@ import {
   type ElectronApplication,
   type Page
 } from '@playwright/test'
-import { mkdirSync, mkdtempSync, rmSync, existsSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -205,6 +205,48 @@ test('P3: sales invoice, receipt with allocation, receivables and ageing', async
   await go('#/reports/ageing')
   await expect(page.getByText('Acme Distributor').first()).toBeVisible()
   await shot('ageing')
+})
+
+test('P3: sales invoice exports a two-copy PDF and prints both copies', async () => {
+  await go('#/sales')
+  const href = await page.getByRole('link', { name: 'INV/0001' }).first().getAttribute('href')
+  const voucherId = Number(/(\d+)$/.exec(href ?? '')?.[1] ?? 0)
+  expect(voucherId).toBeGreaterThan(0)
+
+  await page.getByRole('link', { name: 'INV/0001' }).first().click()
+  await expect(page.getByRole('button', { name: 'Export PDF' })).toBeVisible()
+
+  const invoiceDir = mkdtempSync(join(tmpdir(), 'crown-books-invoice-'))
+  await app.evaluate(async ({ dialog }, dir) => {
+    const store = globalThis as unknown as { __crownInvoiceName?: string }
+    store.__crownInvoiceName = ''
+    dialog.showSaveDialog = (async (...args: unknown[]) => {
+      const options = args[args.length - 1] as { defaultPath?: string }
+      store.__crownInvoiceName = options.defaultPath ?? ''
+      return { canceled: false, filePath: `${dir}/${options.defaultPath}` }
+    }) as typeof dialog.showSaveDialog
+  }, invoiceDir)
+
+  await page.getByRole('button', { name: 'Export PDF' }).click()
+  await expect(page.getByText('Invoice PDF saved')).toBeVisible()
+
+  const savedName = await app.evaluate(
+    () => (globalThis as unknown as { __crownInvoiceName?: string }).__crownInvoiceName ?? ''
+  )
+  expect(savedName).toMatch(/^Acme-Distributor_Sales_INV-0001_\d{8}-\d{6}\.pdf$/)
+  const savedPath = join(invoiceDir, savedName)
+  expect(existsSync(savedPath)).toBe(true)
+  const pdf = readFileSync(savedPath)
+  expect(pdf.subarray(0, 4).toString()).toBe('%PDF')
+  const pageCount = pdf.toString('latin1').match(/\/Type\s*\/Page(?!s)/g)?.length ?? 0
+  expect(pageCount).toBe(2)
+  rmSync(invoiceDir, { recursive: true, force: true })
+
+  await go(`#/print/vouchers/${voucherId}`)
+  await page.getByText('ORIGINAL FOR RECIPIENT').first().waitFor()
+  await expect(page.getByText('ORIGINAL FOR RECIPIENT').first()).toBeVisible()
+  await expect(page.getByText('DUPLICATE FOR TRANSPORTER').first()).toBeVisible()
+  await expect(page.getByText('TAX INVOICE').first()).toBeVisible()
 })
 
 test('P5 and P6: stock, registers, profit and loss, balance sheet', async () => {

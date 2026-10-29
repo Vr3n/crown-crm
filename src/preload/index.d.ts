@@ -16,6 +16,7 @@ import type { ItemSummary, PartySummary, VoucherSummary } from '../shared/contra
 import type { VoucherType } from '../shared/contracts/vouchers'
 import type { LicenseStatus } from '../shared/contracts/license'
 import type { ExportCsvInput, ExportResult, ExportTableInput } from '../shared/contracts/export'
+import type { InvoiceDocument } from '../shared/contracts/invoice'
 import type { BackupDestinations, BackupFile, BackupPathInput } from '../shared/contracts/backup'
 import type { SearchInput, SearchOutput } from '../shared/contracts/search'
 import type {
@@ -132,6 +133,10 @@ declare global {
         cancel: (id: number, reason: string) => Promise<void>
         outstanding: (input: OutstandingInput) => Promise<OutstandingBill[]>
         postOpening: (date: string) => Promise<{ id: number; number: string }>
+      }
+      invoice: {
+        document: (id: number) => Promise<InvoiceDocument>
+        exportPdf: (id: number) => Promise<ExportResult>
       }
       dashboard: {
         summary: () => Promise<DashboardSummary>

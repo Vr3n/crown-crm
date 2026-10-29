@@ -42,6 +42,7 @@ import { VoucherListPage } from '@/features/vouchers/pages/VoucherListPage'
 import { VoucherEntryPage } from '@/features/vouchers/pages/VoucherEntryPage'
 import { ReceiptEntryPage } from '@/features/vouchers/pages/ReceiptEntryPage'
 import { VoucherDetailPage } from '@/features/vouchers/pages/VoucherDetailPage'
+import { InvoicePrintPage } from '@/features/invoice/pages/InvoicePrintPage'
 import { ModulePlaceholder } from '@/pages/module-placeholder'
 import { can, useSession } from '@/context/session-context'
 
@@ -205,7 +206,7 @@ const PLANNED: PlannedRoute[] = [
     scope: 'P1',
     icon: Building2,
     requires: 'company.view'
-  },
+  }
 ]
 
 function VoucherDetailRoute(): React.JSX.Element {
@@ -213,6 +214,13 @@ function VoucherDetailRoute(): React.JSX.Element {
   const numeric = Number(id)
   if (!numeric) return <Navigate to="/" replace />
   return <VoucherDetailPage id={numeric} />
+}
+
+function InvoicePrintRoute(): React.JSX.Element {
+  const { id } = useParams()
+  const numeric = Number(id)
+  if (!numeric) return <Navigate to="/" replace />
+  return <InvoicePrintPage id={numeric} />
 }
 
 export function AppRoutes(): React.JSX.Element {
@@ -223,6 +231,14 @@ export function AppRoutes(): React.JSX.Element {
         element={
           <Protected code="settings.manage">
             <SetupNumberingPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="print/vouchers/:id"
+        element={
+          <Protected code="voucher.view">
+            <InvoicePrintRoute />
           </Protected>
         }
       />
