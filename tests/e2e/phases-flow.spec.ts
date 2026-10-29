@@ -8,6 +8,7 @@ import {
 import { mkdirSync, mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { quietApp } from './support/silent'
 
 /**
  * Visual phase walkthrough. Every step drives the real UI and leaves a
@@ -69,6 +70,7 @@ test.beforeAll(async () => {
       CROWN_BOOKS_USER_DATA: userData
     }
   })
+  await quietApp(app)
   page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
 })
@@ -261,7 +263,8 @@ test('P3: sales invoice exports a two-copy PDF and prints both copies', async ()
   await expect(purchaseSheet.getByText('TAX INVOICE')).toBeVisible()
   await expect(purchaseSheet.getByText('Supplier Bill No.')).toBeVisible()
   await expect(purchaseSheet.getByText('TechConnect').first()).toBeVisible()
-  await expect(purchaseSheet.getByText('Buyer (Bill to)')).toBeVisible()
+  await expect(purchaseSheet.getByText('Supplier', { exact: true })).toBeVisible()
+  await expect(purchaseSheet.getByText('Buyer', { exact: true })).toBeVisible()
   await expect(purchaseSheet.getByText('Acme Distributors').first()).toBeVisible()
 })
 
@@ -334,6 +337,7 @@ test('restart: the books survive', async () => {
       CROWN_BOOKS_USER_DATA: userData
     }
   })
+  await quietApp(app)
   page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
   await page.getByText('Receivables', { exact: false }).first().waitFor()

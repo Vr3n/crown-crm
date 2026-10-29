@@ -55,18 +55,20 @@ loose page can still be identified.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ TAX INVOICE                              ORIGINAL FOR RECIPIENT │
+│                        TAX INVOICE        ORIGINAL FOR RECIPIENT │
 ├───────────────────────────────────────┬──────────────────────────┤
-│ [logo] Company / supplier name        │ Invoice No.  │ Dated     │
-│ address, city, pincode                │ Delivery Note│ Mode of   │
-│ GSTIN/UIN · PAN/IT No. · State        │ Supplier's   │ Payment   │
-│ phone · email                         │   Ref.       │ Other Ref.│
-│                                       │ ... Tally transport grid │
+│ SUPPLIER                              │ Invoice No.  │ Dated     │
+│ [logo] Company / supplier name        │ Delivery Note│ Mode of   │
+│ address, city, pincode                │ Supplier's   │ Payment   │
+│ Phone · Email                         │   Ref.       │ Other Ref.│
+│ GSTIN/UIN · PAN/IT No. · State        │ ... Tally transport grid │
 │                                       │ Place of Delivery        │
 ├───────────────────────────────────────┴──────────────────────────┤
-│ BUYER (BILL TO)                                                  │
-│ name, address                      Phone · GSTIN/UIN · PAN/IT No.│
-│                                    State Name · Contact          │
+│ BUYER                                                            │
+│ Party name                                                       │
+│ address                                                          │
+│ Phone · Email                                                    │
+│ GSTIN/UIN · PAN/IT No. · State                                   │
 ├──┬────────────────┬─────────┬──────────┬───────┬─────┬──────┬────┤
 │# │Description     │HSN/SAC  │Quantity  │Rate   │per  │Disc %│Amt │
 │  (the item table stretches to fill the page)                     │
@@ -91,18 +93,28 @@ loose page can still be identified.
 The second page repeats the same sheet with `DUPLICATE FOR TRANSPORTER`.
 
 The content follows the two sample bills in `docs/sales-bill.pdf` and
-`docs/purchase-bill.pdf`: the issuer block and Tally meta grid at the top, a
-buyer block with phone/GSTIN/PAN/state, the S.No/Description/HSN/Quantity/
-Rate/per/Disc./Amount grid, totals with a CGST/SGST or IGST row per rate,
-amount in words, the HSN/SAC-wise tax summary, tax in words, terms, a
-declaration and the signature block.
+`docs/purchase-bill.pdf`: a bordered `SUPPLIER` panel and the Tally meta grid at
+the top, a bordered `BUYER` panel, the S.No/Description/HSN/Quantity/Rate/per/
+Disc./Amount grid, totals with a CGST/SGST or IGST row per rate, amount in
+words, the HSN/SAC-wise tax summary, tax in words, terms, a declaration and the
+signature block.
+
+Both party panels share the same header style, a muted strip above the details.
+The document title is centred on the page; the copy caption sits in the right
+column of the same row.
+
+The supplier panel prints the letterhead first, then the address, the phone and
+email lines, and finally GSTIN/UIN, PAN/IT No. and state. The buyer panel is a
+vertical stack rather than two columns: party name, address, phone and email on
+one line, then GSTIN/UIN, PAN/IT No. and state on the next. Long values wrap
+instead of squeezing the meta grid.
 
 The right-hand grid mirrors the sample of the same type. A sales invoice prints
 the full Tally transport grid — Invoice No./Dated, Delivery Note/Mode of
 Payment, Supplier's Ref./Other Reference, Buyer's Order No./Dated, Despatch Doc
 No./Delivery Note Date, Despatched Through/Terms of Delivery and a full-width
 Place of Delivery row — with the due date under it. The purchase sample is a
-supplier's shorter Tally form, so a purchase prints Supplier Bill No./Dated, Our
+supplier's shorter Tally form, so a purchase prints Supplier Bill No./Dated,
 Voucher No./Place of Supply and Reference No. & Date/Other References.
 
 Tally fields this app does not store (Delivery Note, Mode of Payment, Despatch
@@ -127,11 +139,11 @@ tax invoice as received, so the two party blocks swap.
 
 | Field             | Sales                              | Purchase                                    |
 | ----------------- | ---------------------------------- | ------------------------------------------- |
-| Issuer block      | Our company (logo, terms, bank)    | The supplier (party)                        |
+| Supplier block    | Our company (logo, terms, bank)    | The supplier (party)                        |
 | Buyer block       | The customer                       | Our company                                 |
 | Title             | `TAX INVOICE`                      | `TAX INVOICE`                               |
 | Number label      | `Invoice No.` (our number)         | `Supplier Bill No.` (reference, or voucher) |
-| Voucher number    | `Invoice No.`                      | `Our Voucher No.`                           |
+| Voucher number    | `Invoice No.`                      | `Voucher No.`                               |
 | Meta grid         | Full Tally transport grid          | Short reference grid from the sample        |
 | Due date          | Under the grid                     | Omitted: the supplier's bill has none       |
 | Place of delivery | Party shipping or billing address  | Omitted: the buyer block shows our address  |
@@ -273,10 +285,23 @@ Rules (`src/main/export/invoice-filename.ts`):
   detection and state names.
 - `tests/main/export/invoice-filename.test.ts` — exact example filename,
   sanitisation, fallbacks and length caps.
-- `tests/renderer/invoice-sheet.test.tsx` — both captions, the sales issuer and
-  buyer blocks, the sample item grid, totals, amount in words, the HSN/SAC-wise
-  summary, purchase issuer/buyer swap, the omitted supplier terms and bank
-  block, the company logo (sales only) and the cancellation watermark.
+- `tests/renderer/invoice-sheet.test.tsx` — both captions, the `SUPPLIER` and
+  `BUYER` panels, the stacked buyer details, the sample item grid, totals,
+  amount in words, the HSN/SAC-wise summary, purchase issuer/buyer swap, the
+  omitted supplier terms and bank block, the company logo (sales only) and the
+  cancellation watermark.
 - `tests/e2e/phases-flow.spec.ts` — posts a sales invoice, stubs the native save
   dialog, clicks **Export PDF**, asserts the filename pattern and the `%PDF`
-  header, then opens the print route and asserts both captions.
+  header, then opens the print route and asserts both captions and the
+  `SUPPLIER`/`BUYER` panels.
+
+### Quiet end-to-end runs
+
+`tests/e2e/support/silent.ts` keeps the suite unattended without touching
+production code. After each `electron.launch` the test process stubs
+`shell.showItemInFolder`, `shell.openPath` and `shell.openExternal`, so an export
+never opens Explorer and a backup never opens its folder. It also parks every
+`BrowserWindow` off-screen and out of the taskbar, including windows created
+later (the invoice print window). Off-screen rather than hidden keeps Chromium
+painting, so the phase screenshots still capture real content. Production keeps
+the reveal behaviour: only the tests mute it.

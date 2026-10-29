@@ -8,6 +8,7 @@ import {
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { quietApp } from './support/silent'
 
 /**
  * End to end: first run setup, masters, a purchase, a sale, a receipt with an
@@ -43,6 +44,7 @@ async function launch(): Promise<void> {
       CROWN_BOOKS_USER_DATA: userData
     }
   })
+  await quietApp(app)
   page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
 }

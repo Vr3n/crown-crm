@@ -93,22 +93,26 @@
 /* Document heading -------------------------------------------------------- */
 
 .invoice-doc-head {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: baseline;
-  justify-content: space-between;
   gap: 6mm;
   padding-bottom: 1.4mm;
   border-bottom: 0.8pt solid #141a1f;
 }
 
 .invoice-title {
+  grid-column: 2;
   font-size: 17pt;
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1;
+  text-align: center;
 }
 
 .invoice-caption {
+  grid-column: 3;
+  justify-self: end;
   font-size: 7.4pt;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -116,21 +120,29 @@
   color: #4b5359;
 }
 
-/* Issuer and meta grid ---------------------------------------------------- */
+/* Supplier and meta grid -------------------------------------------------- */
 
 .invoice-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 92mm;
-  align-items: start;
+  align-items: stretch;
   gap: 5mm;
 }
 
-.invoice-issuer {
+.invoice-supplier {
   display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 0.5pt solid #333b40;
+}
+
+.invoice-supplier-body {
+  display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 0.5mm;
   min-width: 0;
-  padding-top: 0.5mm;
+  padding: 1.6mm 2.4mm 1.8mm;
 }
 
 /*
@@ -169,19 +181,21 @@
   color: #4b5359;
 }
 
-.invoice-company-ids,
-.invoice-company-contact {
+/*
+ * Phone/email and GSTIN/PAN/state sit on their own wrapped lines so a long
+ * address or a missing value never pushes the grid sideways.
+ */
+.invoice-party-line {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 3mm;
-  font-size: 7.8pt;
+  gap: 0 4mm;
+  font-size: 8pt;
   color: #3c444a;
 }
 
-.invoice-company-ids span + span::before,
-.invoice-company-contact span + span::before {
+.invoice-party-line > span + span::before {
   content: '·';
-  margin-right: 3mm;
+  margin-right: 4mm;
   color: #8a9095;
 }
 
@@ -265,7 +279,8 @@
   color: #4b5359;
 }
 
-.invoice-buyer > .invoice-block-label {
+.invoice-buyer > .invoice-block-label,
+.invoice-supplier > .invoice-block-label {
   padding: 1mm 2.4mm;
   background: #f1efe8;
   border-bottom: 0.5pt solid #333b40;
@@ -273,38 +288,16 @@
 }
 
 .invoice-buyer-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 86mm;
-  gap: 5mm;
-  padding: 1.4mm 2.4mm 1.6mm;
-}
-
-.invoice-buyer-main {
   display: flex;
   flex-direction: column;
-  gap: 0.6mm;
-  min-width: 0;
+  gap: 0.5mm;
+  padding: 1.4mm 2.4mm 1.6mm;
 }
 
 .invoice-party-name {
   font-size: 9.6pt;
   font-weight: 600;
   line-height: 1.2;
-}
-
-.invoice-buyer-ids {
-  display: grid;
-  grid-template-columns: 22mm minmax(0, 1fr);
-  row-gap: 0.3mm;
-  font-size: 7.8pt;
-}
-
-.invoice-buyer-ids dt {
-  color: #5a6268;
-}
-
-.invoice-buyer-ids dd {
-  overflow-wrap: anywhere;
 }
 
 /* Item grid --------------------------------------------------------------- */

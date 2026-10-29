@@ -212,36 +212,45 @@ export function InvoiceSheet({
         <p className="invoice-caption">{caption}</p>
       </header>
 
-      <section className="invoice-head" aria-label="Issuer and invoice details">
-        <div className="invoice-issuer">
-          <div className="invoice-brand">
-            {issuer.logo ? (
-              <img className="invoice-logo" src={issuer.logo} alt="" decoding="async" />
-            ) : null}
-            <div className="invoice-brand-text">
-              <p className="invoice-company-name">{issuer.name}</p>
-              {issuer.legalName && issuer.legalName !== issuer.name ? (
-                <p className="invoice-company-legal">{issuer.legalName}</p>
+      <section className="invoice-head" aria-label="Supplier and invoice details">
+        <section className="invoice-supplier" aria-label="Supplier">
+          <p className="invoice-block-label">Supplier</p>
+          <div className="invoice-supplier-body">
+            <div className="invoice-brand">
+              {issuer.logo ? (
+                <img className="invoice-logo" src={issuer.logo} alt="" decoding="async" />
               ) : null}
+              <div className="invoice-brand-text">
+                <p className="invoice-company-name">{issuer.name}</p>
+                {issuer.legalName && issuer.legalName !== issuer.name ? (
+                  <p className="invoice-company-legal">{issuer.legalName}</p>
+                ) : null}
+              </div>
             </div>
+            {issuer.address ? <p className="invoice-address">{issuer.address}</p> : null}
+            {addressText(issuer.city, issuer.pincode) ? (
+              <p>{addressText(issuer.city, issuer.pincode)}</p>
+            ) : null}
+            <p className="invoice-party-line">
+              <span>Phone: {valueOrDash(issuer.phone)}</span>
+            </p>
+            <p className="invoice-party-line">
+              <span>Email: {valueOrDash(issuer.email)}</span>
+            </p>
+            <p className="invoice-party-line">
+              <span>
+                GSTIN/UIN: <span className="invoice-mono">{valueOrDash(issuer.gstin)}</span>
+              </span>
+              <span>
+                PAN/IT No.: <span className="invoice-mono">{valueOrDash(issuer.pan)}</span>
+              </span>
+              <span>
+                State: {stateText(issuer.stateCode)}
+                {issuer.stateCode ? `, Code: ${issuer.stateCode}` : ''}
+              </span>
+            </p>
           </div>
-          {issuer.address ? <p className="invoice-address">{issuer.address}</p> : null}
-          {addressText(issuer.city, issuer.pincode) ? (
-            <p>{addressText(issuer.city, issuer.pincode)}</p>
-          ) : null}
-          <p className="invoice-company-ids">
-            <span>GSTIN/UIN: {valueOrDash(issuer.gstin)}</span>
-            <span>PAN/IT No.: {valueOrDash(issuer.pan)}</span>
-            <span>
-              State: {stateText(issuer.stateCode)}
-              {issuer.stateCode ? `, Code: ${issuer.stateCode}` : ''}
-            </span>
-          </p>
-          <p className="invoice-company-contact">
-            {issuer.phone ? <span>Phone: {issuer.phone}</span> : null}
-            {issuer.email ? <span>Email: {issuer.email}</span> : null}
-          </p>
-        </div>
+        </section>
 
         <div className="invoice-meta-col">
           {isPurchase ? (
@@ -253,7 +262,7 @@ export function InvoiceSheet({
             <dl className="invoice-meta">
               <MetaCell label={invoiceNumberLabel(document.type)} value={invoiceNumber} mono />
               <MetaCell label="Dated" value={formatInvoiceDate(document.date)} mono />
-              <MetaCell label="Our Voucher No." value={document.number} mono />
+              <MetaCell label="Voucher No." value={document.number} mono />
               <MetaCell
                 label="Place of Supply"
                 value={stateText(document.placeOfSupplyStateCode)}
@@ -291,34 +300,23 @@ export function InvoiceSheet({
       </section>
 
       <section className="invoice-buyer" aria-label="Buyer">
-        <p className="invoice-block-label">Buyer (Bill to)</p>
+        <p className="invoice-block-label">Buyer</p>
         <div className="invoice-buyer-body">
-          <div className="invoice-buyer-main">
-            <p className="invoice-party-name">{buyer.name}</p>
-            {buyer.address ? <p className="invoice-address">{buyer.address}</p> : null}
-          </div>
-          <dl className="invoice-buyer-ids">
-            <div>
-              <dt>Phone</dt>
-              <dd>{valueOrDash(buyer.phone)}</dd>
-            </div>
-            <div>
-              <dt>GSTIN/UIN</dt>
-              <dd className="invoice-mono">{valueOrDash(buyer.gstin)}</dd>
-            </div>
-            <div>
-              <dt>PAN/IT No.</dt>
-              <dd className="invoice-mono">{valueOrDash(buyer.pan)}</dd>
-            </div>
-            <div>
-              <dt>State Name</dt>
-              <dd>{stateText(buyer.stateCode)}</dd>
-            </div>
-            <div>
-              <dt>Contact</dt>
-              <dd>{valueOrDash(buyer.email)}</dd>
-            </div>
-          </dl>
+          <p className="invoice-party-name">{buyer.name}</p>
+          <p className="invoice-address">{valueOrDash(buyer.address)}</p>
+          <p className="invoice-party-line">
+            <span>Phone: {valueOrDash(buyer.phone)}</span>
+            <span>Email: {valueOrDash(buyer.email)}</span>
+          </p>
+          <p className="invoice-party-line">
+            <span>
+              GSTIN/UIN: <span className="invoice-mono">{valueOrDash(buyer.gstin)}</span>
+            </span>
+            <span>
+              PAN/IT No.: <span className="invoice-mono">{valueOrDash(buyer.pan)}</span>
+            </span>
+            <span>State: {stateText(buyer.stateCode)}</span>
+          </p>
         </div>
       </section>
 

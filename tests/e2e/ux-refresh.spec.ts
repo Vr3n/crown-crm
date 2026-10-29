@@ -8,6 +8,7 @@ import {
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { quietApp } from './support/silent'
 
 /**
  * The UX refresh flow: first run numbering, the dashboard checklist, reactive
@@ -28,6 +29,7 @@ async function launch(): Promise<void> {
       CROWN_BOOKS_USER_DATA: userData
     }
   })
+  await quietApp(app)
   page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
 }
