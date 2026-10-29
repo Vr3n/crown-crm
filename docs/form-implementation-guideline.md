@@ -50,7 +50,16 @@ The shared primitives are:
 - `FormTextField` for a TanStack Form field, including the live re-check.
 - `FieldHelp` for the keyboard reachable explanation.
 - `FormLegend` for the "Required fields" legend.
+- `FieldCounter` for a live count on the label row, such as the digits left.
 - `focusFirstError` to reveal and focus the first invalid field on submit.
+
+Mobile numbers use `filter="mobile"` on `FormTextField` (or the same
+`toMobileDigits` helper in a custom field). The filter keeps digits only, caps
+the value at ten, and drops a pasted `+91`, `0091`, `91` or `0` prefix. The
+label row shows `N left` from `mobileDigitsLeft`, and the counter turns green at
+zero. Do not set `maxLength` on a mobile input: the browser would truncate a
+pasted country code before the filter can remove it. The stored value is a bare
+ten digit number; the main process still normalises it at the boundary.
 
 ```ts
 const form = useForm({

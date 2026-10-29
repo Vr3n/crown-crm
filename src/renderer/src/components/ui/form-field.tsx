@@ -1,8 +1,9 @@
 import * as React from 'react'
 import { CheckCircle2 } from 'lucide-react'
-import { Field, type FieldProps } from '@/components/ui/field'
+import { Field, FieldCounter, type FieldProps } from '@/components/ui/field'
 import type { FieldHelpContent } from '@/components/ui/field-help'
 import { Input } from '@/components/ui/input'
+import { mobileDigitsLeft, toMobileDigits } from '@/lib/validation'
 import { cn } from '@/lib/utils'
 
 /**
@@ -23,11 +24,12 @@ export interface FormFieldApi<T = string> {
   setErrorMap?: (map: { onBlur?: undefined; onChange?: undefined }) => void
 }
 
-type Filter = 'digits' | 'upper' | 'decimal'
+type Filter = 'digits' | 'upper' | 'decimal' | 'mobile'
 
 function applyFilter(value: string, filter?: Filter): string {
   if (filter === 'digits') return value.replace(/\D/g, '')
   if (filter === 'upper') return value.toUpperCase()
+  if (filter === 'mobile') return toMobileDigits(value)
   return value
 }
 
@@ -79,6 +81,7 @@ export function FormTextField({
   const extraError = validate?.(value)
   const error = extraError ?? (fieldError ? String(fieldError) : undefined)
   const valid = !error && evaluated
+  const digitsLeft = filter === 'mobile' ? mobileDigitsLeft(value) : undefined
 
   const change = (raw: string): void => {
     const next = applyFilter(raw, filter)
@@ -95,6 +98,11 @@ export function FormTextField({
       label={label}
       required={required}
       help={help}
+      labelEnd={
+        digitsLeft === undefined ? undefined : (
+          <FieldCounter complete={digitsLeft === 0}>{digitsLeft} left</FieldCounter>
+        )
+      }
       hint={hint}
       warning={error ? undefined : warning}
       error={error}
@@ -110,6 +118,7 @@ export function FormTextField({
         id={field.name}
         name={field.name}
         value={value}
+        inputMode={input.inputMode ?? (filter === 'mobile' ? 'tel' : undefined)}
         onChange={(event) => change(event.target.value)}
         onBlur={() => {
           field.handleBlur()

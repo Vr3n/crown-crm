@@ -105,7 +105,7 @@ export function DashboardPage(): React.JSX.Element {
               {session.companyName}. Here is where the books stand today.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link
               to="/parties?action=new"
               className="ui-press flex h-8 items-center gap-1.5 border border-border bg-card px-3 text-[0.875rem] font-medium hover:border-rule-strong"
@@ -114,11 +114,25 @@ export function DashboardPage(): React.JSX.Element {
               Add a party
             </Link>
             <Link
+              to="/items?action=new"
+              className="ui-press flex h-8 items-center gap-1.5 bg-warning px-3 text-[0.875rem] font-medium text-paper hover:bg-warning/90"
+            >
+              <Package className="size-3.5" strokeWidth={1.75} />
+              New Item Inventory
+            </Link>
+            <Link
+              to="/purchases/new"
+              className="ui-press flex h-8 items-center gap-1.5 bg-stamp px-3 text-[0.875rem] font-medium text-paper hover:bg-stamp/90"
+            >
+              <ArrowUpRight className="size-3.5" strokeWidth={1.75} />
+              New Purchase Invoice
+            </Link>
+            <Link
               to="/sales/new"
               className="ui-press flex h-8 items-center gap-1.5 bg-primary px-3 text-[0.875rem] font-medium text-primary-foreground hover:bg-primary/90"
             >
               <Receipt className="size-3.5" strokeWidth={1.75} />
-              New invoice
+              New Sales Invoice
             </Link>
           </div>
         </div>

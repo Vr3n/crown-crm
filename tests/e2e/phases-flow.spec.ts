@@ -86,7 +86,7 @@ test('P0: first run, company setup and shell', async () => {
 
   await page.getByLabel('Business name').fill('Acme Distributors')
   await page.getByLabel('Owner name').fill('Viren Patel')
-  await page.getByLabel('Phone (optional)').fill('9876543210')
+  await page.getByLabel('Mobile (optional)').fill('9876543210')
   await page.getByLabel('Owner email').fill('owner@acme.in')
   await page.locator('input[type="password"]').first().fill('correct-horse')
   await page.getByLabel('GSTIN (optional)').fill('27AABFU4477G1ZY')
@@ -103,7 +103,7 @@ test('P1: parties, items, chart of accounts and company', async () => {
   await go('#/parties')
   await page.getByRole('button', { name: 'New party' }).first().click()
   await page.getByLabel(/^Name/).fill('Acme Distributor')
-  await page.getByLabel('Phone', { exact: true }).fill('9000000001')
+  await page.getByLabel('Mobile', { exact: true }).fill('9000000001')
   await page.getByLabel('GSTIN', { exact: true }).fill('27AABFU4477G1ZY')
   await page.getByRole('textbox', { name: 'State code' }).fill('27')
   await page.getByRole('textbox', { name: 'Credit days' }).fill('30')
@@ -113,7 +113,7 @@ test('P1: parties, items, chart of accounts and company', async () => {
   // Supplier
   await page.getByRole('button', { name: 'New party' }).first().click()
   await page.getByLabel(/^Name/).fill('TechConnect')
-  await page.getByLabel('Phone', { exact: true }).fill('9000000002')
+  await page.getByLabel('Mobile', { exact: true }).fill('9000000002')
   await page.getByLabel('Customer').click()
   await page.getByLabel('Supplier').click()
   await page.getByRole('textbox', { name: 'Credit days' }).fill('30')

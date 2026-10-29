@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent } from 'react'
 import { BookOpen, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { FieldCounter } from '@/components/ui/field'
 import { FieldHelp } from '@/components/ui/field-help'
 import { FIELD_HELP } from '@/lib/form-help'
+import { mobileDigitsLeft, toMobileDigits } from '@/lib/validation'
 
 type SessionContext = Awaited<ReturnType<typeof window.api.identity.session>>
 type Phase = 'setup' | 'login'
@@ -182,9 +184,10 @@ export function AuthGate({
                     placeholder="Viren Patel"
                   />
                   <Field
-                    label="Phone (optional)"
+                    label="Mobile (optional)"
                     value={phone}
                     onChange={setPhone}
+                    filter="mobile"
                     placeholder="98765 43210"
                   />
                 </div>
@@ -315,6 +318,7 @@ function Field({
   placeholder,
   hint,
   maxLength,
+  filter,
   autoFocus
 }: {
   label: string
@@ -324,15 +328,31 @@ function Field({
   placeholder?: string
   hint?: string
   maxLength?: number
+  filter?: 'mobile'
   autoFocus?: boolean
 }): React.JSX.Element {
+  const digitsLeft = filter === 'mobile' ? mobileDigitsLeft(value) : undefined
+  const id = useId()
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-[0.75rem] font-medium text-foreground">{label}</span>
+    <div className="block">
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <label htmlFor={id} className="text-[0.75rem] font-medium text-foreground">
+          {label}
+        </label>
+        {digitsLeft === undefined ? null : (
+          <FieldCounter complete={digitsLeft === 0} className="ml-auto">
+            {digitsLeft} left
+          </FieldCounter>
+        )}
+      </div>
       <input
+        id={id}
         type={type}
+        inputMode={filter === 'mobile' ? 'tel' : undefined}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) =>
+          onChange(filter === 'mobile' ? toMobileDigits(e.target.value) : e.target.value)
+        }
         placeholder={placeholder}
         maxLength={maxLength}
         autoFocus={autoFocus}
@@ -343,7 +363,7 @@ function Field({
           {hint}
         </span>
       ) : null}
-    </label>
+    </div>
   )
 }
 

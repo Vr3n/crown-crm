@@ -99,7 +99,7 @@ test('first run creates the company and opens the dashboard', async () => {
   await page.getByText('Set up the books').waitFor()
   await page.getByLabel('Business name').fill('Acme Distributors')
   await page.getByLabel('Owner name').fill('Viren Patel')
-  await page.getByLabel('Phone (optional)').fill('9876543210')
+  await page.getByLabel('Mobile (optional)').fill('9876543210')
   await page.getByLabel('Owner email').fill('owner@acme.in')
   await page.locator('input[type="password"]').first().fill('correct-horse')
   await page.getByLabel('GSTIN (optional)').fill('27AABFU4477G1ZY')

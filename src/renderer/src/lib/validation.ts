@@ -9,6 +9,28 @@ const MOBILE_MAX = 10
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PASSWORD_MIN = 8
 
+/** Mobile inputs never accept more than this many digits. */
+export const MOBILE_MAX_DIGITS = MOBILE_MAX
+
+/**
+ * Digits only, capped at ten. A pasted Indian country code (`+91`, `0091`,
+ * `91`) or trunk prefix (`0`) is removed first so the whole number still fits
+ * in the field. Only full prefixes are stripped, so typing `91…` as a mobile
+ * number is never mistaken for a country code.
+ */
+export function toMobileDigits(value: string): string {
+  let digits = value.replace(/\D/g, '')
+  if (digits.length === 14 && digits.startsWith('0091')) digits = digits.slice(4)
+  else if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2)
+  else if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1)
+  return digits.slice(0, MOBILE_MAX_DIGITS)
+}
+
+/** How many digits a ten digit mobile number is still missing. */
+export function mobileDigitsLeft(value: string): number {
+  return Math.max(0, MOBILE_MAX_DIGITS - value.replace(/\D/g, '').length)
+}
+
 // Indian phone rules (mirrors src/main/domain/phone.ts):
 //  - mobile:  10 digits starting 6-9, optionally prefixed +91 / 0091 / 91 / 0
 //    (the prefix lives inside the regex so a '91…' mobile is never misread)

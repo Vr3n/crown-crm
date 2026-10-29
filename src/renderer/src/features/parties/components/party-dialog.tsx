@@ -32,7 +32,7 @@ const FIELDS: {
   type?: string
   inputMode?: 'tel' | 'email' | 'numeric' | 'decimal'
   maxLength?: number
-  filter?: 'digits' | 'upper'
+  filter?: 'digits' | 'upper' | 'mobile'
   className?: string
   mono?: boolean
   required?: boolean
@@ -46,7 +46,7 @@ const FIELDS: {
     required: true,
     help: FIELD_HELP.party.name
   },
-  { name: 'phone', label: 'Phone', inputMode: 'tel', help: FIELD_HELP.party.phone },
+  { name: 'phone', label: 'Mobile', filter: 'mobile', help: FIELD_HELP.party.phone },
   { name: 'email', label: 'Email', type: 'email', help: FIELD_HELP.party.email },
   {
     name: 'gstin',

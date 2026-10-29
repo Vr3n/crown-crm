@@ -351,6 +351,11 @@ state plate and chart series. The body stays neutral.
 The map lives in `src/renderer/src/lib/module-tone.ts`. Colour is never the
 only signal: labels and icons carry the same meaning.
 
+The dashboard greeting uses the same accents for its quick actions: sales in
+action blue (`--primary`), purchases in vermilion (`--stamp`), and items in
+ochre (`--warning`). Each button carries its label and an icon, so the colour
+is a wayfinding cue rather than the only signal.
+
 Charts use `@tanstack/charts` with the `--chart-1` to `--chart-5` tokens, at
 most two per screen, always with an accessible name and a data table fallback.
 They are not decorative: each answers a question the page already asks.

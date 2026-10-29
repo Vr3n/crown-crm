@@ -127,6 +127,32 @@ export function FieldDescription({
   return <p id={id} className={cn('text-xs text-muted-foreground', className)} {...props} />
 }
 
+/**
+ * Live count on the label row, e.g. the digits left in a mobile number. It is
+ * announced politely so a screen reader hears the change without it becoming
+ * an alert. Turns green once the count reaches zero.
+ */
+export function FieldCounter({
+  complete,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<'span'> & { complete?: boolean }): React.JSX.Element {
+  return (
+    <span
+      aria-live="polite"
+      className={cn(
+        'font-mono text-[0.6875rem] tabular-nums',
+        complete ? 'font-medium text-success' : 'text-muted-foreground',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </span>
+  )
+}
+
 export function FieldError({
   id,
   className,

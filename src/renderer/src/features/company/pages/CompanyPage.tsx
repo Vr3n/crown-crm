@@ -7,12 +7,13 @@ import { PageHeader } from '@/components/page-header'
 import { EmptyState } from '@/components/empty-state'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { FormLegend } from '@/components/ui/field'
+import { FieldCounter, FormLegend } from '@/components/ui/field'
 import { FieldHelp, type FieldHelpContent } from '@/components/ui/field-help'
 import { StatusPill } from '@/components/ui/status-pill'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FIELD_HELP } from '@/lib/form-help'
+import { mobileDigitsLeft, toMobileDigits } from '@/lib/validation'
 import {
   Select,
   SelectContent,
@@ -69,7 +70,7 @@ const IDENTITY_FIELDS: {
   type?: string
   inputMode?: 'tel' | 'email' | 'numeric'
   maxLength?: number
-  filter?: 'digits' | 'upper'
+  filter?: 'digits' | 'upper' | 'mobile'
   className?: string
 }[] = [
   { id: 'company-name', label: 'Registered name', name: 'name' },
@@ -84,7 +85,7 @@ const IDENTITY_FIELDS: {
     inputMode: 'numeric',
     maxLength: 2
   },
-  { id: 'company-phone', label: 'Phone', name: 'phone', inputMode: 'tel' },
+  { id: 'company-phone', label: 'Mobile', name: 'phone', inputMode: 'tel', filter: 'mobile' },
   { id: 'company-email', label: 'Email', name: 'email', type: 'email', className: 'sm:col-span-2' },
   { id: 'company-address', label: 'Address', name: 'address', className: 'sm:col-span-2' },
   { id: 'company-city', label: 'City', name: 'city' },
@@ -243,9 +244,10 @@ function TextField({
   type?: string
   inputMode?: 'tel' | 'email' | 'numeric'
   maxLength?: number
-  filter?: 'digits' | 'upper'
+  filter?: 'digits' | 'upper' | 'mobile'
   className?: string
 }): React.JSX.Element {
+  const digitsLeft = filter === 'mobile' ? mobileDigitsLeft(value) : undefined
   return (
     <div className={`flex min-w-0 flex-col gap-1.5 ${className ?? ''}`}>
       <div className="flex items-center gap-1.5">
@@ -261,6 +263,11 @@ function TextField({
           ) : null}
         </Label>
         {help ? <FieldHelp label={label} content={help} /> : null}
+        {digitsLeft === undefined ? null : (
+          <FieldCounter complete={digitsLeft === 0} className="ml-auto">
+            {digitsLeft} left
+          </FieldCounter>
+        )}
       </div>
       <Input
         id={id}
@@ -272,17 +279,23 @@ function TextField({
         onChange={(event) => {
           const raw = event.target.value
           onChange(
-            filter === 'digits'
-              ? raw.replace(/\D/g, '')
-              : filter === 'upper'
-                ? raw.toUpperCase()
-                : raw
+            filter === 'mobile'
+              ? toMobileDigits(raw)
+              : filter === 'digits'
+                ? raw.replace(/\D/g, '')
+                : filter === 'upper'
+                  ? raw.toUpperCase()
+                  : raw
           )
         }}
         aria-invalid={Boolean(error)}
         aria-required={required}
         aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        className={filter === 'upper' || inputMode === 'numeric' ? 'font-mono' : undefined}
+        className={
+          filter === 'upper' || filter === 'mobile' || inputMode === 'numeric'
+            ? 'font-mono'
+            : undefined
+        }
       />
       {error ? (
         <p id={`${id}-error`} role="alert" className="text-[0.75rem] text-destructive">

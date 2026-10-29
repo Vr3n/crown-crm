@@ -12,8 +12,8 @@ export const FIELD_HELP = {
       points: ['Use the name printed on their invoices.', 'Required.']
     },
     phone: {
-      summary: 'A contact number for reminders and statements.',
-      points: ['Optional. Digits, spaces and a country code are accepted.']
+      summary: 'A 10 digit mobile number for reminders and statements.',
+      points: ['Optional. Digits only, up to 10.', 'A pasted country code is removed.']
     },
     email: {
       summary: 'Where invoices and statements are sent.',
