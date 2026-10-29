@@ -180,6 +180,23 @@ dispatcher against a real SQLite file:
     logout
 13. a third test reopens the database and restores the remembered login
 
+### Smoke tests against the built app
+
+`npm run smoke:win` launches the built binary against a throwaway data directory
+and asserts the database was created, four migrations ran, the 28 tables exist
+and 31 permissions were seeded.
+
+`npm run smoke:ui` goes further: it starts the app with WebView2 remote
+debugging, attaches over the DevTools protocol, and checks that
+
+* React actually mounted and painted the first-run screen,
+* `window.api.identity.status()` answers `SETUP_REQUIRED` through the production
+  Content-Security-Policy (a CSP mistake would show as a blank window),
+* `identity.setup` creates the company and the reloaded page restores the
+  session and shows the first-run wizard,
+* `identity.company`, `dashboard.summary`, `vouchers.list` and `numbering.list`
+  all answer over the bridge.
+
 ### Windows test binaries
 
 `rfd` (via `tauri-plugin-dialog`) imports `TaskDialogIndirect`, which exists only
@@ -192,7 +209,7 @@ test binaries are separate link targets, so `build.rs` embeds
 
 | Artefact | Electron | Tauri | Change |
 |---|---|---|---|
-| Installer | 94.65 MB | **5.93 MB** (5.66 MiB) | −93.7% |
+| Installer | 94.65 MB | **5.94 MB** (5.66 MiB) | −93.7% |
 | Installed footprint | 327.02 MB | **11.86 MB** (11.31 MiB) | −96.4% |
 | — `crown-books.exe` | — | 11.78 MB | |
 | — `uninstall.exe` | — | 0.08 MB | |

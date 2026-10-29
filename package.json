@@ -22,7 +22,8 @@
     "dev:web": "vite",
     "build": "tauri build",
     "build:web": "vite build",
-    "smoke:win": "node scripts/smoke-tauri.mjs"
+    "smoke:win": "node scripts/smoke-tauri.mjs",
+    "smoke:ui": "node scripts/smoke-ui.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
