@@ -3,6 +3,12 @@ productName: Crown Books
 afterPack: scripts/after-pack.ts
 directories:
   buildResources: build
+# Shrink the Windows payload for low-disk machines. `maximum` costs build time
+# only; the NSIS archive is still 7z/LZMA compressed the same way.
+compression: maximum
+# Chromium ships ~55 locale packs (~46 MB). The app UI is English only.
+electronLanguages:
+  - en-US
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -16,6 +22,18 @@ files:
   - '!components.json'
   - '!*.tsbuildinfo'
   - '!**/*.{map,ts,tsx,mts,cts,md}'
+  # Repo scaffolding that is never read from inside the asar.
+  - '!{.herdr-sync,scripts,test-results}/**'
+  - '!{.releaserc.json,skills-lock.json}'
+  # ExcelJS is loaded through its Node entry (`lib/exceljs.nodejs.js`);
+  # `dist/` is the ~20 MB browser bundle we never touch.
+  - '!node_modules/exceljs/dist/**'
+  # drizzle-orm publishes one directory per SQL dialect (~13 MB). The app only
+  # uses the built-in node:sqlite driver, so the other dialects are dead weight.
+  # `sqlite-core`, `sql`, `cache`, `query-builders` and `up-migrations` stay:
+  # the sqlite migrator requires them at runtime. If a new dialect or subpath is
+  # ever imported, drop it from this list (see docs/18-windows-build-size.md).
+  - '!node_modules/drizzle-orm/{arktype,aws-data-api,better-sqlite3,bun-sql,bun-sqlite,cockroach,cockroach-core,d1,durable-sqlite,effect-core,effect-d1,effect-libsql,effect-mysql2,effect-pglite,effect-postgres,effect-schema,effect-sqlite-bun,effect-sqlite-do,effect-sqlite-node,effect-sqlite-wasm,expo-sqlite,libsql,mssql-core,mysql-core,mysql-proxy,mysql2,neon,neon-http,neon-serverless,netlify-db,node-mssql,node-postgres,op-sqlite,pg-core,pg-proxy,pglite,planetscale-serverless,postgres,postgres-js,singlestore,singlestore-core,singlestore-proxy,sql-js,sqlite-cloud,sqlite-proxy,supabase,tidb-serverless,tursodatabase,tursodatabase-serverless,tursodatabase-sync,typebox,typebox-legacy,valibot,vercel-postgres,xata-http,zod}/**'
 asarUnpack:
   - 'resources/**'
 npmRebuild: false

@@ -269,7 +269,7 @@ Seeded roles:
 
 ## 8. Dependency delta
 
-Remove: nothing required by the current design. `@yornaath/batshit` is used by the old dashboard search; confirm before removing.
+Remove: nothing required by the current design. `@yornaath/batshit` was used by the old dashboard search and was removed in the packaging pass (no remaining imports, see `docs/18-windows-build-size.md`).
 
 Add: nothing. The current stack already has Drizzle, Zod, TanStack Query, TanStack Form, TanStack Table, exceljs, Radix and Tailwind. Accounting needs arithmetic and patience, not new libraries.
 
