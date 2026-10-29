@@ -97,6 +97,13 @@ nothing and opens nothing.
 - A rejected channel call becomes the standard IPC error envelope, and the page
   shows `Could not save the CSV` or `Could not create the spreadsheet`.
 
+## Invoice PDF
+
+Sales invoices and purchase bills have their own two-copy A4 export. See
+[`17-invoice-print.md`](17-invoice-print.md) for the layout, the GST copy
+captions, the hidden-window PDF pipeline and the filename rules. The existing
+`export:pdf` channel above is unchanged and still prints the focused screen.
+
 ## Tests
 
 - `tests/main/export/xlsx.test.ts` reads the generated buffer back with ExcelJS

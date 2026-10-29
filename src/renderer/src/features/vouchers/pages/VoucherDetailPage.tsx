@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { ArrowLeft, Ban, Printer } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Ban, FileDown, Printer } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { StatusPill } from '@/components/ui/status-pill'
@@ -86,6 +86,7 @@ function TotalRow({ label, value }: { label: string; value: number }): React.JSX
 
 export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const session = useSession()
   const mayCancel = can(session.permissions, session.isSuper, 'voucher.cancel')
   const [open, setOpen] = useState(false)
@@ -98,6 +99,16 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
   const { data: company } = useQuery({
     queryKey: ['company'],
     queryFn: () => window.api.identity.company()
+  })
+
+  const exportInvoice = useMutation({
+    mutationFn: () => window.api.invoice.exportPdf(id),
+    onSuccess: (result) => {
+      if (result.saved) toast.success('Invoice PDF saved')
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Could not save the invoice PDF')
+    }
   })
 
   const cancel = useMutation({
@@ -128,6 +139,8 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
   const back = BACK[data.type] ?? '/'
   const title = TITLES[data.type] ?? data.type
   const cancelled = data.status === 'CANCELLED'
+  const isInvoice = data.type === 'SALES' || data.type === 'PURCHASE'
+  const mayExportInvoice = isInvoice && data.status === 'POSTED'
   const cancelError =
     cancel.error instanceof Error ? cancel.error.message : 'Could not cancel the voucher.'
 
@@ -144,10 +157,27 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
           Back
         </Link>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => window.print()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => (isInvoice ? navigate(`/print/vouchers/${id}`) : window.print())}
+          >
             <Printer className="size-3.5" />
             Print
           </Button>
+          {mayExportInvoice ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={exportInvoice.isPending}
+              onClick={() => exportInvoice.mutate()}
+            >
+              <FileDown className="size-3.5" />
+              {exportInvoice.isPending ? 'Preparing…' : 'Export PDF'}
+            </Button>
+          ) : null}
           {data.status === 'POSTED' && mayCancel ? (
             <Button
               type="button"
@@ -386,7 +416,9 @@ export function VoucherDetailPage({ id }: { id: number }): React.JSX.Element {
       {cancelled ? (
         <div className="border-l-2 border-destructive bg-destructive-soft px-3 py-2 text-[0.8125rem] print:hidden">
           <p className="font-medium text-destructive">
-            {data.cancelledAt ? `Cancelled ${displayDateTime(data.cancelledAt)}` : 'Cancelled voucher'}
+            {data.cancelledAt
+              ? `Cancelled ${displayDateTime(data.cancelledAt)}`
+              : 'Cancelled voucher'}
             {data.cancelledByName ? ` by ${data.cancelledByName}` : ''}
           </p>
           {data.cancelReason ? (

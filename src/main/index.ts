@@ -16,6 +16,7 @@ import { registerSummariesIpc } from './ipc/summaries'
 import { registerMastersIpc } from './ipc/masters'
 import { registerSearchIpc } from './ipc/search'
 import { registerVouchersIpc } from './ipc/vouchers'
+import { registerInvoiceIpc } from './ipc/invoice'
 import { registerReportsIpc } from './ipc/reports'
 import { registerBackupIpc } from './ipc/backup'
 import { registerLicenseIpc } from './ipc/license'
@@ -106,6 +107,7 @@ app.whenReady().then(async () => {
   registerMastersIpc()
   registerSearchIpc()
   registerVouchersIpc()
+  registerInvoiceIpc()
   registerReportsIpc()
   registerBackupIpc()
   registerDashboardIpc()
