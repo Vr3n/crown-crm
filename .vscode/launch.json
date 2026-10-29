@@ -2,24 +2,26 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug Main Process",
+      "name": "Tauri: Dev",
       "type": "node",
       "request": "launch",
-      "cwd": "${workspaceRoot}",
-      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron-vite",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "npm",
       "windows": {
-        "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron-vite.cmd"
+        "runtimeExecutable": "npm.cmd"
       },
-      "runtimeArgs": ["--sourcemap"],
+      "runtimeArgs": ["run", "dev"],
       "env": {
-        "REMOTE_DEBUGGING_PORT": "9222"
-      }
+        "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "--remote-debugging-port=9222"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
     },
     {
-      "name": "Debug Renderer Process",
-      "port": 9222,
-      "request": "attach",
+      "name": "Tauri: Attach to WebView",
       "type": "chrome",
+      "request": "attach",
+      "port": 9222,
       "webRoot": "${workspaceFolder}/src/renderer",
       "timeout": 60000,
       "presentation": {
@@ -29,8 +31,9 @@
   ],
   "compounds": [
     {
-      "name": "Debug All",
-      "configurations": ["Debug Main Process", "Debug Renderer Process"],
+      "name": "Tauri: Debug All",
+      "configurations": ["Tauri: Dev", "Tauri: Attach to WebView"],
+      "stopAll": true,
       "presentation": {
         "order": 1
       }

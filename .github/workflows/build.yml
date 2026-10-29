@@ -18,24 +18,30 @@ jobs:
           node-version: 22
           cache: npm
 
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
       - name: Install dependencies
         run: npm ci
 
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm run test
+      - name: Test renderer and contracts
+        run: npm test
 
-      - name: Build app (main/preload/renderer into out/)
-        run: npx electron-vite build
+      - name: Test backend
+        run: cargo test --manifest-path src-tauri/Cargo.toml
 
-      - name: Build and package (fuses applied via afterPack hook)
-        run: npx electron-builder --win
+      - name: Build app and NSIS installer
+        run: npm run build
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: CrownCRM-setup
-          path: dist/*-setup.exe
+          name: Crown-Books-setup
+          path: src-tauri/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
