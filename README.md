@@ -88,6 +88,7 @@ npm run lint
 npm test             # renderer and shared-contract tests
 cargo test --manifest-path src-tauri/Cargo.toml   # backend, including tests/rpc_flow.rs
 npm run smoke:win    # launches the built binary and checks the migrated database
+npm run smoke:ui     # attaches to the running window and checks React + the IPC bridge
 ```
 
 ## Data
