@@ -21,6 +21,7 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { CompanyLogoAvatar } from '../components/company-logo-avatar'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type { CompanyProfile, UpdateCompanyInput } from '../../../../../shared/contracts/identity'
 
@@ -106,17 +107,6 @@ function formatDay(value: string): string {
   })
 }
 
-function initials(name: string): string {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('') || 'CB'
-  )
-}
-
 function fyLabel(startMonth: number, today = new Date()): string {
   const year = today.getMonth() + 1 >= startMonth ? today.getFullYear() : today.getFullYear() - 1
   return `${year}–${String((year + 1) % 100).padStart(2, '0')}`
@@ -179,9 +169,7 @@ function CompanySummary({ profile }: { profile: CompanyProfile }): React.JSX.Ele
   return (
     <section className="border border-border bg-card">
       <div className="flex flex-wrap items-start gap-4 p-4">
-        <div className="flex size-12 shrink-0 items-center justify-center border border-rule-strong bg-muted font-heading text-[1.0625rem] font-semibold tracking-tight">
-          {initials(profile.name)}
-        </div>
+        <CompanyLogoAvatar name={profile.name} logo={profile.logo} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="font-heading text-[1.125rem] font-semibold tracking-tight">
