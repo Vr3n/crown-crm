@@ -247,6 +247,22 @@ test('P3: sales invoice exports a two-copy PDF and prints both copies', async ()
   await expect(page.getByText('ORIGINAL FOR RECIPIENT').first()).toBeVisible()
   await expect(page.getByText('DUPLICATE FOR TRANSPORTER').first()).toBeVisible()
   await expect(page.getByText('TAX INVOICE').first()).toBeVisible()
+
+  // A purchase print reproduces the supplier's tax invoice: the supplier is
+  // the issuer and our company is the buyer.
+  await go('#/purchase')
+  const purchaseHref = await page.getByRole('link', { name: /PUR\// }).first().getAttribute('href')
+  const purchaseId = Number(/(\d+)$/.exec(purchaseHref ?? '')?.[1] ?? 0)
+  expect(purchaseId).toBeGreaterThan(0)
+
+  await go(`#/print/vouchers/${purchaseId}`)
+  await page.getByText('ORIGINAL FOR RECIPIENT').first().waitFor()
+  const purchaseSheet = page.locator('article').first()
+  await expect(purchaseSheet.getByText('TAX INVOICE')).toBeVisible()
+  await expect(purchaseSheet.getByText('Supplier Bill No.')).toBeVisible()
+  await expect(purchaseSheet.getByText('TechConnect').first()).toBeVisible()
+  await expect(purchaseSheet.getByText('Buyer (Bill to)')).toBeVisible()
+  await expect(purchaseSheet.getByText('Acme Distributors').first()).toBeVisible()
 })
 
 test('P5 and P6: stock, registers, profit and loss, balance sheet', async () => {

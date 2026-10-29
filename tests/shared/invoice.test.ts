@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  INVOICE_DOCUMENT_TITLE,
+  buildHsnSummary,
   buildTaxSlabs,
   formatInvoiceAmount,
   formatInvoiceDate,
   formatInvoicePercent,
   formatInvoiceQty,
   groupIndian,
-  invoiceDocumentTitle,
   invoiceNumberLabel,
-  invoicePartyLabel,
+  invoiceTaxTotal,
   invoiceTermLines,
   isInterStateInvoice
 } from '../../src/shared/invoice'
@@ -113,11 +114,8 @@ describe('buildTaxSlabs', () => {
 })
 
 describe('invoice labels', () => {
-  it('calls a sale a tax invoice and a purchase a purchase bill', () => {
-    expect(invoiceDocumentTitle('SALES')).toBe('TAX INVOICE')
-    expect(invoiceDocumentTitle('PURCHASE')).toBe('PURCHASE BILL')
-    expect(invoicePartyLabel('SALES')).toBe('Bill To')
-    expect(invoicePartyLabel('PURCHASE')).toBe('Supplier')
+  it('prints both voucher types as a tax invoice', () => {
+    expect(INVOICE_DOCUMENT_TITLE).toBe('TAX INVOICE')
     expect(invoiceNumberLabel('SALES')).toBe('Invoice No.')
     expect(invoiceNumberLabel('PURCHASE')).toBe('Supplier Bill No.')
   })
@@ -125,6 +123,69 @@ describe('invoice labels', () => {
   it('splits stored terms into readable lines', () => {
     expect(invoiceTermLines('1. First\r\n\r\n2. Second \n')).toEqual(['1. First', '2. Second'])
     expect(invoiceTermLines(null)).toEqual([])
+  })
+})
+
+describe('buildHsnSummary', () => {
+  it('groups by HSN and rate and sorts by HSN', () => {
+    const rows = buildHsnSummary([
+      line({ id: 1, hsn: '8504', taxableMinor: 76_271, cgstMinor: 6_864, sgstMinor: 6_864 }),
+      line({ id: 2, hsn: '3215', taxableMinor: 152_120, cgstMinor: 13_690, sgstMinor: 13_690 }),
+      line({
+        id: 3,
+        hsn: '3215',
+        taxableMinor: 50_000,
+        cgstMinor: 4_500,
+        sgstMinor: 4_500
+      })
+    ])
+
+    expect(rows.map((row) => row.hsn)).toEqual(['3215', '8504'])
+    expect(rows[0]).toMatchObject({
+      taxableMinor: 202_120,
+      cgstMinor: 18_190,
+      sgstMinor: 18_190,
+      taxMinor: 36_380
+    })
+  })
+
+  it('keeps the same HSN at different rates apart', () => {
+    const rows = buildHsnSummary([
+      line({ id: 1, hsn: '8471', gstRateBps: 1800 }),
+      line({ id: 2, hsn: '8471', gstRateBps: 1200 })
+    ])
+
+    expect(rows).toHaveLength(2)
+    expect(rows.map((row) => row.gstRateBps)).toEqual([1200, 1800])
+  })
+
+  it('treats a missing HSN as one group and drops empty lines', () => {
+    const rows = buildHsnSummary([
+      line({ id: 1, hsn: null }),
+      line({ id: 2, hsn: '  ' }),
+      line({ id: 3, hsn: '9999', taxableMinor: 0, cgstMinor: 0, sgstMinor: 0 })
+    ])
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ hsn: null, taxableMinor: 200_000, taxMinor: 36_000 })
+  })
+})
+
+describe('invoiceTaxTotal', () => {
+  it('adds every tax head including cess', () => {
+    expect(
+      invoiceTaxTotal({
+        taxableMinor: 100_000,
+        cgstMinor: 9_000,
+        sgstMinor: 9_000,
+        igstMinor: 0,
+        cessMinor: 500,
+        discountMinor: 0,
+        roundOffMinor: 0,
+        totalMinor: 118_500,
+        totalQtyE4: 10_000
+      })
+    ).toBe(18_500)
   })
 })
 

@@ -1,13 +1,14 @@
 import { amountInWords } from '../../../../../shared/amount-in-words'
 import type { InvoiceCopyCaption, InvoiceDocument } from '../../../../../shared/contracts/invoice'
 import {
+  INVOICE_DOCUMENT_TITLE,
+  buildHsnSummary,
   formatInvoiceAmount,
   formatInvoiceDate,
   formatInvoicePercent,
   formatInvoiceQty,
-  invoiceDocumentTitle,
   invoiceNumberLabel,
-  invoicePartyLabel,
+  invoiceTaxTotal,
   invoiceTermLines,
   isInterStateInvoice
 } from '../../../../../shared/invoice'
@@ -21,12 +22,27 @@ interface InvoiceSheetProps {
   pages: number
 }
 
+interface PartyBlock {
+  name: string
+  legalName: string | null
+  address: string | null
+  city: string | null
+  pincode: string | null
+  gstin: string | null
+  pan: string | null
+  stateCode: string | null
+  phone: string | null
+  email: string | null
+  logo: string | null
+}
+
 function stateText(code: string | null | undefined): string {
   return stateLabel(code) ?? '—'
 }
 
-function amountOrDash(value: number): string {
-  return value === 0 ? '—' : formatInvoiceAmount(value)
+function valueOrDash(value: string | null | undefined): string {
+  const text = (value ?? '').trim()
+  return text === '' ? '—' : text
 }
 
 function addressText(...parts: (string | null | undefined)[]): string {
@@ -36,9 +52,31 @@ function addressText(...parts: (string | null | undefined)[]): string {
     .join(', ')
 }
 
+function MetaCell({
+  label,
+  value,
+  mono = false
+}: {
+  label: string
+  value: string | null
+  mono?: boolean
+}): React.JSX.Element {
+  const text = valueOrDash(value)
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd className={mono && text !== '—' ? 'invoice-mono' : undefined}>{text}</dd>
+    </div>
+  )
+}
+
 /**
  * One printed copy of a sales invoice or purchase bill, sized to a single A4
  * sheet. The page renders this twice with the two GST Rule 48(1) captions.
+ *
+ * A sales voucher prints our company as the issuer and the customer as the
+ * buyer. A purchase voucher reproduces the supplier's tax invoice: the party
+ * is the issuer and our company is the buyer, which is why the blocks swap.
  */
 export function InvoiceSheet({
   document,
@@ -47,24 +85,119 @@ export function InvoiceSheet({
   pages
 }: InvoiceSheetProps): React.JSX.Element {
   const { company, party, totals } = document
+  const isPurchase = document.type === 'PURCHASE'
   const interState = isInterStateInvoice(document)
-  const terms = invoiceTermLines(company.invoiceTerms)
+  const terms = isPurchase ? [] : invoiceTermLines(company.invoiceTerms)
   const cancelled = document.status === 'CANCELLED'
+  const taxTotal = invoiceTaxTotal(totals)
 
-  const shipTo =
-    document.type === 'SALES'
+  const issuer: PartyBlock =
+    isPurchase && party
       ? {
-          name: party?.name ?? null,
-          address: party?.shippingAddress || party?.billingAddress || null,
-          gstin: party?.gstin ?? null,
-          stateCode: party?.stateCode ?? null
+          name: party.name,
+          legalName: null,
+          address: party.billingAddress,
+          city: null,
+          pincode: null,
+          gstin: party.gstin,
+          pan: party.pan,
+          stateCode: party.stateCode,
+          phone: party.phone,
+          email: party.email,
+          logo: null
         }
       : {
           name: company.name,
+          legalName: company.legalName,
           address: company.address,
+          city: company.city,
+          pincode: company.pincode,
           gstin: company.gstin,
-          stateCode: company.stateCode
+          pan: company.pan,
+          stateCode: company.stateCode,
+          phone: company.phone,
+          email: company.email,
+          logo: company.logo
         }
+
+  const buyer: PartyBlock = isPurchase
+    ? {
+        name: company.name,
+        legalName: company.legalName,
+        address: addressText(company.address, company.city, company.pincode) || null,
+        city: company.city,
+        pincode: company.pincode,
+        gstin: company.gstin,
+        pan: company.pan,
+        stateCode: company.stateCode,
+        phone: company.phone,
+        email: company.email,
+        logo: null
+      }
+    : party
+      ? {
+          name: party.name,
+          legalName: null,
+          address: party.billingAddress,
+          city: null,
+          pincode: null,
+          gstin: party.gstin,
+          pan: party.pan,
+          stateCode: party.stateCode,
+          phone: party.phone,
+          email: party.email,
+          logo: null
+        }
+      : {
+          name: 'Cash sale',
+          legalName: null,
+          address: null,
+          city: null,
+          pincode: null,
+          gstin: null,
+          pan: null,
+          stateCode: null,
+          phone: null,
+          email: null,
+          logo: null
+        }
+
+  const invoiceNumber = isPurchase ? (document.referenceNo ?? document.number) : document.number
+  const deliveryAddress = isPurchase
+    ? addressText(company.address, company.city, company.pincode)
+    : addressText(party?.shippingAddress || party?.billingAddress)
+  const deliveryState = isPurchase ? company.stateCode : (party?.stateCode ?? null)
+
+  const jurisdiction = isPurchase
+    ? (stateLabel(party?.stateCode) ?? company.city ?? null)
+    : (company.city ?? stateLabel(company.stateCode))
+  const jurisdictionText = jurisdiction
+    ? `Subject to ${jurisdiction} jurisdiction`
+    : 'Subject to jurisdiction'
+
+  const taxRows = document.taxSlabs.flatMap((slab) => {
+    if (interState) {
+      return [
+        {
+          key: `igst-${slab.gstRateBps}`,
+          label: `IGST @ ${formatInvoicePercent(slab.gstRateBps)}`,
+          value: slab.igstMinor
+        }
+      ]
+    }
+    const half = formatInvoicePercent(slab.gstRateBps / 2)
+    const rows = [
+      { key: `cgst-${slab.gstRateBps}`, label: `CGST @ ${half}`, value: slab.cgstMinor },
+      { key: `sgst-${slab.gstRateBps}`, label: `SGST @ ${half}`, value: slab.sgstMinor }
+    ]
+    if (slab.cessMinor !== 0) {
+      rows.push({ key: `cess-${slab.gstRateBps}`, label: 'Cess', value: slab.cessMinor })
+    }
+    return rows
+  })
+
+  const hsnSummary = buildHsnSummary(document.lines)
+  const hasCess = hsnSummary.some((row) => row.cessMinor !== 0)
 
   return (
     <article className="invoice-sheet" data-copy={caption}>
@@ -74,296 +207,342 @@ export function InvoiceSheet({
         </p>
       ) : null}
 
-      <header className="invoice-head">
-        <div className="invoice-company">
+      <header className="invoice-doc-head">
+        <p className="invoice-title">{INVOICE_DOCUMENT_TITLE}</p>
+        <p className="invoice-caption">{caption}</p>
+      </header>
+
+      <section className="invoice-head" aria-label="Issuer and invoice details">
+        <div className="invoice-issuer">
           <div className="invoice-brand">
-            {company.logo ? (
-              <img className="invoice-logo" src={company.logo} alt="" decoding="async" />
+            {issuer.logo ? (
+              <img className="invoice-logo" src={issuer.logo} alt="" decoding="async" />
             ) : null}
             <div className="invoice-brand-text">
-              <p className="invoice-company-name">{company.name}</p>
-              {company.legalName && company.legalName !== company.name ? (
-                <p className="invoice-company-legal">{company.legalName}</p>
+              <p className="invoice-company-name">{issuer.name}</p>
+              {issuer.legalName && issuer.legalName !== issuer.name ? (
+                <p className="invoice-company-legal">{issuer.legalName}</p>
               ) : null}
             </div>
           </div>
-          {company.address ? <p className="invoice-address">{company.address}</p> : null}
-          <p>{addressText(company.city, company.pincode)}</p>
+          {issuer.address ? <p className="invoice-address">{issuer.address}</p> : null}
+          {addressText(issuer.city, issuer.pincode) ? (
+            <p>{addressText(issuer.city, issuer.pincode)}</p>
+          ) : null}
           <p className="invoice-company-ids">
-            {company.gstin ? <span>GSTIN {company.gstin}</span> : null}
-            {company.pan ? <span>PAN {company.pan}</span> : null}
-            <span>State {stateText(company.stateCode)}</span>
+            <span>GSTIN/UIN: {valueOrDash(issuer.gstin)}</span>
+            <span>PAN/IT No.: {valueOrDash(issuer.pan)}</span>
+            <span>
+              State: {stateText(issuer.stateCode)}
+              {issuer.stateCode ? `, Code: ${issuer.stateCode}` : ''}
+            </span>
           </p>
           <p className="invoice-company-contact">
-            {company.phone ? <span>{company.phone}</span> : null}
-            {company.email ? <span>{company.email}</span> : null}
+            {issuer.phone ? <span>Phone: {issuer.phone}</span> : null}
+            {issuer.email ? <span>Email: {issuer.email}</span> : null}
           </p>
         </div>
 
-        <div className="invoice-head-title">
-          <p className="invoice-title">{invoiceDocumentTitle(document.type)}</p>
-          <p className="invoice-caption">{caption}</p>
-        </div>
-      </header>
-
-      <dl className="invoice-meta">
-        <div>
-          <dt>{invoiceNumberLabel(document.type)}</dt>
-          <dd className="invoice-mono">{document.number}</dd>
-        </div>
-        <div>
-          <dt>Date</dt>
-          <dd className="invoice-mono">{formatInvoiceDate(document.date)}</dd>
-        </div>
-        <div>
-          <dt>Due Date</dt>
-          <dd className="invoice-mono">{formatInvoiceDate(document.dueDate) || '—'}</dd>
-        </div>
-        <div>
-          <dt>Reference</dt>
-          <dd>{document.referenceNo ?? '—'}</dd>
-        </div>
-        <div>
-          <dt>Place of Supply</dt>
-          <dd>{stateText(document.placeOfSupplyStateCode)}</dd>
-        </div>
-      </dl>
-
-      <section className="invoice-parties" aria-label="Parties">
-        <div className="invoice-party">
-          <p className="invoice-block-label">{invoicePartyLabel(document.type)}</p>
-          <p className="invoice-party-name">{party?.name ?? 'Cash sale'}</p>
-          {party?.billingAddress ? <p className="invoice-address">{party.billingAddress}</p> : null}
-          <p className="invoice-party-ids">
-            {party?.gstin ? <span>GSTIN {party.gstin}</span> : <span>Unregistered</span>}
-            {party?.stateCode ? <span>State {stateText(party.stateCode)}</span> : null}
-          </p>
-          {party?.phone || party?.email ? (
-            <p className="invoice-party-contact">
-              {[party?.phone, party?.email].filter(Boolean).join(' · ')}
-            </p>
+        <div className="invoice-meta-col">
+          {isPurchase ? (
+            /*
+             * The purchase sample is a supplier's Tally invoice, which prints a
+             * two-row reference grid instead of the full transport grid. Our
+             * voucher number and the place of supply carry the extra rows.
+             */
+            <dl className="invoice-meta">
+              <MetaCell label={invoiceNumberLabel(document.type)} value={invoiceNumber} mono />
+              <MetaCell label="Dated" value={formatInvoiceDate(document.date)} mono />
+              <MetaCell label="Our Voucher No." value={document.number} mono />
+              <MetaCell
+                label="Place of Supply"
+                value={stateText(document.placeOfSupplyStateCode)}
+              />
+              <MetaCell label="Reference No. & Date" value={null} />
+              <MetaCell label="Other References" value={document.narration} />
+            </dl>
+          ) : (
+            <dl className="invoice-meta">
+              <MetaCell label={invoiceNumberLabel(document.type)} value={invoiceNumber} mono />
+              <MetaCell label="Dated" value={formatInvoiceDate(document.date)} mono />
+              <MetaCell label="Delivery Note" value={null} />
+              <MetaCell label="Mode of Payment" value={null} />
+              <MetaCell label="Supplier's Ref." value={document.referenceNo} mono />
+              <MetaCell label="Other Reference" value={document.narration} />
+              <MetaCell label="Buyer's Order No." value={null} />
+              <MetaCell label="Dated" value={null} mono />
+              <MetaCell label="Despatch Doc No." value={null} />
+              <MetaCell label="Delivery Note Date" value={null} mono />
+              <MetaCell label="Despatched Through" value={null} />
+              <MetaCell label="Terms of Delivery" value={null} />
+              <div className="invoice-meta-wide">
+                <dt>Place of Delivery</dt>
+                <dd>
+                  <span className="invoice-address">{deliveryAddress || '—'}</span>
+                  <span className="invoice-meta-sub">State: {stateText(deliveryState)}</span>
+                </dd>
+              </div>
+            </dl>
+          )}
+          {!isPurchase && document.dueDate ? (
+            <p className="invoice-meta-extra">Due {formatInvoiceDate(document.dueDate)}</p>
           ) : null}
-        </div>
-
-        <div className="invoice-party">
-          <p className="invoice-block-label">Ship To</p>
-          <p className="invoice-party-name">{shipTo.name ?? '—'}</p>
-          {shipTo.address ? <p className="invoice-address">{shipTo.address}</p> : null}
-          <p className="invoice-party-ids">
-            {shipTo.gstin ? <span>GSTIN {shipTo.gstin}</span> : <span>Unregistered</span>}
-            {shipTo.stateCode ? <span>State {stateText(shipTo.stateCode)}</span> : null}
-          </p>
         </div>
       </section>
 
-      <table className={interState ? 'invoice-lines is-interstate' : 'invoice-lines'}>
-        <colgroup>
-          <col className="col-sno" />
-          <col className="col-description" />
-          <col className="col-hsn" />
-          <col className="col-qty" />
-          <col className="col-rate" />
-          <col className="col-discount" />
-          <col className="col-taxable" />
-          <col className="col-gst" />
-          {interState ? (
-            <col className="col-tax" />
-          ) : (
-            <>
-              <col className="col-tax" />
-              <col className="col-tax" />
-            </>
-          )}
-          <col className="col-amount" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th scope="col" className="is-left">
-              S.No
-            </th>
-            <th scope="col" className="is-left">
-              Description
-            </th>
-            <th scope="col">HSN/SAC</th>
-            <th scope="col">Qty</th>
-            <th scope="col">Rate</th>
-            <th scope="col">Disc %</th>
-            <th scope="col">Taxable</th>
-            <th scope="col">GST %</th>
-            {interState ? (
-              <th scope="col">IGST</th>
-            ) : (
-              <>
-                <th scope="col">CGST</th>
-                <th scope="col">SGST</th>
-              </>
-            )}
-            <th scope="col">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {document.lines.map((line, index) => (
-            <tr key={line.id}>
-              <td className="is-left invoice-mono">{index + 1}</td>
-              <td className="is-left">{line.description}</td>
-              <td className="invoice-mono">{line.hsn ?? '—'}</td>
-              <td className="invoice-mono">
-                {formatInvoiceQty(line.qtyE4)}
-                {line.uom ? ` ${line.uom}` : ''}
-              </td>
-              <td className="invoice-mono">{formatInvoiceAmount(line.rateMinor)}</td>
-              <td className="invoice-mono">{formatInvoicePercent(line.discountBps)}</td>
-              <td className="invoice-mono">{formatInvoiceAmount(line.taxableMinor)}</td>
-              <td className="invoice-mono">{formatInvoicePercent(line.gstRateBps)}</td>
-              {interState ? (
-                <td className="invoice-mono">{amountOrDash(line.igstMinor)}</td>
-              ) : (
-                <>
-                  <td className="invoice-mono">{amountOrDash(line.cgstMinor)}</td>
-                  <td className="invoice-mono">{amountOrDash(line.sgstMinor)}</td>
-                </>
-              )}
-              <td className="invoice-mono">{formatInvoiceAmount(line.totalMinor)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <section className="invoice-buyer" aria-label="Buyer">
+        <p className="invoice-block-label">Buyer (Bill to)</p>
+        <div className="invoice-buyer-body">
+          <div className="invoice-buyer-main">
+            <p className="invoice-party-name">{buyer.name}</p>
+            {buyer.address ? <p className="invoice-address">{buyer.address}</p> : null}
+          </div>
+          <dl className="invoice-buyer-ids">
+            <div>
+              <dt>Phone</dt>
+              <dd>{valueOrDash(buyer.phone)}</dd>
+            </div>
+            <div>
+              <dt>GSTIN/UIN</dt>
+              <dd className="invoice-mono">{valueOrDash(buyer.gstin)}</dd>
+            </div>
+            <div>
+              <dt>PAN/IT No.</dt>
+              <dd className="invoice-mono">{valueOrDash(buyer.pan)}</dd>
+            </div>
+            <div>
+              <dt>State Name</dt>
+              <dd>{stateText(buyer.stateCode)}</dd>
+            </div>
+            <div>
+              <dt>Contact</dt>
+              <dd>{valueOrDash(buyer.email)}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
 
-      <section className="invoice-tax-analysis" aria-label="Rate-wise tax summary">
-        <p className="invoice-block-label">Rate-wise Tax Summary</p>
-        <table>
+      <div className="invoice-lines-wrap">
+        <table className="invoice-lines">
+          <colgroup>
+            <col className="col-sno" />
+            <col className="col-description" />
+            <col className="col-hsn" />
+            <col className="col-qty" />
+            <col className="col-rate" />
+            <col className="col-per" />
+            <col className="col-discount" />
+            <col className="col-amount" />
+          </colgroup>
           <thead>
             <tr>
-              <th scope="col">GST Rate</th>
-              <th scope="col">Taxable</th>
-              {interState ? (
-                <th scope="col">IGST</th>
-              ) : (
-                <>
-                  <th scope="col">CGST</th>
-                  <th scope="col">SGST</th>
-                </>
-              )}
-              {document.taxSlabs.some((slab) => slab.cessMinor !== 0) ? (
-                <th scope="col">Cess</th>
-              ) : null}
-              <th scope="col">Total Tax</th>
+              <th scope="col">S.No</th>
+              <th scope="col" className="is-left">
+                Description of Goods
+              </th>
+              <th scope="col">HSN/SAC</th>
+              <th scope="col">Quantity</th>
+              <th scope="col">Rate</th>
+              <th scope="col">per</th>
+              <th scope="col">Disc. %</th>
+              <th scope="col">Amount</th>
             </tr>
           </thead>
           <tbody>
-            {document.taxSlabs.map((slab) => (
-              <tr key={slab.gstRateBps}>
-                <td className="invoice-mono">{formatInvoicePercent(slab.gstRateBps)}</td>
-                <td className="invoice-mono">{formatInvoiceAmount(slab.taxableMinor)}</td>
-                {interState ? (
-                  <td className="invoice-mono">{amountOrDash(slab.igstMinor)}</td>
-                ) : (
-                  <>
-                    <td className="invoice-mono">{amountOrDash(slab.cgstMinor)}</td>
-                    <td className="invoice-mono">{amountOrDash(slab.sgstMinor)}</td>
-                  </>
-                )}
-                {document.taxSlabs.some((row) => row.cessMinor !== 0) ? (
-                  <td className="invoice-mono">{amountOrDash(slab.cessMinor)}</td>
-                ) : null}
-                <td className="invoice-mono">{formatInvoiceAmount(slab.taxMinor)}</td>
+            {document.lines.map((line, index) => (
+              <tr key={line.id}>
+                <td className="invoice-mono">{index + 1}</td>
+                <td className="is-left">{line.description}</td>
+                <td className="invoice-mono">{line.hsn ?? '—'}</td>
+                <td className="invoice-mono">{formatInvoiceQty(line.qtyE4)}</td>
+                <td className="invoice-mono">{formatInvoiceAmount(line.rateMinor)}</td>
+                <td>{line.uom ?? '—'}</td>
+                <td className="invoice-mono">{formatInvoicePercent(line.discountBps)}</td>
+                <td className="invoice-mono">{formatInvoiceAmount(line.taxableMinor)}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      </section>
+      </div>
 
-      <section className="invoice-summary">
-        <div className="invoice-summary-left">
-          <div className="invoice-words">
-            <p className="invoice-block-label">Amount in Words</p>
-            <p>{amountInWords(totals.totalMinor, company.currency)}</p>
-          </div>
-
-          {document.bank ? (
-            <div className="invoice-bank">
+      <section className="invoice-bottom">
+        <div className="invoice-bank">
+          {!isPurchase && document.bank ? (
+            <>
               <p className="invoice-block-label">Bank Details</p>
-              <p>
-                <span className="invoice-bank-name">{document.bank.name}</span>
-                {document.bank.code ? (
-                  <span className="invoice-mono"> · Code {document.bank.code}</span>
-                ) : null}
-              </p>
-            </div>
-          ) : null}
-
-          {terms.length > 0 ? (
-            <div className="invoice-terms">
-              <p className="invoice-block-label">Terms &amp; Conditions</p>
-              <ul>
-                {terms.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            </div>
+              <p className="invoice-bank-name">{document.bank.name}</p>
+              {document.bank.code ? (
+                <p>
+                  A/c Code: <span className="invoice-mono">{document.bank.code}</span>
+                </p>
+              ) : null}
+            </>
           ) : null}
         </div>
 
         <dl className="invoice-totals">
-          {totals.discountMinor !== 0 ? (
-            <div>
-              <dt>Discount</dt>
-              <dd className="invoice-mono">{formatInvoiceAmount(totals.discountMinor)}</dd>
-            </div>
-          ) : null}
           <div>
             <dt>Taxable Value</dt>
             <dd className="invoice-mono">{formatInvoiceAmount(totals.taxableMinor)}</dd>
           </div>
-          {totals.cgstMinor !== 0 ? (
+          {taxRows.map((row) => (
+            <div key={row.key}>
+              <dt>{row.label}</dt>
+              <dd className="invoice-mono">{formatInvoiceAmount(row.value)}</dd>
+            </div>
+          ))}
+          {totals.roundOffMinor !== 0 ? (
             <div>
-              <dt>CGST</dt>
-              <dd className="invoice-mono">{formatInvoiceAmount(totals.cgstMinor)}</dd>
+              <dt>Round Off</dt>
+              <dd className="invoice-mono">{formatInvoiceAmount(totals.roundOffMinor)}</dd>
             </div>
           ) : null}
-          {totals.sgstMinor !== 0 ? (
-            <div>
-              <dt>SGST</dt>
-              <dd className="invoice-mono">{formatInvoiceAmount(totals.sgstMinor)}</dd>
-            </div>
-          ) : null}
-          {totals.igstMinor !== 0 ? (
-            <div>
-              <dt>IGST</dt>
-              <dd className="invoice-mono">{formatInvoiceAmount(totals.igstMinor)}</dd>
-            </div>
-          ) : null}
-          {totals.cessMinor !== 0 ? (
-            <div>
-              <dt>Cess</dt>
-              <dd className="invoice-mono">{formatInvoiceAmount(totals.cessMinor)}</dd>
-            </div>
-          ) : null}
-          <div>
-            <dt>Round Off</dt>
-            <dd className="invoice-mono">{formatInvoiceAmount(totals.roundOffMinor)}</dd>
-          </div>
           <div className="invoice-grand-total">
-            <dt>Grand Total</dt>
-            <dd className="invoice-mono">{formatInvoiceAmount(totals.totalMinor)}</dd>
+            <dt>Total</dt>
+            <dd className="invoice-mono">
+              {company.currency === 'INR' ? '₹ ' : ''}
+              {formatInvoiceAmount(totals.totalMinor)}
+            </dd>
           </div>
         </dl>
       </section>
 
-      <section className="invoice-signature">
-        <div className="invoice-jurisdiction">
-          {company.city ? `Subject to ${company.city} jurisdiction` : 'Subject to jurisdiction'}
+      <div className="invoice-words">
+        <div>
+          <p className="invoice-block-label">Amount (in Words)</p>
+          <p className="invoice-words-value">
+            {amountInWords(totals.totalMinor, company.currency)}
+          </p>
+        </div>
+        <span className="invoice-eoe">E. &amp; E.O.</span>
+      </div>
+
+      <section className="invoice-tax-summary" aria-label="HSN-wise tax summary">
+        <p className="invoice-block-label">HSN/SAC-wise Tax Summary</p>
+        <table>
+          <colgroup>
+            <col className="col-hsn-summary" />
+            <col className="col-taxable-summary" />
+            <col className="col-rate-summary" />
+            <col className="col-tax-summary" />
+            <col className="col-rate-summary" />
+            <col className="col-tax-summary" />
+            {hasCess ? <col className="col-rate-summary" /> : null}
+            {hasCess ? <col className="col-tax-summary" /> : null}
+            <col className="col-tax-summary" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">HSN/SAC</th>
+              <th scope="col">Taxable Value</th>
+              {interState ? (
+                <>
+                  <th scope="col">IGST Rate</th>
+                  <th scope="col">IGST Amount</th>
+                </>
+              ) : (
+                <>
+                  <th scope="col">CGST Rate</th>
+                  <th scope="col">CGST Amount</th>
+                  <th scope="col">SGST Rate</th>
+                  <th scope="col">SGST Amount</th>
+                </>
+              )}
+              {hasCess ? <th scope="col">Cess Rate</th> : null}
+              {hasCess ? <th scope="col">Cess Amount</th> : null}
+              <th scope="col">Total Tax Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {hsnSummary.map((row) => (
+              <tr key={`${row.hsn ?? 'none'}-${row.gstRateBps}`}>
+                <td>{row.hsn ?? '—'}</td>
+                <td className="invoice-mono">{formatInvoiceAmount(row.taxableMinor)}</td>
+                {interState ? (
+                  <>
+                    <td className="invoice-mono">{formatInvoicePercent(row.gstRateBps)}</td>
+                    <td className="invoice-mono">{formatInvoiceAmount(row.igstMinor)}</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="invoice-mono">{formatInvoicePercent(row.gstRateBps / 2)}</td>
+                    <td className="invoice-mono">{formatInvoiceAmount(row.cgstMinor)}</td>
+                    <td className="invoice-mono">{formatInvoicePercent(row.gstRateBps / 2)}</td>
+                    <td className="invoice-mono">{formatInvoiceAmount(row.sgstMinor)}</td>
+                  </>
+                )}
+                {hasCess ? (
+                  <td className="invoice-mono">{formatInvoicePercent(row.gstRateBps)}</td>
+                ) : null}
+                {hasCess ? (
+                  <td className="invoice-mono">{formatInvoiceAmount(row.cessMinor)}</td>
+                ) : null}
+                <td className="invoice-mono">{formatInvoiceAmount(row.taxMinor)}</td>
+              </tr>
+            ))}
+            <tr className="invoice-tax-total">
+              <td>Total</td>
+              <td className="invoice-mono">{formatInvoiceAmount(totals.taxableMinor)}</td>
+              {interState ? (
+                <>
+                  <td />
+                  <td className="invoice-mono">{formatInvoiceAmount(totals.igstMinor)}</td>
+                </>
+              ) : (
+                <>
+                  <td />
+                  <td className="invoice-mono">{formatInvoiceAmount(totals.cgstMinor)}</td>
+                  <td />
+                  <td className="invoice-mono">{formatInvoiceAmount(totals.sgstMinor)}</td>
+                </>
+              )}
+              {hasCess ? <td /> : null}
+              {hasCess ? (
+                <td className="invoice-mono">{formatInvoiceAmount(totals.cessMinor)}</td>
+              ) : null}
+              <td className="invoice-mono">{formatInvoiceAmount(taxTotal)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      {taxTotal !== 0 ? (
+        <p className="invoice-tax-words">
+          <span>Tax Amount (in words):</span> {amountInWords(taxTotal, company.currency)}
+        </p>
+      ) : null}
+
+      {terms.length > 0 ? (
+        <section className="invoice-terms">
+          <p className="invoice-block-label">Terms &amp; Conditions</p>
+          <ul>
+            {terms.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section className="invoice-declaration">
+        <div className="invoice-declaration-box">
+          <p className="invoice-block-label">Declaration</p>
+          <p>
+            We declare that this invoice shows the actual price of the goods described and that all
+            particulars are true and correct.
+          </p>
+          {isPurchase ? <p className="invoice-seal">Customer&apos;s Seal and Signature</p> : null}
         </div>
         <div className="invoice-signatory">
-          <p>For {company.name}</p>
+          <p>For {issuer.name}</p>
           <p className="invoice-signatory-line">Authorised Signatory</p>
         </div>
       </section>
 
       <footer className="invoice-foot">
-        <span>{caption}</span>
+        <span>{jurisdictionText}</span>
+        <span>This is a Computer Generated Invoice</span>
         <span>
-          Page {page} of {pages}
+          {caption} · Page {page} of {pages}
         </span>
       </footer>
     </article>

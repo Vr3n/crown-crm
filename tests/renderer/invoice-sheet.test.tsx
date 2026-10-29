@@ -70,7 +70,7 @@ function salesDocument(overrides: Partial<InvoiceDocument> = {}): InvoiceDocumen
         taxMinor: 180_000
       }
     ],
-    bank: null,
+    bank: { name: 'HDFC Bank', code: 'BANK-01' },
     totals: {
       taxableMinor: 1_000_000,
       cgstMinor: 90_000,
@@ -84,6 +84,16 @@ function salesDocument(overrides: Partial<InvoiceDocument> = {}): InvoiceDocumen
     },
     ...overrides
   }
+}
+
+function purchaseDocument(overrides: Partial<InvoiceDocument> = {}): InvoiceDocument {
+  return salesDocument({
+    type: 'PURCHASE',
+    number: 'PUR/0001',
+    referenceNo: 'TC/2026-27/583',
+    narration: 'Office supplies',
+    ...overrides
+  })
 }
 
 describe('InvoiceSheet', () => {
@@ -105,11 +115,11 @@ describe('InvoiceSheet', () => {
 
     expect(screen.getAllByText('ORIGINAL FOR RECIPIENT').length).toBeGreaterThan(0)
     expect(screen.getAllByText('DUPLICATE FOR TRANSPORTER').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Page 1 of 2').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Page 2 of 2').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Page 1 of 2/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Page 2 of 2/).length).toBeGreaterThan(0)
   })
 
-  it('renders the company, party, line grid and totals', () => {
+  it('renders the sample bill content for a sales invoice', () => {
     render(
       <InvoiceSheet
         document={salesDocument()}
@@ -121,32 +131,77 @@ describe('InvoiceSheet', () => {
 
     expect(screen.getAllByText('Acme Distributors').length).toBeGreaterThan(0)
     expect(screen.getByText('TAX INVOICE')).toBeInTheDocument()
+    expect(screen.getByText('Invoice No.')).toBeInTheDocument()
     expect(screen.getByText('INV/0001')).toBeInTheDocument()
-    expect(screen.getByText('Bill To')).toBeInTheDocument()
+    expect(screen.getByText('Buyer (Bill to)')).toBeInTheDocument()
     expect(screen.getAllByText('Acme Distributor').length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/GSTIN 27AABFU4477G1ZY/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('88 Buyer Street, Pune').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/GSTIN\/UIN: 27AABFU4477G1ZY/).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Maharashtra (27)').length).toBeGreaterThan(0)
+
+    expect(screen.getByText('Delivery Note')).toBeInTheDocument()
+    expect(screen.getByText('Mode of Payment')).toBeInTheDocument()
+    expect(screen.getByText("Supplier's Ref.")).toBeInTheDocument()
+    expect(screen.getByText('Due 28 Nov 2026')).toBeInTheDocument()
+
+    expect(screen.getByText('Description of Goods')).toBeInTheDocument()
+    expect(screen.getAllByText('HSN/SAC').length).toBeGreaterThan(0)
+    expect(screen.getByText('Quantity')).toBeInTheDocument()
+    expect(screen.getByText('Disc. %')).toBeInTheDocument()
     expect(screen.getByText('SSD 256GB')).toBeInTheDocument()
-    expect(screen.getByText('8471')).toBeInTheDocument()
-    expect(screen.getByText('Grand Total')).toBeInTheDocument()
-    expect(screen.getAllByText('11,800.00').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('8471').length).toBeGreaterThan(0)
+
+    expect(screen.getAllByText('Taxable Value').length).toBeGreaterThan(0)
+    expect(screen.getByText('CGST @ 9%')).toBeInTheDocument()
+    expect(screen.getByText('SGST @ 9%')).toBeInTheDocument()
+    expect(screen.getAllByText('Total').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/11,800\.00/).length).toBeGreaterThan(0)
     expect(screen.getByText('Rupees Eleven Thousand Eight Hundred Only')).toBeInTheDocument()
-    expect(screen.getByText('Rate-wise Tax Summary')).toBeInTheDocument()
+    expect(screen.getByText('Rupees One Thousand Eight Hundred Only')).toBeInTheDocument()
+
+    expect(screen.getByText('HSN/SAC-wise Tax Summary')).toBeInTheDocument()
+    expect(screen.getByText('HDFC Bank')).toBeInTheDocument()
+    expect(screen.getByText('Declaration')).toBeInTheDocument()
     expect(screen.getByText('Authorised Signatory')).toBeInTheDocument()
     expect(screen.getByText(/Subject to Pune jurisdiction/i)).toBeInTheDocument()
+    expect(screen.getByText('This is a Computer Generated Invoice')).toBeInTheDocument()
     expect(screen.getByText('1. Goods once sold are not taken back.')).toBeInTheDocument()
   })
 
-  it('uses purchase wording and the supplier block for a purchase bill', () => {
-    const document = salesDocument({ type: 'PURCHASE', number: 'PUR/0001' })
-    render(<InvoiceSheet document={document} caption="ORIGINAL FOR RECIPIENT" page={1} pages={2} />)
+  it('reproduces the supplier invoice and our company as buyer for a purchase', () => {
+    render(
+      <InvoiceSheet
+        document={purchaseDocument()}
+        caption="ORIGINAL FOR RECIPIENT"
+        page={1}
+        pages={2}
+      />
+    )
 
-    expect(screen.getByText('PURCHASE BILL')).toBeInTheDocument()
+    expect(screen.getByText('TAX INVOICE')).toBeInTheDocument()
     expect(screen.getByText('Supplier Bill No.')).toBeInTheDocument()
-    expect(screen.getByText('Supplier')).toBeInTheDocument()
+    expect(screen.getByText('TC/2026-27/583')).toBeInTheDocument()
+    expect(screen.getByText('Our Voucher No.')).toBeInTheDocument()
+    expect(screen.getByText('PUR/0001')).toBeInTheDocument()
+    expect(screen.getByText('Place of Supply')).toBeInTheDocument()
+    expect(screen.getByText('Reference No. & Date')).toBeInTheDocument()
+    expect(screen.getByText('Office supplies')).toBeInTheDocument()
+
+    // The supplier's shorter Tally grid has no transport rows.
+    expect(screen.queryByText('Despatched Through')).toBeNull()
+    expect(screen.queryByText('Delivery Note')).toBeNull()
+
+    // The supplier is the issuer and our company is the buyer.
+    expect(screen.getAllByText('Acme Distributor').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Acme Distributors').length).toBeGreaterThan(0)
+    expect(screen.getByText("Customer's Seal and Signature")).toBeInTheDocument()
+
+    // Supplier terms and bank details are not in our books, so they stay out.
+    expect(screen.queryByText('Terms & Conditions')).toBeNull()
+    expect(screen.queryByText('HDFC Bank')).toBeNull()
   })
 
-  it('renders the company logo when the profile has one', () => {
+  it('renders the company logo on a sale when the profile has one', () => {
     const logo = 'data:image/png;base64,iVBORw0KGgo='
     const { container } = render(
       <InvoiceSheet
@@ -166,10 +221,13 @@ describe('InvoiceSheet', () => {
     expect(image?.getAttribute('alt')).toBe('')
   })
 
-  it('omits the logo element when the profile has none', () => {
+  it('does not put our logo on the supplier letterhead of a purchase', () => {
+    const logo = 'data:image/png;base64,iVBORw0KGgo='
     const { container } = render(
       <InvoiceSheet
-        document={salesDocument()}
+        document={purchaseDocument({
+          company: { ...purchaseDocument().company, logo }
+        })}
         caption="ORIGINAL FOR RECIPIENT"
         page={1}
         pages={2}

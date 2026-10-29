@@ -92,16 +92,72 @@ export function buildTaxSlabs(lines: InvoiceLine[]): InvoiceTaxSlab[] {
     .sort((a, b) => a.gstRateBps - b.gstRateBps)
 }
 
-export function invoiceDocumentTitle(type: InvoiceDocument['type']): string {
-  return type === 'SALES' ? 'TAX INVOICE' : 'PURCHASE BILL'
-}
-
-export function invoicePartyLabel(type: InvoiceDocument['type']): string {
-  return type === 'SALES' ? 'Bill To' : 'Supplier'
-}
+/**
+ * A purchase print reproduces the supplier's tax invoice, so both types carry
+ * the same document title. The voucher type changes the party blocks and the
+ * number label, not the title.
+ */
+export const INVOICE_DOCUMENT_TITLE = 'TAX INVOICE'
 
 export function invoiceNumberLabel(type: InvoiceDocument['type']): string {
   return type === 'SALES' ? 'Invoice No.' : 'Supplier Bill No.'
+}
+
+/** HSN/SAC-wise summary row, the table Tally prints under the tax totals. */
+export interface InvoiceHsnSummary {
+  hsn: string | null
+  gstRateBps: number
+  taxableMinor: number
+  cgstMinor: number
+  sgstMinor: number
+  igstMinor: number
+  cessMinor: number
+  taxMinor: number
+}
+
+/**
+ * Groups lines by HSN/SAC and GST rate. Two lines with the same HSN but
+ * different rates stay separate, because the rate columns would otherwise
+ * contradict the taxable value beside them.
+ */
+export function buildHsnSummary(lines: InvoiceLine[]): InvoiceHsnSummary[] {
+  const groups = new Map<string, InvoiceHsnSummary>()
+
+  for (const line of lines) {
+    const hsn = (line.hsn ?? '').trim() || null
+    const key = `${hsn ?? ''}|${line.gstRateBps}`
+    const existing = groups.get(key) ?? {
+      hsn,
+      gstRateBps: line.gstRateBps,
+      taxableMinor: 0,
+      cgstMinor: 0,
+      sgstMinor: 0,
+      igstMinor: 0,
+      cessMinor: 0,
+      taxMinor: 0
+    }
+    existing.taxableMinor += line.taxableMinor
+    existing.cgstMinor += line.cgstMinor
+    existing.sgstMinor += line.sgstMinor
+    existing.igstMinor += line.igstMinor
+    existing.cessMinor += line.cessMinor
+    existing.taxMinor += line.cgstMinor + line.sgstMinor + line.igstMinor + line.cessMinor
+    groups.set(key, existing)
+  }
+
+  return [...groups.values()]
+    .filter((row) => row.taxableMinor !== 0 || row.taxMinor !== 0)
+    .sort((a, b) => {
+      const left = a.hsn ?? ''
+      const right = b.hsn ?? ''
+      if (left !== right) return left < right ? -1 : 1
+      return a.gstRateBps - b.gstRateBps
+    })
+}
+
+/** Total tax on the document, including cess. */
+export function invoiceTaxTotal(totals: InvoiceDocument['totals']): number {
+  return totals.cgstMinor + totals.sgstMinor + totals.igstMinor + totals.cessMinor
 }
 
 /** True when any line was taxed as IGST, so the grid shows one IGST column. */

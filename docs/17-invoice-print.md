@@ -55,62 +55,103 @@ loose page can still be identified.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ [logo] Company name                   TAX INVOICE                │
-│ address, city, pincode                ORIGINAL FOR RECIPIENT     │
-│ GSTIN · PAN · State · phone · email                              │
-├──────────┬──────────┬──────────┬──────────────┬──────────────────┤
-│Invoice No│ Date     │ Due Date │ Reference    │ Place of Supply  │
-├──────────────────────────────┬───────────────────────────────────┤
-│ Bill To / Supplier           │ Ship To                           │
-│ name, address, GSTIN, state  │ name, address, GSTIN, state       │
-├──┬────────────┬─────┬────┬────┬─────┬──────┬─────┬─────┬────┬────┤
-│# │Description │HSN  │Qty │Rate│Disc │Taxbl │GST% │CGST │SGST│Amt │
-├──┴────────────┴─────┴────┴────┴─────┴──────┴─────┴─────┴────┴────┤
-│ Rate-wise Tax Summary                                            │
-├───────────────────────────────────────────┬──────────────────────┤
-│ Amount in words                           │ Taxable Value        │
-│ Bank details                              │ CGST / SGST / IGST   │
-│ Terms & Conditions                        │ Round Off            │
-│                                           │ GRAND TOTAL          │
-├───────────────────────────────────────────┴──────────────────────┤
-│ Subject to <city> jurisdiction              For <company>        │
-│                                             Authorised Signatory │
-├──────────────────────────────────────────────────────────────────┤
-│ ORIGINAL FOR RECIPIENT                              Page 1 of 2  │
+│ TAX INVOICE                              ORIGINAL FOR RECIPIENT │
+├───────────────────────────────────────┬──────────────────────────┤
+│ [logo] Company / supplier name        │ Invoice No.  │ Dated     │
+│ address, city, pincode                │ Delivery Note│ Mode of   │
+│ GSTIN/UIN · PAN/IT No. · State        │ Supplier's   │ Payment   │
+│ phone · email                         │   Ref.       │ Other Ref.│
+│                                       │ ... Tally transport grid │
+│                                       │ Place of Delivery        │
+├───────────────────────────────────────┴──────────────────────────┤
+│ BUYER (BILL TO)                                                  │
+│ name, address                      Phone · GSTIN/UIN · PAN/IT No.│
+│                                    State Name · Contact          │
+├──┬────────────────┬─────────┬──────────┬───────┬─────┬──────┬────┤
+│# │Description     │HSN/SAC  │Quantity  │Rate   │per  │Disc %│Amt │
+│  (the item table stretches to fill the page)                     │
+├───────────────────────────────────────┬──────────────────────────┤
+│ Bank details                          │ Taxable Value            │
+│                                       │ CGST/SGST or IGST rows   │
+│                                       │ Round Off                │
+│                                       │ TOTAL                    │
+├───────────────────────────────────────┴──────────────────────────┤
+│ Amount (in Words)                                        E.&E.O.│
+│ HSN/SAC-wise tax summary                                         │
+│ Tax Amount (in words)                                            │
+│ Terms & Conditions (sales only)                                  │
+├───────────────────────────────────────┬──────────────────────────┤
+│ Declaration                           │ For <issuer>             │
+│                                       │ Authorised Signatory     │
+├───────────────────────────────────────┴──────────────────────────┤
+│ Subject to <jurisdiction> · Computer generated · copy · page     │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
 The second page repeats the same sheet with `DUPLICATE FOR TRANSPORTER`.
 
+The content follows the two sample bills in `docs/sales-bill.pdf` and
+`docs/purchase-bill.pdf`: the issuer block and Tally meta grid at the top, a
+buyer block with phone/GSTIN/PAN/state, the S.No/Description/HSN/Quantity/
+Rate/per/Disc./Amount grid, totals with a CGST/SGST or IGST row per rate,
+amount in words, the HSN/SAC-wise tax summary, tax in words, terms, a
+declaration and the signature block.
+
+The right-hand grid mirrors the sample of the same type. A sales invoice prints
+the full Tally transport grid — Invoice No./Dated, Delivery Note/Mode of
+Payment, Supplier's Ref./Other Reference, Buyer's Order No./Dated, Despatch Doc
+No./Delivery Note Date, Despatched Through/Terms of Delivery and a full-width
+Place of Delivery row — with the due date under it. The purchase sample is a
+supplier's shorter Tally form, so a purchase prints Supplier Bill No./Dated, Our
+Voucher No./Place of Supply and Reference No. & Date/Other References.
+
+Tally fields this app does not store (Delivery Note, Mode of Payment, Despatch
+Doc No., Delivery Note Date, Despatched Through, Terms of Delivery, Buyer's
+Order No.) print as an em dash, exactly as a Tally form leaves them blank.
+
 ### Company logo
 
 When `companies.logo` holds a data URL (uploaded from the company page, see
-[`16-company-logo.md`](./16-company-logo.md)), the header prints it as a
-letterhead mark beside the company name. It is boxed to an 18mm square with
+[`16-company-logo.md`](./16-company-logo.md)), a sales invoice prints it as a
+letterhead mark beside the company name. It is boxed to a 17mm square with
 `object-fit: contain`, so a wide or tall upload keeps its aspect ratio and
-cannot change how many line rows fit on the first page. The logo is
-`alt=""` because the company name is printed directly next to it. Profiles
-without a logo simply render the name block, so the header never leaves a hole.
+cannot change how many line rows fit on the first page. The logo is `alt=""`
+because the company name is printed directly next to it. A purchase voucher
+reproduces the supplier's bill, and we do not store supplier logos, so that
+header has no mark.
 
 ### Sales versus purchase
 
-| Field        | Sales                    | Purchase                  |
-| ------------ | ------------------------ | ------------------------- |
-| Title        | `TAX INVOICE`            | `PURCHASE BILL`           |
-| Party label  | `Bill To`                | `Supplier`                |
-| Number label | `Invoice No.`            | `Supplier Bill No.`       |
-| Ship To      | Party's shipping address | The company's own address |
-| Tax columns  | CGST + SGST or IGST      | CGST + SGST or IGST       |
+A sales voucher is our own tax invoice. A purchase voucher is the supplier's
+tax invoice as received, so the two party blocks swap.
 
-The business is the buyer on a purchase voucher, so calling it a "tax invoice"
-would be wrong. The rest of the layout is identical; input tax is shown in the
-same grid and totals.
+| Field             | Sales                              | Purchase                                    |
+| ----------------- | ---------------------------------- | ------------------------------------------- |
+| Issuer block      | Our company (logo, terms, bank)    | The supplier (party)                        |
+| Buyer block       | The customer                       | Our company                                 |
+| Title             | `TAX INVOICE`                      | `TAX INVOICE`                               |
+| Number label      | `Invoice No.` (our number)         | `Supplier Bill No.` (reference, or voucher) |
+| Voucher number    | `Invoice No.`                      | `Our Voucher No.`                           |
+| Meta grid         | Full Tally transport grid          | Short reference grid from the sample        |
+| Due date          | Under the grid                     | Omitted: the supplier's bill has none       |
+| Place of delivery | Party shipping or billing address  | Omitted: the buyer block shows our address  |
+| Terms and bank    | Company terms, linked bank account | Omitted: supplier terms/bank are not stored |
+| Tax columns       | CGST + SGST or IGST                | CGST + SGST or IGST                         |
+
+The supplier bill number is `vouchers.reference_no` (the "Order or bill
+reference" field on the purchase form). When it is empty the print falls back
+to our own voucher number so the document is never anonymous.
 
 ### Tax columns
 
 `isInterStateInvoice` checks whether any line carries IGST. If it does, the grid
-shows a single IGST column; otherwise it shows CGST and SGST. The rate-wise
-summary follows the same rule. Cess only appears when a line actually has it.
+shows a single IGST column; otherwise it shows CGST and SGST. The totals block
+prints one CGST/SGST pair per rate, so a bill mixing 5% and 18% lines shows four
+tax rows. Cess only appears when a line actually has it.
+
+The summary under the totals is HSN/SAC-wise, like the purchase sample:
+`buildHsnSummary` groups lines by HSN and rate, sums taxable value and each tax
+head, sorts by HSN and prints a total row.
 
 ## Where it lives
 
@@ -162,11 +203,14 @@ other printable screen.
 
 ### A4 geometry
 
-Each `.invoice-sheet` is `210mm × 297mm` with `box-sizing: border-box` and
-12mm side padding. `printToPDF` uses zero margins, so the sheet padding is the
-only margin and nothing is doubled. The second sheet starts on a new page
-(`break-after: page` on the first, `auto` on the last). Table headers repeat if
-an unusually long invoice runs past one page.
+Each `.invoice-sheet` is `210mm × 297mm` with `box-sizing: border-box`, 12mm
+side padding, 8mm at the top and 6mm at the bottom. `printToPDF` uses zero
+margins, so the sheet padding is the only margin and nothing is doubled. The
+item table lives in a grid track that takes the remaining height and its rows
+stretch, so a one-line invoice fills the page instead of leaving a white gap;
+a long invoice grows past 297mm. The second sheet starts on a new page
+(`break-after: page` on the first, `auto` on the last), and table headers repeat
+if an invoice runs past one page.
 
 ## Filename
 
@@ -198,10 +242,21 @@ Rules (`src/main/export/invoice-filename.ts`):
 
 ## Limitations
 
+- **Supplier terms and bank details are not stored.** A purchase print
+  reproduces the supplier's header, items and tax, but the terms box and bank
+  block are omitted because the party master has no such fields. A supplier
+  logo is not stored either, so the purchase header has no letterhead mark.
+- **Tally transport fields are blank.** Delivery Note, Mode of Payment,
+  Despatch Doc No., Delivery Note Date, Despatched Through, Terms of Delivery
+  and Buyer's Order No. have no columns in the voucher, so they print an em
+  dash. The labels stay so the sheet matches the sample bills.
 - **Bank block is thin.** `vouchers.bank_account_id` points at an `accounts`
   row, which has a name and a code but no bank name, IFSC or account number.
   The sheet prints the account name and code when one is linked. A richer bank
   master is a separate schema change.
+- **Supplier bill number fallback.** When a purchase voucher has no reference,
+  `Supplier Bill No.` falls back to our voucher number. The reference field on
+  the purchase form is the right place to record the supplier's number.
 - **No per-invoice template editor.** Titles, terms and the bank block come
   from the company record; there is no Tally-style template designer.
 - **Long invoices.** The sheet grows past 297mm rather than clipping content,
@@ -213,13 +268,15 @@ Rules (`src/main/export/invoice-filename.ts`):
 - `tests/shared/amount-in-words.test.ts` — Indian scales, paise, negatives,
   other currencies and non-finite input.
 - `tests/shared/invoice.test.ts` — Indian digit grouping, money and quantity
-  formatting, rate-wise slab grouping, sales/purchase labels, inter-state
+  formatting, rate-wise slab grouping, HSN grouping by HSN + rate, the shared
+  document title, the number labels, the document tax total, inter-state
   detection and state names.
 - `tests/main/export/invoice-filename.test.ts` — exact example filename,
   sanitisation, fallbacks and length caps.
-- `tests/renderer/invoice-sheet.test.tsx` — both captions, company and party
-  blocks, item grid, totals, amount in words, purchase wording, the company
-  logo (rendered when set, absent when not) and the cancellation watermark.
+- `tests/renderer/invoice-sheet.test.tsx` — both captions, the sales issuer and
+  buyer blocks, the sample item grid, totals, amount in words, the HSN/SAC-wise
+  summary, purchase issuer/buyer swap, the omitted supplier terms and bank
+  block, the company logo (sales only) and the cancellation watermark.
 - `tests/e2e/phases-flow.spec.ts` — posts a sales invoice, stubs the native save
   dialog, clicks **Export PDF**, asserts the filename pattern and the `%PDF`
   header, then opens the print route and asserts both captions.
