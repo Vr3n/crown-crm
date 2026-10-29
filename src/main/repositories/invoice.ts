@@ -34,7 +34,8 @@ export const invoiceRepo = {
         phone: companies.phone,
         email: companies.email,
         currency: companies.currency,
-        invoiceTerms: companies.invoice_terms
+        invoiceTerms: companies.invoice_terms,
+        logo: companies.logo
       })
       .from(companies)
       .where(eq(companies.id, companyId))

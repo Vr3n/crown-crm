@@ -22,6 +22,8 @@ export interface InvoiceCompany {
   email: string | null
   currency: string
   invoiceTerms: string | null
+  /** `data:image/...` URL stored on the company profile, or null when unset. */
+  logo: string | null
 }
 
 export interface InvoiceParty {

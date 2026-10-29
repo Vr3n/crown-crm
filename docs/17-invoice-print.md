@@ -55,7 +55,7 @@ loose page can still be identified.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ Company name                          TAX INVOICE                │
+│ [logo] Company name                   TAX INVOICE                │
 │ address, city, pincode                ORIGINAL FOR RECIPIENT     │
 │ GSTIN · PAN · State · phone · email                              │
 ├──────────┬──────────┬──────────┬──────────────┬──────────────────┤
@@ -81,6 +81,16 @@ loose page can still be identified.
 ```
 
 The second page repeats the same sheet with `DUPLICATE FOR TRANSPORTER`.
+
+### Company logo
+
+When `companies.logo` holds a data URL (uploaded from the company page, see
+[`16-company-logo.md`](./16-company-logo.md)), the header prints it as a
+letterhead mark beside the company name. It is boxed to an 18mm square with
+`object-fit: contain`, so a wide or tall upload keeps its aspect ratio and
+cannot change how many line rows fit on the first page. The logo is
+`alt=""` because the company name is printed directly next to it. Profiles
+without a logo simply render the name block, so the header never leaves a hole.
 
 ### Sales versus purchase
 
@@ -188,10 +198,6 @@ Rules (`src/main/export/invoice-filename.ts`):
 
 ## Limitations
 
-- **No logo.** `companies.logo` exists in the schema but is not part of
-  `CompanyProfile` yet. The header in `InvoiceSheet.tsx` is the extension
-  point: add an `<img>` beside the company block once the company profile
-  carries a data URL or a managed file path. Do not render the raw column.
 - **Bank block is thin.** `vouchers.bank_account_id` points at an `accounts`
   row, which has a name and a code but no bank name, IFSC or account number.
   The sheet prints the account name and code when one is linked. A richer bank
@@ -212,8 +218,8 @@ Rules (`src/main/export/invoice-filename.ts`):
 - `tests/main/export/invoice-filename.test.ts` — exact example filename,
   sanitisation, fallbacks and length caps.
 - `tests/renderer/invoice-sheet.test.tsx` — both captions, company and party
-  blocks, item grid, totals, amount in words, purchase wording and the
-  cancellation watermark.
+  blocks, item grid, totals, amount in words, purchase wording, the company
+  logo (rendered when set, absent when not) and the cancellation watermark.
 - `tests/e2e/phases-flow.spec.ts` — posts a sales invoice, stubs the native save
   dialog, clicks **Export PDF**, asserts the filename pattern and the `%PDF`
   header, then opens the print route and asserts both captions.

@@ -108,6 +108,30 @@
   max-width: 118mm;
 }
 
+/*
+ * The logo sits beside the company name like a letterhead mark. It is boxed to
+ * a fixed square so a wide or tall upload cannot push the header down and
+ * change how many line rows fit on page one.
+ */
+.invoice-brand {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  margin-bottom: 1mm;
+}
+
+.invoice-logo {
+  flex: none;
+  width: 18mm;
+  height: 18mm;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.invoice-brand-text {
+  min-width: 0;
+}
+
 .invoice-company-name {
   font-size: 15pt;
   font-weight: 700;

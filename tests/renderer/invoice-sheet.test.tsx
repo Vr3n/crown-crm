@@ -27,7 +27,8 @@ function salesDocument(overrides: Partial<InvoiceDocument> = {}): InvoiceDocumen
       phone: '9876543210',
       email: 'owner@acme.in',
       currency: 'INR',
-      invoiceTerms: '1. Goods once sold are not taken back.\n2. Report discrepancies in 7 days.'
+      invoiceTerms: '1. Goods once sold are not taken back.\n2. Report discrepancies in 7 days.',
+      logo: null
     },
     party: {
       id: 3,
@@ -143,6 +144,39 @@ describe('InvoiceSheet', () => {
     expect(screen.getByText('PURCHASE BILL')).toBeInTheDocument()
     expect(screen.getByText('Supplier Bill No.')).toBeInTheDocument()
     expect(screen.getByText('Supplier')).toBeInTheDocument()
+  })
+
+  it('renders the company logo when the profile has one', () => {
+    const logo = 'data:image/png;base64,iVBORw0KGgo='
+    const { container } = render(
+      <InvoiceSheet
+        document={salesDocument({
+          company: { ...salesDocument().company, logo }
+        })}
+        caption="ORIGINAL FOR RECIPIENT"
+        page={1}
+        pages={2}
+      />
+    )
+
+    const image = container.querySelector('img.invoice-logo')
+    expect(image).not.toBeNull()
+    expect(image?.getAttribute('src')).toBe(logo)
+    // Decorative: the company name is printed next to it.
+    expect(image?.getAttribute('alt')).toBe('')
+  })
+
+  it('omits the logo element when the profile has none', () => {
+    const { container } = render(
+      <InvoiceSheet
+        document={salesDocument()}
+        caption="ORIGINAL FOR RECIPIENT"
+        page={1}
+        pages={2}
+      />
+    )
+
+    expect(container.querySelector('img.invoice-logo')).toBeNull()
   })
 
   it('shows a cancellation watermark when the voucher was cancelled', () => {

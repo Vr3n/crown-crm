@@ -143,8 +143,6 @@ Avatar-upload interaction references:
 
 ## Not in scope
 
-- The logo is not yet drawn on printed invoices or exported PDFs. The data is on
-  the profile read model, so the print work can consume it without another
-  storage change.
 - Cropping and manual zoom are not offered; the image is fitted with
-  `object-contain`.
+  `object-contain`. On printed invoices the same logo is drawn in an 18mm
+  square beside the company name (see `docs/17-invoice-print.md`).

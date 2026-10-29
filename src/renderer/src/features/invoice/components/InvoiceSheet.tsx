@@ -76,10 +76,17 @@ export function InvoiceSheet({
 
       <header className="invoice-head">
         <div className="invoice-company">
-          <p className="invoice-company-name">{company.name}</p>
-          {company.legalName && company.legalName !== company.name ? (
-            <p className="invoice-company-legal">{company.legalName}</p>
-          ) : null}
+          <div className="invoice-brand">
+            {company.logo ? (
+              <img className="invoice-logo" src={company.logo} alt="" decoding="async" />
+            ) : null}
+            <div className="invoice-brand-text">
+              <p className="invoice-company-name">{company.name}</p>
+              {company.legalName && company.legalName !== company.name ? (
+                <p className="invoice-company-legal">{company.legalName}</p>
+              ) : null}
+            </div>
+          </div>
           {company.address ? <p className="invoice-address">{company.address}</p> : null}
           <p>{addressText(company.city, company.pincode)}</p>
           <p className="invoice-company-ids">
