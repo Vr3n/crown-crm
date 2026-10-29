@@ -27,6 +27,7 @@ interface CompanyRow {
   currency: string
   fy_start_month: number
   books_begin_date: string
+  logo: string | null
   invoice_terms: string | null
   costing_method: string
   round_off_mode: string
@@ -80,6 +81,7 @@ function mapCompany(row: CompanyRow): Company {
     currency: row.currency,
     fyStartMonth: row.fy_start_month,
     booksBeginDate: row.books_begin_date,
+    logo: row.logo,
     invoiceTerms: row.invoice_terms,
     costingMethod: row.costing_method as Company['costingMethod'],
     roundOffMode: row.round_off_mode as Company['roundOffMode'],
@@ -191,6 +193,7 @@ export const companyRepo = {
       invoiceTerms?: string | null
       fyStartMonth?: number
       booksBeginDate?: string
+      logo?: string | null
       costingMethod?: string
       roundOffMode?: string
       allowNegativeStock?: boolean
@@ -210,6 +213,7 @@ export const companyRepo = {
     if (input.invoiceTerms !== undefined) set.invoice_terms = input.invoiceTerms
     if (input.fyStartMonth !== undefined) set.fy_start_month = input.fyStartMonth
     if (input.booksBeginDate !== undefined) set.books_begin_date = input.booksBeginDate
+    if (input.logo !== undefined) set.logo = input.logo
     if (input.costingMethod !== undefined) set.costing_method = input.costingMethod
     if (input.roundOffMode !== undefined) set.round_off_mode = input.roundOffMode
     if (input.allowNegativeStock !== undefined) set.allow_negative_stock = input.allowNegativeStock

@@ -76,6 +76,46 @@ test('first run numbers the books and opens the dashboard', async () => {
   await expect(page.getByText('1 of 6 steps done.')).toBeVisible()
 })
 
+test('the company logo uploads, survives a reload and can be removed', async () => {
+  // A real 1x1 PNG so the renderer can decode and re-encode it.
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    'base64'
+  )
+
+  await goto('#/settings/company')
+  await expect(
+    page.getByRole('main').getByRole('heading', { name: 'Company', exact: true })
+  ).toBeVisible()
+  await expect(page.getByText('AD', { exact: true })).toBeVisible()
+
+  await page.getByLabel('Company logo file').setInputFiles({
+    name: 'logo.png',
+    mimeType: 'image/png',
+    buffer: png
+  })
+
+  const logo = page.getByRole('img', { name: 'Acme Distributors logo' })
+  await expect(logo).toBeVisible()
+  await expect(logo).toHaveAttribute('src', /^data:image\/(png|webp);base64,/)
+
+  // The logo is stored on the company row, not just in the query cache.
+  await page.reload()
+  await goto('#/settings/company')
+  await expect(page.getByRole('img', { name: 'Acme Distributors logo' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Remove company logo' }).click()
+  await expect(page.getByRole('alertdialog')).toBeVisible()
+  await page.getByRole('button', { name: 'Remove logo' }).click()
+  await expect(page.getByRole('img', { name: 'Acme Distributors logo' })).toHaveCount(0)
+  await expect(page.getByText('AD', { exact: true })).toBeVisible()
+
+  await page.reload()
+  await goto('#/settings/company')
+  await expect(page.getByText('AD', { exact: true })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Acme Distributors logo' })).toHaveCount(0)
+})
+
 test('the party dialog validates live and marks required fields', async () => {
   await goto('#/parties')
   await page.getByRole('button', { name: 'New party' }).first().click()

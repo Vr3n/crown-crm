@@ -26,6 +26,7 @@ interface CompanyRow {
   currency: string
   fy_start_month: number
   books_begin_date: string
+  logo: string | null
   invoice_terms: string | null
   costing_method: string
   round_off_mode: string
@@ -57,6 +58,7 @@ export function registerIdentityReadIpc(): void {
       currency: row.currency,
       fyStartMonth: row.fy_start_month,
       booksBeginDate: row.books_begin_date,
+      logo: row.logo,
       invoiceTerms: row.invoice_terms,
       costingMethod: row.costing_method,
       roundOffMode: row.round_off_mode,

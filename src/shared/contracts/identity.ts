@@ -89,8 +89,38 @@ export const createdStaffMemberSchema = z.object({
 })
 export type CreatedStaffMember = z.infer<typeof createdStaffMemberSchema>
 
+/**
+ * A company logo is stored as a data URL so it travels inside the database
+ * backup and needs no second file to restore. The cap is on the encoded text,
+ * not the source file: 512 KiB of base64 is roughly 384 KiB of image, which is
+ * far above what a 512px logo needs while keeping a `companies` row small.
+ */
+export const MAX_COMPANY_LOGO_DATA_URL_LENGTH = 512 * 1024
+
+/** PNG, JPEG or WebP only. SVG is excluded: it can carry script and is never needed here. */
+const COMPANY_LOGO_DATA_URL_RE = /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/
+
+export function isCompanyLogoDataUrl(value: string): boolean {
+  return COMPANY_LOGO_DATA_URL_RE.test(value)
+}
+
+/**
+ * The renderer sends the prepared data URL. An empty string or null clears the
+ * logo; both are accepted here so the patch can remove it without a second
+ * channel.
+ */
+export const companyLogoInputSchema = z
+  .string()
+  .max(MAX_COMPANY_LOGO_DATA_URL_LENGTH, 'Logo is too large. Use an image under 512 KB.')
+  .refine(
+    (value) => value.length === 0 || isCompanyLogoDataUrl(value),
+    'Logo must be a PNG, JPEG or WebP image'
+  )
+  .nullable()
+
 export const updateCompanyInputSchema = z.object({
   name: z.string().min(1).max(120).optional(),
+  logo: companyLogoInputSchema.optional(),
   legalName: z.string().max(200).optional().nullable(),
   gstin: z.string().max(15).optional().nullable(),
   pan: z.string().max(10).optional().nullable(),
@@ -126,6 +156,7 @@ export interface CompanyProfile {
   currency: string
   fyStartMonth: number
   booksBeginDate: string
+  logo: string | null
   invoiceTerms: string | null
   costingMethod: string
   roundOffMode: string

@@ -22,6 +22,8 @@ export interface Company {
   currency: string
   fyStartMonth: number
   booksBeginDate: string
+  /** Data URL (`data:image/png|jpeg|webp;base64,...`) or null. */
+  logo: string | null
   invoiceTerms: string | null
   costingMethod: CostingMethod
   roundOffMode: RoundOffMode

@@ -6,15 +6,17 @@ import { companyRepo, userRepo, roleRepo, staffRepo, appMetaRepo } from '../repo
 import { numberingRepo } from '../repositories/numbering'
 import { auditRepo } from '../repositories/audit'
 import { assertCanAssignRole } from '../auth/access-guards'
-import type {
-  AuthStatus,
-  CreateStaffMemberInput,
-  CreatedStaffMember,
-  LoginInput,
-  CompanyExistenceInput,
-  SessionContext,
-  SetupCompanyInput,
-  UpdateCompanyInput
+import {
+  MAX_COMPANY_LOGO_DATA_URL_LENGTH,
+  isCompanyLogoDataUrl,
+  type AuthStatus,
+  type CreateStaffMemberInput,
+  type CreatedStaffMember,
+  type LoginInput,
+  type CompanyExistenceInput,
+  type SessionContext,
+  type SetupCompanyInput,
+  type UpdateCompanyInput
 } from '../../shared/contracts/identity'
 import type { Company } from '../domain/identity'
 import { ValidationError, UnauthorizedError, NotFoundError } from '../domain/errors'
@@ -146,6 +148,18 @@ export function updateCompany(input: UpdateCompanyInput): Company {
       throw new ValidationError('Books begin date must be YYYY-MM-DD')
     }
     patch.booksBeginDate = input.booksBeginDate
+  }
+  if (input.logo !== undefined) {
+    const logo = input.logo?.trim() || null
+    if (logo) {
+      if (logo.length > MAX_COMPANY_LOGO_DATA_URL_LENGTH) {
+        throw new ValidationError('Logo is too large. Use an image under 512 KB.')
+      }
+      if (!isCompanyLogoDataUrl(logo)) {
+        throw new ValidationError('Logo must be a PNG, JPEG or WebP image')
+      }
+    }
+    patch.logo = logo
   }
   if (input.costingMethod !== undefined) patch.costingMethod = input.costingMethod
   if (input.roundOffMode !== undefined) patch.roundOffMode = input.roundOffMode
