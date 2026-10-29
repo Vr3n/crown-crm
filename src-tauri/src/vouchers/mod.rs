@@ -1195,6 +1195,17 @@ fn opening_in_tx(
     };
 
     let id = repo::insert(conn, &header, &[], &ledger, &stock_movements, &[], Some(user_id))?;
+
+    // The ledger now carries every opening figure. Clear the staging columns so
+    // the trial balance and P&L, which add them to the ledger sum, do not count
+    // the same money twice. Items and parties keep their declared openings: the
+    // stock report reads movements only and party balances are ledger-driven.
+    conn.execute(
+        "UPDATE accounts SET opening_balance_minor = 0
+         WHERE company_id = ?1 AND opening_balance_minor <> 0",
+        rusqlite::params![company_id],
+    )?;
+
     Ok(json!({ "id": id, "number": number }))
 }
 

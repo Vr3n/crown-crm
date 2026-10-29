@@ -153,32 +153,74 @@ src-tauri/
     db/                    open, migrate, seed, permission catalog
     audit.rs               append-only audit trail
     <domain>/              one module per backend area
-  tests/rpc_flow.rs        end-to-end backend test
+  tests/common/mod.rs       shared harness (temp database + dispatcher)
+  tests/rpc_flow.rs         boot, setup, one invoice, reports, login
+  tests/full_flow.rs        every feature in one realistic month of trading
 ```
 
 `src-tauri/PORTING.md` documents the conventions used for every module.
 
 ## 5. Verification
 
-`cargo test` runs the unit tests plus `tests/rpc_flow.rs`, which drives the real
-dispatcher against a real SQLite file:
+`cargo test` runs 51 unit tests plus two end-to-end suites that drive the real
+dispatcher against a real SQLite file.
 
-1. `identity:status` → `SETUP_REQUIRED`
-2. `identity:setup` → session, 31 permissions, five seeded roles
-3. masters: units, accounts, tax rates, godowns, a party, an item
-4. `vouchers:postOpening` → stock enters the ledger
-5. `vouchers:post` a sales invoice → `INV/0001`, 200.00 taxable, 18% GST, 236.00
-6. idempotent replay returns the same voucher; a tampered replay is
-   `IDEMPOTENCY_CONFLICT`
-7. trial balance balances, P&L nets 40.00, balance sheet difference is zero
-8. receivables, payables, ageing buckets, party statement, sales register,
-   stock and stock movements
-9. dashboard, page summaries, global search
-10. backup create/list, `license:status`
-11. cancel, logout, wrong password, login
-12. a second test proves every read channel answers `UNAUTHENTICATED` after
-    logout
-13. a third test reopens the database and restores the remembered login
+### `tests/full_flow.rs` — every feature
+
+One company is set up and taken through the whole product. The arithmetic is
+asserted exactly, so the ledger, the stock ledger and the reports have to agree.
+
+1. **Identity and access.** First-run status, `checkCompanyExists`, setup,
+   company profile edits (legal name, PAN, address, round-off mode, negative
+   stock), GSTIN/PAN validation, role create/update/delete, the system-role
+   guard, staff create/update/password reset, signing in as the limited role,
+   `PERMISSION_DENIED` on a write it lacks, the privilege-escalation guard, then
+   back to the owner.
+2. **Masters.** Units create/update/deactivate (active vs `includeInactive`),
+   accounts groups/create/deactivate, parties create/update/list filters/get/
+   deactivate, items create/update/list/deactivate, tax rates create/revise/
+   retire with the append-only history, godowns.
+3. **Numbering.** The nine seeded series, a custom prefix `SINV/{FY}/` with
+   three-digit padding, and rejection of an invalid series and an unknown token.
+4. **Opening balances.** `vouchers:postOpening` moves the declared account,
+   party and stock openings into the ledger. Items report `stockQtyE4 = 0`
+   before that and the real quantity after, exactly like the product.
+5. **All nine voucher types.** Sales intra-state (CGST+SGST), sales inter-state
+   with a 10% discount, manual numbering, and round off (955.80 → 956.00),
+   a service sale with no stock movement, a purchase bill with 12% IGST, a
+   receipt settled against a bill, a payment against a bill, a credit note that
+   returns stock and reverses COGS, a debit note that is then cancelled, a
+   balanced journal and a cash-to-bank contra.
+6. **Invariants.** The trial balance balances, cash carries the receipt and the
+   contra, the first bill shows 100.00 paid and 136.00 open, a bill with an
+   allocation cannot be cancelled, cancelling the debit note restores the unit
+   (`stockQtyE4` 15 → 16 units for the month), and a second cancel is refused.
+7. **Lists.** Filters by type, party and date range, a number search, paging,
+   and the invoice read model (nested company, party, totals, tax slabs, amount
+   in words) — including `NOT_FOUND` for a journal, which has no invoice.
+8. **Reports.** Profit and loss (income 1415.00), balance sheet (difference 0),
+   receivables, payables (496.00), ageing buckets, party statement with a
+   running balance, sales and purchase registers, stock (16 units, valued) and
+   stock movements with the per-voucher unit cost.
+9. **Dashboard, summaries, search.** Bill-based receivables (1682.00) and
+   payables, the five-bucket ageing, four party rows and three item rows, the
+   party page's ledger-based balances (2064.00 / 496.00), items and voucher
+   summaries with a month point per month that has data, and global search by
+   party and item name.
+10. **Exports.** The real `rust_xlsxwriter` workbook (a zip, `PK` magic) and the
+    real `printpdf` invoice (`%PDF-` magic, default file name), plus the fact
+    that the save-dialog commands report an error instead of writing silently
+    when there is no window.
+11. **Backup and licence.** Create (twice, distinct names), list, destinations,
+    remove-unknown-destination, reveal-missing-folder, `license:status`.
+12. **Error contract.** Unbalanced journal, receipt from a supplier, sale with
+    no party, manual number on a series that forbids it, unknown voucher type,
+    unknown channel, and every read channel answering `UNAUTHENTICATED` after
+    logout.
+
+`tests/rpc_flow.rs` covers the boot path and session restore, and
+`rejected_vouchers_leave_no_trace` proves a refused post consumes no voucher
+number and leaves no rows behind.
 
 ### Smoke tests against the built app
 
@@ -186,16 +228,13 @@ dispatcher against a real SQLite file:
 and asserts the database was created, four migrations ran, the 28 tables exist
 and 31 permissions were seeded.
 
-`npm run smoke:ui` goes further: it starts the app with WebView2 remote
-debugging, attaches over the DevTools protocol, and checks that
-
-* React actually mounted and painted the first-run screen,
-* `window.api.identity.status()` answers `SETUP_REQUIRED` through the production
-  Content-Security-Policy (a CSP mistake would show as a blank window),
-* `identity.setup` creates the company and the reloaded page restores the
-  session and shows the first-run wizard,
-* `identity.company`, `dashboard.summary`, `vouchers.list` and `numbering.list`
-  all answer over the bridge.
+`npm run smoke:ui` starts the app with WebView2 remote debugging and drives the
+real UI over the DevTools protocol: the first-run screen, setup, session
+restore, the numbering wizard, the dashboard, all 27 routes, a party created
+through the dialog (including the empty-form rejection), then an item, opening
+balances, a posted invoice and the screens that read it — voucher detail,
+receivables, trial balance, profit and loss, stock, company settings and the
+two-copy GST print view.
 
 ### Windows test binaries
 
@@ -252,3 +291,9 @@ These were defects in the TypeScript that the port fixed, not new behaviour:
   generic `INTERNAL_ERROR`.
 * **`instrumentNo` and `reversalOfVoucherId`** were parsed and then dropped by
   the old post path; they are now stored.
+* **Opening balances were counted twice.** The trial balance and the P&L added
+  `accounts.opening_balance_minor` to the ledger sum, while the opening voucher
+  posted the same figure into the ledger. Any custom account with an opening
+  balance made the trial balance disagree by that amount. Posting the opening
+  voucher now clears the staging column, so the ledger is the single source of
+  truth and the books balance.

@@ -86,9 +86,9 @@ npm run build:web    # renderer bundle only, into dist/
 npm run typecheck
 npm run lint
 npm test             # renderer and shared-contract tests
-cargo test --manifest-path src-tauri/Cargo.toml   # backend, including tests/rpc_flow.rs
+cargo test --manifest-path src-tauri/Cargo.toml   # backend: 51 unit + 5 end-to-end
 npm run smoke:win    # launches the built binary and checks the migrated database
-npm run smoke:ui     # attaches to the running window and checks React + the IPC bridge
+npm run smoke:ui     # drives the real UI over the DevTools protocol
 ```
 
 ## Data

@@ -5,8 +5,8 @@
 //! path or overwrite a file silently, and a cancelled dialog writes nothing.
 
 mod invoice_format;
-mod invoice_pdf;
-mod xlsx;
+pub mod invoice_pdf;
+pub mod xlsx;
 
 use std::path::{Path, PathBuf};
 
