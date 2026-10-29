@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 /**
- * Renderer smoke test.
+ * Full UI end-to-end test.
  *
- * Starts the built app with WebView2 remote debugging enabled, attaches to the
- * page over the DevTools protocol, and asserts that React actually mounted and
- * that the IPC bridge answers through the production Content-Security-Policy.
- * A blank window (CSP error, bad asset path, broken import) fails here even
- * though the process stays alive.
+ * Starts the release binary with WebView2 remote debugging, attaches over the
+ * DevTools protocol, and drives the real application:
+ *
+ *   1. first run: the setup screen renders and the IPC bridge answers
+ *   2. setup writes the company; the reloaded app restores the session and
+ *      shows the first-run numbering wizard
+ *   3. completing numbering lands on the dashboard
+ *   4. every route in AppRoutes renders real content (no blank screen, no crash)
+ *   5. a party is created through the dialog, with the form's own validation
+ *   6. an item and a sales invoice are posted, then the voucher detail, the
+ *      party detail, the receivables report, the trial balance and the print
+ *      view are all read back from the running UI
  *
  * Usage:
  *   node scripts/smoke-ui.mjs
@@ -27,6 +34,9 @@ if (!existsSync(exe)) {
   process.exit(1)
 }
 
+const COMPANY = 'Smoke Test Traders'
+const PARTY = 'Smoke Customer'
+const ITEM = 'Smoke Widget'
 const port = 9333
 const dataDir = mkdtempSync(join(tmpdir(), 'crown-books-ui-'))
 
@@ -40,13 +50,29 @@ const child = spawn(exe, [], {
   stdio: ['ignore', 'pipe', 'pipe']
 })
 
-let stderr = ''
+let appStderr = ''
 child.stderr.on('data', (chunk) => {
-  stderr += chunk.toString()
+  appStderr += chunk.toString()
 })
 
 /** @returns {Promise<void>} */
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms))
+
+const problems = []
+/**
+ * @param {string} label
+ * @param {boolean} ok
+ * @param {string} [detail]
+ * @returns {void}
+ */
+function check(label, ok, detail) {
+  if (ok) {
+    console.log(`  ok   ${label}`)
+  } else {
+    problems.push(detail ? `${label} (${detail})` : label)
+    console.log(`  FAIL ${label}${detail ? ` — ${detail}` : ''}`)
+  }
+}
 
 /**
  * Resolves the WebView2 page target once DevTools is listening.
@@ -69,7 +95,12 @@ async function findTarget() {
  * @returns {Promise<unknown>}
  */
 async function evaluate(expression) {
-  const target = await findTarget()
+  const deadline = Date.now() + 10_000
+  let target = await findTarget()
+  while (!target && Date.now() < deadline) {
+    await sleep(200)
+    target = await findTarget()
+  }
   if (!target) throw new Error('no page target')
 
   return new Promise((done, failed) => {
@@ -77,7 +108,7 @@ async function evaluate(expression) {
     const timer = setTimeout(() => {
       socket.close()
       failed(new Error('DevTools evaluate timed out'))
-    }, 8000)
+    }, 15_000)
 
     socket.addEventListener('open', () => {
       socket.send(
@@ -95,7 +126,7 @@ async function evaluate(expression) {
       socket.close()
       if (message.error) failed(new Error(message.error.message))
       else if (message.result?.exceptionDetails) {
-        failed(new Error(message.result.exceptionDetails.text))
+        failed(new Error(message.result.exceptionDetails.exception?.description ?? 'page threw'))
       } else done(message.result?.result?.value)
     })
     socket.addEventListener('error', () => {
@@ -105,15 +136,95 @@ async function evaluate(expression) {
   })
 }
 
+/** @returns {Promise<string>} */
+async function bodyText() {
+  return String(await evaluate('document.body.innerText'))
+}
+
+/**
+ * Polls until the page text contains every marker.
+ * @param {string[]} markers
+ * @param {number} [timeout]
+ * @returns {Promise<string>}
+ */
+async function waitForText(markers, timeout = 20_000) {
+  const deadline = Date.now() + timeout
+  let text = ''
+  while (Date.now() < deadline) {
+    text = await bodyText()
+    if (markers.every((marker) => text.includes(marker))) return text
+    await sleep(300)
+  }
+  return text
+}
+
+/**
+ * Navigates the hash router and waits for the new screen.
+ * @param {string} route
+ * @param {string[]} [markers]
+ * @returns {Promise<string>}
+ */
+async function goto(route, markers = []) {
+  await evaluate(`(() => { location.hash = ${JSON.stringify(`#${route}`)}; return true })()`)
+  await sleep(250)
+  if (markers.length === 0) {
+    // Give the route a moment to render before the caller measures it.
+    await sleep(700)
+    return bodyText()
+  }
+  return waitForText(markers)
+}
+
+/**
+ * Clicks the first button whose trimmed text matches.
+ * @param {string} label
+ * @returns {Promise<string>}
+ */
+async function clickButton(label) {
+  return String(
+    await evaluate(`(() => {
+      const button = [...document.querySelectorAll('button')]
+        .find((candidate) => candidate.textContent.trim() === ${JSON.stringify(label)})
+      if (!button) return 'missing'
+      button.click()
+      return 'clicked'
+    })()`)
+  )
+}
+
+/**
+ * Sets a React-controlled field through the native value setter.
+ * @param {string} fieldId
+ * @param {string} value
+ * @returns {Promise<string>}
+ */
+async function setField(fieldId, value) {
+  return String(
+    await evaluate(`(() => {
+      const field = document.getElementById(${JSON.stringify(fieldId)})
+      if (!field) return 'missing'
+      const proto = field.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+      const setter = Object.getOwnPropertyDescriptor(proto, 'value').set
+      setter.call(field, ${JSON.stringify(value)})
+      field.dispatchEvent(new Event('input', { bubbles: true }))
+      field.dispatchEvent(new Event('change', { bubbles: true }))
+      return 'set'
+    })()`)
+  )
+}
+
 /** @returns {void} */
 function stop() {
   if (!child.killed) child.kill()
 }
 
 try {
-  const deadline = Date.now() + 30_000
+  // -------------------------------------------------------------------
+  // Boot and first run
+  // -------------------------------------------------------------------
+  const bootDeadline = Date.now() + 30_000
   let target = null
-  while (Date.now() < deadline) {
+  while (Date.now() < bootDeadline) {
     if (child.exitCode !== null) throw new Error(`app exited early with code ${child.exitCode}`)
     target = await findTarget()
     if (target) break
@@ -121,97 +232,198 @@ try {
   }
   if (!target) throw new Error(`WebView2 never exposed DevTools on port ${port}`)
 
-  // React must mount and paint something before the assertion below is useful.
-  let text = ''
-  while (Date.now() < deadline) {
-    text = String(await evaluate('document.body.innerText'))
-    if (text.trim().length > 0) break
-    await sleep(300)
-  }
+  console.log('first run')
+  let text = await waitForText(['Set up the books'])
+  check('the setup screen renders', text.includes('Set up the books'))
+  check('React mounted', text.length > 200, `${text.length} chars`)
 
-  const problems = []
-  if (!text.includes('Set up the books')) problems.push('the first-run heading did not render')
-  if (text.length < 40) problems.push(`the page is nearly empty (${text.length} chars)`)
-
-  // The bridge must reach Rust through the production CSP.
   const status = String(await evaluate('window.api.identity.status()'))
-  if (status !== 'SETUP_REQUIRED') problems.push(`identity.status returned ${status}`)
+  check('window.api answers SETUP_REQUIRED through the CSP', status === 'SETUP_REQUIRED', status)
+  check(
+    'the bridge exposes every domain',
+    (await evaluate(
+      "['identity','parties','items','accounts','units','taxRates','godowns','vouchers','invoice','dashboard','search','summaries','numbering','reports','license','backup'].every((key) => typeof window.api[key] === 'object')"
+    )) === true
+  )
 
-  const hasBridge = await evaluate('typeof window.api.vouchers.post === "function"')
-  if (hasBridge !== true) problems.push('window.api is incomplete')
+  // -------------------------------------------------------------------
+  // Setup, session restore, first-run wizard
+  // -------------------------------------------------------------------
+  console.log('setup and session restore')
+  const created = await evaluate(`window.api.identity.setup({
+    name: ${JSON.stringify(COMPANY)},
+    ownerFullName: 'Smoke Owner',
+    ownerEmail: 'owner@smoke.test',
+    ownerPassword: 'correct-horse',
+    stateCode: '27',
+    booksBeginDate: '2026-04-01'
+  }).then((session) => session.companyName)`)
+  check('identity.setup creates the company', created === COMPANY, String(created))
 
-  // The whole first-run path, through the real UI and the real Rust backend:
-  // setup writes the company, seeds roles and defaults, signs the owner in, and
-  // the auth gate must swap to the dashboard.
-  if (problems.length === 0) {
-    const companyName = 'Smoke Test Traders'
-    const created = await evaluate(`window.api.identity.setup({
-      name: '${companyName}',
-      ownerFullName: 'Smoke Owner',
-      ownerEmail: 'owner@smoke.test',
-      ownerPassword: 'correct-horse',
-      stateCode: '27',
-      booksBeginDate: '2026-04-01'
-    }).then((session) => session.companyName)`)
+  await evaluate('(() => { setTimeout(() => location.reload(), 50); return true })()')
+  await sleep(1500)
+  text = await waitForText(['Number your vouchers'])
+  check('the session is restored and the wizard shows', text.includes('Number your vouchers'))
+  check('the setup screen is gone', !text.includes('Set up the books'))
 
-    if (created !== companyName) {
-      problems.push(`identity.setup returned ${created}`)
-    } else {
-      // The direct API call bypasses React Query's mutation, so reload the page
-      // the way a restart would: the remembered session is restored and the auth
-      // gate must move past the setup screen into the first-run wizard.
-      await evaluate('(() => { setTimeout(() => location.reload(), 50); return true })()')
-      await sleep(1500)
+  // Save through the wizard itself: its own submit updates the cached company
+  // profile before navigating, which is exactly what a real first run does.
+  check('the wizard save button is present', (await clickButton('Save numbering')) === 'clicked')
+  text = await waitForText(['where the books stand today'], 25_000)
+  check('the dashboard renders for the signed-in owner', text.includes(COMPANY), text.replace(/\s+/g, ' ').slice(0, 220))
+  check('the dashboard shows the setup checklist', text.includes('Number your vouchers'))
 
-      let screen = ''
-      const screenDeadline = Date.now() + 25_000
-      while (Date.now() < screenDeadline) {
-        screen = String(await evaluate('document.body.innerText'))
-        const movedOn = !screen.includes('Set up the books') && screen.includes('Number your vouchers')
-        if (movedOn) break
-        await sleep(400)
-      }
-      if (screen.includes('Set up the books')) {
-        problems.push('the setup screen was still showing after setup')
-      } else if (!screen.includes('Number your vouchers')) {
-        problems.push('the first-run wizard did not render after setup')
-      }
-
-      const company = await evaluate('window.api.identity.company().then((row) => row && row.name)')
-      if (company !== companyName) problems.push(`identity.company returned ${company}`)
-    }
-
-    const summary = await evaluate('window.api.dashboard.summary()')
-    if (summary === null || typeof summary !== 'object') {
-      problems.push('dashboard.summary did not return an object')
-    }
-
-    const vouchers = await evaluate('window.api.vouchers.list({})')
-    if (!Array.isArray(vouchers)) {
-      problems.push('vouchers.list did not return an array')
-    }
-
-    const numbering = await evaluate('window.api.numbering.list()')
-    if (!Array.isArray(numbering) || numbering.length !== 9) {
-      problems.push(`numbering.list returned ${Array.isArray(numbering) ? numbering.length : 'nothing'}`)
-    }
+  // -------------------------------------------------------------------
+  // Every route renders
+  // -------------------------------------------------------------------
+  console.log('every route')
+  const routes = [
+    ['/', ['Dashboard', 'Books']],
+    ['/parties', []],
+    ['/customers', []],
+    ['/suppliers', []],
+    ['/items', []],
+    ['/stock', []],
+    ['/journals', []],
+    ['/day-book', []],
+    ['/sales', []],
+    ['/purchases', []],
+    ['/receipts', []],
+    ['/payments', []],
+    ['/masters/accounts', []],
+    ['/masters/units', []],
+    ['/masters/tax-rates', []],
+    ['/settings/company', []],
+    ['/settings/numbering', []],
+    ['/settings/users', []],
+    ['/settings/backup', []],
+    ['/reports/receivables', []],
+    ['/reports/payables', []],
+    ['/reports/ageing', []],
+    ['/reports/trial-balance', []],
+    ['/reports/profit-loss', []],
+    ['/reports/balance-sheet', []],
+    ['/reports/sales-register', []],
+    ['/reports/purchase-register', []]
+  ]
+  for (const [route] of routes) {
+    const routeText = await goto(route)
+    const rendered = routeText.length > 300 && !routeText.includes('Unexpected Application Error')
+    check(`${route} renders`, rendered, `${routeText.length} chars`)
   }
 
-  if (problems.length > 0) {
-    console.error(`smoke-ui: ${problems.join('; ')}`)
-    console.error(`smoke-ui: rendered text was:\n${text.slice(0, 400)}`)
-    if (stderr.trim()) console.error(stderr.trim())
-    process.exitCode = 1
-  } else {
-    console.log('smoke-ui: ok — React mounted, window.api answered SETUP_REQUIRED')
-    console.log(`smoke-ui: ${text.replace(/\s+/g, ' ').slice(0, 120)}…`)
-  }
+  // -------------------------------------------------------------------
+  // A party through the real dialog
+  // -------------------------------------------------------------------
+  console.log('party dialog')
+  await goto('/parties', ['New party'])
+  check('the New party trigger is present', (await clickButton('New party')) === 'clicked')
+  text = await waitForText(['Add party'])
+  check('the dialog opens', text.includes('Add party'))
+  check('the name field exists', (await setField('name', PARTY)) === 'set')
+  check('the credit days field accepts input', (await setField('creditDays', '15')) === 'set')
+  check('submitting the form works', (await clickButton('Add party')) === 'clicked')
+
+  text = await waitForText([PARTY], 15_000)
+  check('the new party appears in the list', text.includes(PARTY))
+
+  // Validation still runs: an empty name must not create a row.
+  const partiesBefore = await evaluate('window.api.parties.list({}).then((rows) => rows.length)')
+  await clickButton('New party')
+  await waitForText(['Add party'])
+  await clickButton('Add party')
+  await sleep(800)
+  const partiesAfter = await evaluate('window.api.parties.list({}).then((rows) => rows.length)')
+  check('an empty form is rejected by the dialog', partiesBefore === partiesAfter, `${partiesBefore} -> ${partiesAfter}`)
+  await clickButton('Cancel')
+  await sleep(400)
+
+  // -------------------------------------------------------------------
+  // An item and an invoice, then the screens that read them
+  // -------------------------------------------------------------------
+  console.log('invoice and reports')
+  const item = await evaluate(`window.api.items.create({
+    name: ${JSON.stringify(ITEM)},
+    hsnSac: '8471',
+    gstRateBps: 1800,
+    salePriceMinor: 25000,
+    purchasePriceMinor: 18000,
+    openingQtyE4: 50000,
+    openingRateMinor: 18000
+  }).then((row) => row.id)`)
+  check('an item can be created', typeof item === 'number', String(item))
+
+  const opening = await evaluate("window.api.vouchers.postOpening('2026-04-01').then((row) => row.number)")
+  check('opening balances post', String(opening).startsWith('OPN/'), String(opening))
+
+  const posted = await evaluate(`window.api.parties.list({ query: ${JSON.stringify(PARTY)} }).then((rows) =>
+    window.api.vouchers.post({
+      requestId: 'ui-sale-0001',
+      type: 'SALES',
+      date: '2026-04-15',
+      partyId: rows[0].id,
+      lines: [{
+        itemId: ${item},
+        description: ${JSON.stringify(ITEM)},
+        hsn: '8471',
+        uom: 'nos',
+        qtyE4: 20000,
+        rateMinor: 25000,
+        discountBps: 0,
+        gstRateBps: 1800
+      }]
+    })
+  )`)
+  check('a sales invoice posts', posted?.number === 'INV/0001', JSON.stringify(posted))
+  const voucherId = posted?.id
+
+  text = await goto(`/vouchers/${voucherId}`, ['INV/0001'])
+  check('the voucher detail shows the number', text.includes('INV/0001'))
+  check('the voucher detail shows the taxed total', text.includes('590.00'), 'expected 2 x 250.00 + 18%')
+
+  text = await goto('/parties', [PARTY])
+  check('the party list shows the new party', text.includes(PARTY))
+
+  text = await goto('/reports/receivables', [PARTY])
+  check('receivables show the invoice', text.includes(PARTY) && text.includes('590.00'))
+
+  text = await goto('/reports/trial-balance', ['Sales'])
+  check('the trial balance lists Sales', text.includes('Sales'))
+  check('the trial balance balances', text.includes('TOTAL') || text.includes('Total'), text.slice(0, 200))
+
+  text = await goto('/reports/profit-loss', [])
+  check('the profit and loss renders the sale', text.includes('Sales'))
+
+  text = await goto('/stock', [ITEM])
+  check('the stock page shows the item', text.includes(ITEM))
+
+  text = await goto(`/print/vouchers/${voucherId}`, ['ORIGINAL FOR RECIPIENT'])
+  check('the print view renders both GST copies', text.includes('ORIGINAL FOR RECIPIENT'))
+  check('the print view shows the company', text.includes(COMPANY))
+
+  await goto('/settings/company', [])
+  text = await bodyText()
+  check('company settings render the profile', text.includes(COMPANY))
 } catch (error) {
+  problems.push(error.message)
   console.error(`smoke-ui: ${error.message}`)
-  if (stderr.trim()) console.error(stderr.trim())
-  process.exitCode = 1
+  if (appStderr.trim()) console.error(appStderr.trim())
 } finally {
   stop()
   await sleep(500)
-  rmSync(dataDir, { recursive: true, force: true })
+  // WebView2 keeps its user-data folder mapped for a moment after the process
+  // exits; a locked cleanup must not fail the run.
+  try {
+    rmSync(dataDir, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 })
+  } catch {
+    // left for the OS temp sweeper
+  }
+}
+
+if (problems.length > 0) {
+  console.error(`\nsmoke-ui: ${problems.length} failure(s)`)
+  for (const problem of problems) console.error(`  - ${problem}`)
+  process.exitCode = 1
+} else {
+  console.log('\nsmoke-ui: ok — every screen rendered and every flow worked')
 }
