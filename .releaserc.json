@@ -5,22 +5,32 @@
     "@semantic-release/release-notes-generator",
     "@semantic-release/changelog",
     ["@semantic-release/npm", { "npmPublish": false }],
-    ["@semantic-release/exec", {
-      "prepareCmd": "electron-vite build && electron-builder --win --publish never"
-    }],
-    ["@semantic-release/github", {
-      "assets": [
-        { "path": "dist/CrownCRM-setup.exe" },
-        { "path": "dist/latest.yml" },
-        { "path": "dist/*.blockmap" }
-      ]
-    }],
-    ["@semantic-release/exec", {
-      "successCmd": "gh release edit ${nextRelease.gitTag} --prerelease"
-    }],
-    ["@semantic-release/git", {
-      "assets": ["package.json", "package-lock.json", "CHANGELOG.md"],
-      "message": "chore(release): ${nextRelease.version} [skip ci]"
-    }]
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "node scripts/sync-version.mjs && npm run build && node scripts/collect-installer.mjs"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [{ "path": "dist/Crown-Books-*-setup.exe", "label": "Crown Books installer (Windows x64)" }]
+      }
+    ],
+    ["@semantic-release/exec", { "successCmd": "gh release edit ${nextRelease.gitTag} --prerelease" }],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "package.json",
+          "package-lock.json",
+          "CHANGELOG.md",
+          "src-tauri/Cargo.toml",
+          "src-tauri/Cargo.lock",
+          "src-tauri/tauri.conf.json"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]"
+      }
+    ]
   ]
 }

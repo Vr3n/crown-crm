@@ -133,6 +133,32 @@ paper is identical.
 * Release profile: `lto = true`, `codegen-units = 1`, `opt-level = "s"`,
   `strip = true`.
 
+### 3.8 CI and releases
+
+Both GitHub workflows now build the Tauri app. They install
+`dtolnay/rust-toolchain@stable`, cache `src-tauri` with `swatinem/rust-cache`,
+then run the same gates as before (`typecheck`, Vitest) plus
+`cargo test --manifest-path src-tauri/Cargo.toml`, and finish with
+`npm run build`. The installer artifact comes from
+`src-tauri/target/release/bundle/nsis/*-setup.exe`.
+
+`semantic-release` used to run `electron-vite build && electron-builder`. It now
+runs three steps in `prepareCmd`:
+
+1. `scripts/sync-version.mjs` copies the version npm just bumped into
+   `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`, so the git tag, the
+   `package.json` version and the bundled installer agree (`Cargo.lock` follows
+   on the next build).
+2. `npm run build` produces the NSIS installer.
+3. `scripts/collect-installer.mjs` copies the newest installer to
+   `dist/Crown-Books-<version>-setup.exe`, which is the GitHub release asset.
+
+`@semantic-release/git` also commits the two manifests, and the Electron-only
+`afterPack`/`applyFuses` hooks, the `build/` icon bundle and the gym-era EULA
+that lived in it are gone. `scripts/guide/capture-*.mjs` still drive Electron
+through Playwright; they are documentation tooling only and need porting before
+the guide PDFs can be regenerated.
+
 ## 4. Layout
 
 ```
@@ -156,6 +182,12 @@ src-tauri/
   tests/common/mod.rs       shared harness (temp database + dispatcher)
   tests/rpc_flow.rs         boot, setup, one invoice, reports, login
   tests/full_flow.rs        every feature in one realistic month of trading
+
+vite.config.ts             renderer-only bundle (root src/renderer)
+scripts/smoke-tauri.mjs    packaged-binary smoke test
+scripts/smoke-ui.mjs       full UI walkthrough over the DevTools protocol
+scripts/sync-version.mjs   semantic-release -> Cargo.toml + tauri.conf.json
+scripts/collect-installer.mjs  newest NSIS installer -> dist/Crown-Books-<v>-setup.exe
 ```
 
 `src-tauri/PORTING.md` documents the conventions used for every module.
