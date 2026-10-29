@@ -36,7 +36,8 @@ const STATES: { code: string; name: string }[] = [
 
 interface AuthGateProps {
   status: 'SETUP_REQUIRED' | 'LOGIN_REQUIRED' | 'AUTHENTICATED' | undefined
-  statusPending: boolean
+  /** True while the boot status or the remembered session is still resolving. */
+  bootPending: boolean
   onAuthenticated: (session: SessionContext) => void
 }
 
@@ -47,7 +48,7 @@ interface AuthGateProps {
  */
 export function AuthGate({
   status,
-  statusPending,
+  bootPending,
   onAuthenticated
 }: AuthGateProps): React.JSX.Element {
   const phase: Phase = status === 'SETUP_REQUIRED' ? 'setup' : 'login'
@@ -66,7 +67,7 @@ export function AuthGate({
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
 
-  if (statusPending) {
+  if (bootPending) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />

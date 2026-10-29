@@ -35,6 +35,25 @@ the actor and audit trail on a voucher.
 - Resetting a password replaces the hash immediately. The old password stops
   working; the new one is not stored in audit data.
 
+## Remembered login at boot
+
+The main process restores the remembered session from `app_meta` before the
+window is created, so the first `identity:status` call already reports
+`AUTHENTICATED` (`restoreRememberedLogin` in `src/main/application/identity.ts`).
+The renderer then reads the full session with a second call, `identity:session`.
+
+Those are two round trips, so `App.tsx` must not treat "authenticated but the
+session is still in flight" as a signed-out user. It holds the boot splash while
+either the status query or the authenticated session query is pending
+(`bootPending` passed to `AuthGate`). Rendering `AuthGate` during that window
+would show the login form for a few milliseconds and then replace it with the
+dashboard. The login form appears only when the machine truly reports
+`LOGIN_REQUIRED` or `SETUP_REQUIRED`.
+
+`tests/renderer/app-boot.test.tsx` pins both sides: an authenticated status with
+a pending session must never render the login form, and a `LOGIN_REQUIRED`
+status must still show it.
+
 ## Roles and permissions
 
 The five seeded roles are:

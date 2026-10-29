@@ -18,6 +18,10 @@ function App(): React.JSX.Element {
   const commitSession = useCommitSession()
 
   const session = authenticated ? (sessionQuery.data ?? null) : null
+  // Status and session are two round trips. While the session is in flight the
+  // machine is already authenticated, so showing the login form here is a flash
+  // of the wrong screen. Hold the boot splash until the session resolves.
+  const bootPending = statusQuery.isPending || (authenticated && sessionQuery.isPending)
 
   if (session) {
     return (
@@ -35,7 +39,7 @@ function App(): React.JSX.Element {
     <LicenseGate>
       <AuthGate
         status={statusQuery.data}
-        statusPending={statusQuery.isPending}
+        bootPending={bootPending}
         onAuthenticated={commitSession}
       />
     </LicenseGate>
