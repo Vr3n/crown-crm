@@ -49,9 +49,10 @@
 .invoice-sheet {
   position: relative;
   box-sizing: border-box;
-  width: 210mm;
-  min-height: 297mm;
-  padding: 8mm 12mm 6mm;
+  width: var(--print-page-width, 210mm);
+  min-height: var(--print-page-height, 297mm);
+  padding: var(--print-margin-top, 8mm) var(--print-margin-right, 12mm)
+    var(--print-margin-bottom, 6mm) var(--print-margin-left, 12mm);
   display: flex;
   flex-direction: column;
   gap: 2.2mm;
@@ -60,6 +61,23 @@
   font-family: 'IBM Plex Sans Variable', system-ui, sans-serif;
   font-size: 9pt;
   line-height: 1.32;
+}
+
+/*
+ * Screen preview frame. The print route replaces it with a fixed frame so the
+ * edge repeats on every printed page, including continuation pages.
+ */
+.invoice-sheet::after {
+  content: '';
+  position: absolute;
+  inset: var(--print-frame-top, 5mm) var(--print-frame-right, 6mm)
+    var(--print-frame-bottom, 5mm) var(--print-frame-left, 6mm);
+  border: var(--print-border-outer, 0.8pt) solid #141a1f;
+  pointer-events: none;
+}
+
+.invoice-print-frame {
+  display: none;
 }
 
 .invoice-sheet p,
@@ -133,7 +151,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border: 0.5pt solid #333b40;
+  border: var(--print-border-section, 0.5pt) solid #333b40;
 }
 
 .invoice-supplier-body {
@@ -220,14 +238,14 @@
 .invoice-meta {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-top: 0.5pt solid #333b40;
-  border-left: 0.5pt solid #333b40;
+  border-top: var(--print-border-section, 0.5pt) solid #333b40;
+  border-left: var(--print-border-section, 0.5pt) solid #333b40;
 }
 
 .invoice-meta > div {
   padding: 0.6mm 1.6mm;
-  border-right: 0.5pt solid #333b40;
-  border-bottom: 0.5pt solid #333b40;
+  border-right: var(--print-border-section, 0.5pt) solid #333b40;
+  border-bottom: var(--print-border-section, 0.5pt) solid #333b40;
 }
 
 .invoice-meta dt {
@@ -268,7 +286,7 @@
 /* Buyer ------------------------------------------------------------------- */
 
 .invoice-buyer {
-  border: 0.5pt solid #333b40;
+  border: var(--print-border-section, 0.5pt) solid #333b40;
 }
 
 .invoice-block-label {
@@ -283,7 +301,7 @@
 .invoice-supplier > .invoice-block-label {
   padding: 1mm 2.4mm;
   background: #f1efe8;
-  border-bottom: 0.5pt solid #333b40;
+  border-bottom: var(--print-border-cell, 0.4pt) solid #333b40;
   color: #141a1f;
 }
 
@@ -318,35 +336,64 @@
   width: 100%;
   height: 100%;
   table-layout: fixed;
-  border-collapse: collapse;
+  /* Explicit ownership: each cell owns right + bottom, the first cell owns
+     left, the header owns top. Adjacent cells never draw the same edge. */
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .invoice-lines th,
 .invoice-lines td {
-  padding: 1.3mm 1.5mm;
-  border: 0.4pt solid #6d7479;
+  padding: var(--print-cell-padding-y, 1.3mm) var(--print-cell-padding-x, 1.5mm);
+  border: 0;
   vertical-align: top;
   text-align: right;
   overflow-wrap: anywhere;
 }
 
 .invoice-lines th {
+  height: var(--print-header-height, 7mm);
   font-size: 7pt;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   background: #f1efe8;
   color: #141a1f;
-  white-space: nowrap;
 }
 
 .invoice-lines td {
+  height: var(--print-row-height, 7.2mm);
   font-size: 8.8pt;
   line-height: 1.3;
 }
 
-.invoice-lines .is-left {
+/*
+ * One owner per edge. `is-first` supplies the table's left edge on every row,
+ * so a table that breaks across pages keeps its left border on the next page.
+ */
+.invoice-cell {
+  border-right: var(--print-border-cell, 0.4pt) solid #6d7479;
+  border-bottom: var(--print-border-cell, 0.4pt) solid #6d7479;
+}
+
+.invoice-cell.is-first {
+  border-left: var(--print-border-cell, 0.4pt) solid #6d7479;
+}
+
+.invoice-cell.is-head {
+  border-top: var(--print-border-cell, 0.4pt) solid #6d7479;
+}
+
+.invoice-cell.is-left {
   text-align: left;
+}
+
+.invoice-cell.is-center {
+  text-align: center;
+}
+
+.invoice-cell.is-right {
+  text-align: right;
 }
 
 .invoice-lines thead {
@@ -355,31 +402,6 @@
 
 .invoice-lines tr {
   break-inside: avoid;
-}
-
-.col-sno {
-  width: 10mm;
-}
-.col-description {
-  width: auto;
-}
-.col-hsn {
-  width: 17mm;
-}
-.col-qty {
-  width: 17mm;
-}
-.col-rate {
-  width: 20mm;
-}
-.col-per {
-  width: 11mm;
-}
-.col-discount {
-  width: 14mm;
-}
-.col-amount {
-  width: 24mm;
 }
 
 /* Bank and totals --------------------------------------------------------- */
@@ -406,7 +428,7 @@
 }
 
 .invoice-totals {
-  border: 0.5pt solid #333b40;
+  border: var(--print-border-section, 0.5pt) solid #333b40;
 }
 
 .invoice-totals > div {
@@ -418,7 +440,7 @@
 }
 
 .invoice-totals > div + div {
-  border-top: 0.4pt solid #b7bdc1;
+  border-top: var(--print-border-cell, 0.4pt) solid #b7bdc1;
 }
 
 .invoice-totals dt {
@@ -433,7 +455,7 @@
 
 .invoice-totals .invoice-grand-total {
   padding: 1.3mm 2mm;
-  border-top: 0.8pt solid #141a1f;
+  border-top: var(--print-border-total, 0.8pt) solid #141a1f;
   background: #f1efe8;
 }
 
@@ -458,7 +480,7 @@
   justify-content: space-between;
   gap: 6mm;
   padding-bottom: 1.2mm;
-  border-bottom: 0.5pt solid #333b40;
+  border-bottom: var(--print-border-section, 0.5pt) solid #333b40;
 }
 
 .invoice-words-value {
@@ -480,20 +502,22 @@
 .invoice-tax-summary table {
   width: 100%;
   margin-top: 0.8mm;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
 }
 
 .invoice-tax-summary th,
 .invoice-tax-summary td {
   padding: 0.9mm 1.4mm;
-  border: 0.4pt solid #6d7479;
+  border: 0;
   font-size: 8pt;
   text-align: right;
   overflow-wrap: anywhere;
 }
 
 .invoice-tax-summary th {
+  height: var(--print-header-height, 7mm);
   font-size: 6.8pt;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -501,27 +525,17 @@
   background: #f1efe8;
 }
 
-.invoice-tax-summary th:first-child,
-.invoice-tax-summary td:first-child {
-  text-align: left;
-}
-
 .invoice-tax-summary .invoice-tax-total td {
   font-weight: 700;
   background: #f7f5ef;
 }
 
-.col-hsn-summary {
-  width: 22mm;
+.invoice-tax-summary .invoice-tax-total .invoice-cell {
+  border-bottom-width: var(--print-border-total, 0.8pt);
 }
-.col-taxable-summary {
-  width: 24mm;
-}
-.col-rate-summary {
-  width: 16mm;
-}
-.col-tax-summary {
-  width: 20mm;
+
+.invoice-tax-summary th {
+  break-inside: avoid;
 }
 
 .invoice-tax-words {
@@ -538,7 +552,7 @@
 
 .invoice-terms {
   padding: 1.8mm 2.4mm;
-  border: 0.5pt solid #333b40;
+  border: var(--print-border-section, 0.5pt) solid #333b40;
   break-inside: avoid;
 }
 
@@ -571,7 +585,7 @@
   flex-direction: column;
   gap: 0.6mm;
   padding: 1.8mm 2.4mm;
-  border: 0.5pt solid #333b40;
+  border: var(--print-border-section, 0.5pt) solid #333b40;
   font-size: 7.8pt;
   color: #3c444a;
 }
@@ -603,7 +617,7 @@
   width: 100%;
   margin-top: 13mm;
   padding-top: 1mm;
-  border-top: 0.5pt solid #141a1f;
+  border-top: var(--print-border-section, 0.5pt) solid #141a1f;
   font-size: 7pt;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -619,7 +633,7 @@
   gap: 4mm;
   margin-top: auto;
   padding-top: 1.4mm;
-  border-top: 0.4pt solid #9aa0a4;
+  border-top: var(--print-border-cell, 0.4pt) solid #9aa0a4;
   font-size: 6.6pt;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -650,6 +664,25 @@
     margin: 0;
   }
 
+  /*
+   * A fixed frame repeats on every printed page. That is what keeps the outer
+   * edge on a continuation page, where the sheet's own border would be lost.
+   */
+  .invoice-print-frame {
+    display: block;
+    position: fixed;
+    inset: var(--print-frame-top, 5mm) var(--print-frame-right, 6mm)
+      var(--print-frame-bottom, 5mm) var(--print-frame-left, 6mm);
+    border-style: solid;
+    border-color: #141a1f;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  .invoice-sheet::after {
+    display: none;
+  }
+
   .invoice-sheet {
     break-after: page;
     page-break-after: always;
@@ -664,6 +697,11 @@
   .invoice-declaration,
   .invoice-tax-summary,
   .invoice-terms {
+    break-inside: avoid;
+  }
+
+  .invoice-tax-summary tr,
+  .invoice-lines tr {
     break-inside: avoid;
   }
 }

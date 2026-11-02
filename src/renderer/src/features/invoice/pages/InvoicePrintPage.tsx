@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { INVOICE_COPY_CAPTIONS } from '../../../../../shared/contracts/invoice'
+import { printCssVars, printGeometry } from '../../../../../shared/print-geometry'
 import { InvoiceSheet } from '../components/InvoiceSheet'
 
 /**
@@ -11,6 +12,12 @@ import { InvoiceSheet } from '../components/InvoiceSheet'
  * route is mounted. Other screens keep the browser's own print margins.
  */
 const PAGE_STYLE = '@page { size: A4; margin: 0; }'
+
+const pageStyle = printCssVars as React.CSSProperties
+
+const frameStyle: React.CSSProperties = {
+  borderWidth: `${printGeometry.borderPt.outer}pt`
+}
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message
@@ -88,8 +95,10 @@ export function InvoicePrintPage({ id }: { id: number }): React.JSX.Element {
   }
 
   return (
-    <div className="invoice-print-page">
+    <div className="invoice-print-page" style={pageStyle}>
       <style>{PAGE_STYLE}</style>
+
+      <div className="invoice-print-frame" aria-hidden="true" style={frameStyle} />
 
       <div className="invoice-toolbar">
         <div className="flex items-center gap-4">

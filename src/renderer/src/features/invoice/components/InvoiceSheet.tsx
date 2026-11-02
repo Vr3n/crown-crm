@@ -12,8 +12,46 @@ import {
   invoiceTermLines,
   isInterStateInvoice
 } from '../../../../../shared/invoice'
+import {
+  columnWidths,
+  itemColumns,
+  printCssVars,
+  printGeometry,
+  taxSummaryColumns,
+  type PrintAlign
+} from '../../../../../shared/print-geometry'
 import { stateLabel } from '../../../../../shared/indian-states'
+import { cn } from '@/lib/utils'
 import '../invoice-print.css'
+
+const LINE_HEADERS = [
+  'S.No',
+  'Description of Goods',
+  'HSN/SAC',
+  'Quantity',
+  'Rate',
+  'per',
+  'Disc. %',
+  'Amount'
+] as const
+
+const sheetStyle: React.CSSProperties = {
+  ...printCssVars,
+  width: `${printGeometry.page.widthMm}mm`,
+  minHeight: `${printGeometry.page.heightMm}mm`,
+  padding: `${printGeometry.marginsMm.top}mm ${printGeometry.marginsMm.right}mm ${printGeometry.marginsMm.bottom}mm ${printGeometry.marginsMm.left}mm`
+}
+
+function cellClass(index: number, align: PrintAlign, head = false): string {
+  return cn(
+    'invoice-cell',
+    align === 'left' && 'is-left',
+    align === 'center' && 'is-center',
+    align === 'right' && 'is-right',
+    index === 0 && 'is-first',
+    head && 'is-head'
+  )
+}
 
 interface InvoiceSheetProps {
   document: InvoiceDocument
@@ -198,9 +236,21 @@ export function InvoiceSheet({
 
   const hsnSummary = buildHsnSummary(document.lines)
   const hasCess = hsnSummary.some((row) => row.cessMinor !== 0)
+  const lineWidths = columnWidths(itemColumns)
+  const summaryColumns = taxSummaryColumns(interState, hasCess)
+  const summaryWidths = columnWidths(summaryColumns)
+  const summaryHeaders = [
+    'HSN/SAC',
+    'Taxable Value',
+    ...(interState
+      ? ['IGST Rate', 'IGST Amount']
+      : ['CGST Rate', 'CGST Amount', 'SGST Rate', 'SGST Amount']),
+    ...(hasCess ? ['Cess Rate', 'Cess Amount'] : []),
+    'Total Tax Amount'
+  ]
 
   return (
-    <article className="invoice-sheet" data-copy={caption}>
+    <article className="invoice-sheet" data-copy={caption} style={sheetStyle}>
       {cancelled ? (
         <p className="invoice-watermark" aria-hidden="true">
           CANCELLED
@@ -323,42 +373,52 @@ export function InvoiceSheet({
       <div className="invoice-lines-wrap">
         <table className="invoice-lines">
           <colgroup>
-            <col className="col-sno" />
-            <col className="col-description" />
-            <col className="col-hsn" />
-            <col className="col-qty" />
-            <col className="col-rate" />
-            <col className="col-per" />
-            <col className="col-discount" />
-            <col className="col-amount" />
+            {lineWidths.map((width, index) => (
+              <col key={LINE_HEADERS[index]} style={{ width }} />
+            ))}
           </colgroup>
           <thead>
             <tr>
-              <th scope="col">S.No</th>
-              <th scope="col" className="is-left">
-                Description of Goods
-              </th>
-              <th scope="col">HSN/SAC</th>
-              <th scope="col">Quantity</th>
-              <th scope="col">Rate</th>
-              <th scope="col">per</th>
-              <th scope="col">Disc. %</th>
-              <th scope="col">Amount</th>
+              {LINE_HEADERS.map((label, index) => (
+                <th
+                  key={label}
+                  scope="col"
+                  className={cellClass(index, itemColumns[index].align, true)}
+                >
+                  {label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {document.lines.map((line, index) => (
-              <tr key={line.id}>
-                <td className="invoice-mono">{index + 1}</td>
-                <td className="is-left">{line.description}</td>
-                <td className="invoice-mono">{line.hsn ?? '—'}</td>
-                <td className="invoice-mono">{formatInvoiceQty(line.qtyE4)}</td>
-                <td className="invoice-mono">{formatInvoiceAmount(line.rateMinor)}</td>
-                <td>{line.uom ?? '—'}</td>
-                <td className="invoice-mono">{formatInvoicePercent(line.discountBps)}</td>
-                <td className="invoice-mono">{formatInvoiceAmount(line.taxableMinor)}</td>
-              </tr>
-            ))}
+            {document.lines.map((line, index) => {
+              const cells = [
+                String(index + 1),
+                line.description,
+                line.hsn ?? '—',
+                formatInvoiceQty(line.qtyE4),
+                formatInvoiceAmount(line.rateMinor),
+                line.uom ?? '—',
+                formatInvoicePercent(line.discountBps),
+                formatInvoiceAmount(line.taxableMinor)
+              ]
+              return (
+                <tr key={line.id}>
+                  {cells.map((value, cellIndex) => (
+                    <td
+                      key={LINE_HEADERS[cellIndex]}
+                      className={cn(
+                        cellClass(cellIndex, itemColumns[cellIndex].align),
+                        !['description', 'per'].includes(itemColumns[cellIndex].key) &&
+                          'invoice-mono'
+                      )}
+                    >
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -419,86 +479,82 @@ export function InvoiceSheet({
         <p className="invoice-block-label">HSN/SAC-wise Tax Summary</p>
         <table>
           <colgroup>
-            <col className="col-hsn-summary" />
-            <col className="col-taxable-summary" />
-            <col className="col-rate-summary" />
-            <col className="col-tax-summary" />
-            <col className="col-rate-summary" />
-            <col className="col-tax-summary" />
-            {hasCess ? <col className="col-rate-summary" /> : null}
-            {hasCess ? <col className="col-tax-summary" /> : null}
-            <col className="col-tax-summary" />
+            {summaryWidths.map((width, index) => (
+              <col key={summaryColumns[index].key} style={{ width }} />
+            ))}
           </colgroup>
           <thead>
             <tr>
-              <th scope="col">HSN/SAC</th>
-              <th scope="col">Taxable Value</th>
-              {interState ? (
-                <>
-                  <th scope="col">IGST Rate</th>
-                  <th scope="col">IGST Amount</th>
-                </>
-              ) : (
-                <>
-                  <th scope="col">CGST Rate</th>
-                  <th scope="col">CGST Amount</th>
-                  <th scope="col">SGST Rate</th>
-                  <th scope="col">SGST Amount</th>
-                </>
-              )}
-              {hasCess ? <th scope="col">Cess Rate</th> : null}
-              {hasCess ? <th scope="col">Cess Amount</th> : null}
-              <th scope="col">Total Tax Amount</th>
+              {summaryHeaders.map((label, index) => (
+                <th
+                  key={label}
+                  scope="col"
+                  className={cellClass(index, summaryColumns[index].align, true)}
+                >
+                  {label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {hsnSummary.map((row) => (
-              <tr key={`${row.hsn ?? 'none'}-${row.gstRateBps}`}>
-                <td>{row.hsn ?? '—'}</td>
-                <td className="invoice-mono">{formatInvoiceAmount(row.taxableMinor)}</td>
-                {interState ? (
-                  <>
-                    <td className="invoice-mono">{formatInvoicePercent(row.gstRateBps)}</td>
-                    <td className="invoice-mono">{formatInvoiceAmount(row.igstMinor)}</td>
-                  </>
-                ) : (
-                  <>
-                    <td className="invoice-mono">{formatInvoicePercent(row.gstRateBps / 2)}</td>
-                    <td className="invoice-mono">{formatInvoiceAmount(row.cgstMinor)}</td>
-                    <td className="invoice-mono">{formatInvoicePercent(row.gstRateBps / 2)}</td>
-                    <td className="invoice-mono">{formatInvoiceAmount(row.sgstMinor)}</td>
-                  </>
-                )}
-                {hasCess ? (
-                  <td className="invoice-mono">{formatInvoicePercent(row.gstRateBps)}</td>
-                ) : null}
-                {hasCess ? (
-                  <td className="invoice-mono">{formatInvoiceAmount(row.cessMinor)}</td>
-                ) : null}
-                <td className="invoice-mono">{formatInvoiceAmount(row.taxMinor)}</td>
-              </tr>
-            ))}
+            {hsnSummary.map((row) => {
+              const cells = [
+                row.hsn ?? '—',
+                formatInvoiceAmount(row.taxableMinor),
+                ...(interState
+                  ? [formatInvoicePercent(row.gstRateBps), formatInvoiceAmount(row.igstMinor)]
+                  : [
+                      formatInvoicePercent(row.gstRateBps / 2),
+                      formatInvoiceAmount(row.cgstMinor),
+                      formatInvoicePercent(row.gstRateBps / 2),
+                      formatInvoiceAmount(row.sgstMinor)
+                    ]),
+                ...(hasCess
+                  ? [formatInvoicePercent(row.gstRateBps), formatInvoiceAmount(row.cessMinor)]
+                  : []),
+                formatInvoiceAmount(row.taxMinor)
+              ]
+              return (
+                <tr key={`${row.hsn ?? 'none'}-${row.gstRateBps}`}>
+                  {cells.map((value, index) => (
+                    <td
+                      key={summaryColumns[index].key}
+                      className={cn(
+                        cellClass(index, summaryColumns[index].align),
+                        summaryColumns[index].align === 'right' && 'invoice-mono'
+                      )}
+                    >
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
             <tr className="invoice-tax-total">
-              <td>Total</td>
-              <td className="invoice-mono">{formatInvoiceAmount(totals.taxableMinor)}</td>
-              {interState ? (
-                <>
-                  <td />
-                  <td className="invoice-mono">{formatInvoiceAmount(totals.igstMinor)}</td>
-                </>
-              ) : (
-                <>
-                  <td />
-                  <td className="invoice-mono">{formatInvoiceAmount(totals.cgstMinor)}</td>
-                  <td />
-                  <td className="invoice-mono">{formatInvoiceAmount(totals.sgstMinor)}</td>
-                </>
-              )}
-              {hasCess ? <td /> : null}
-              {hasCess ? (
-                <td className="invoice-mono">{formatInvoiceAmount(totals.cessMinor)}</td>
-              ) : null}
-              <td className="invoice-mono">{formatInvoiceAmount(taxTotal)}</td>
+              {[
+                'Total',
+                formatInvoiceAmount(totals.taxableMinor),
+                ...(interState
+                  ? ['', formatInvoiceAmount(totals.igstMinor)]
+                  : [
+                      '',
+                      formatInvoiceAmount(totals.cgstMinor),
+                      '',
+                      formatInvoiceAmount(totals.sgstMinor)
+                    ]),
+                ...(hasCess ? ['', formatInvoiceAmount(totals.cessMinor)] : []),
+                formatInvoiceAmount(taxTotal)
+              ].map((value, index) => (
+                <td
+                  key={summaryColumns[index].key}
+                  className={cn(
+                    cellClass(index, summaryColumns[index].align),
+                    summaryColumns[index].align === 'right' && 'invoice-mono'
+                  )}
+                >
+                  {value}
+                </td>
+              ))}
             </tr>
           </tbody>
         </table>
