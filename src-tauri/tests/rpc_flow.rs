@@ -292,12 +292,34 @@ fn full_rpc_flow() {
     assert_eq!(pnl["totalIncomeMinor"].as_i64(), Some(20000), "pnl: {pnl}");
     assert_eq!(pnl["totalExpenseMinor"].as_i64(), Some(16000), "pnl: {pnl}");
     assert_eq!(pnl["netProfitMinor"].as_i64(), Some(4000), "pnl: {pnl}");
+    // The chart series is an additive read of the same period. It must sum to
+    // the table totals, opening balances included.
+    let monthly = pnl["monthly"].as_array().expect("monthly series");
+    assert_eq!(monthly.len(), 1, "pnl monthly: {pnl}");
+    assert_eq!(monthly[0]["month"], json!("2026-04"));
+    assert_eq!(monthly[0]["incomeMinor"].as_i64(), Some(20000));
+    assert_eq!(monthly[0]["expenseMinor"].as_i64(), Some(16000));
+    assert_eq!(monthly[0]["netProfitMinor"].as_i64(), Some(4000));
 
     let sheet = app.call("reports:balanceSheet", json!({ "from": "2026-04-01", "to": "2027-03-31" }));
     assert_eq!(sheet["differenceMinor"].as_i64(), Some(0), "balance sheet: {sheet}");
 
     let receivables = app.call("reports:receivables", json!({ "asOf": "2026-04-30", "basis": "DUE_DATE" }));
     assert_eq!(rows(&receivables).len(), 1);
+    // Due 2026-04-25, five days late: bucket 0-30, nothing still to fall due.
+    assert_eq!(receivables[0]["bucketsMinor"], json!([23600, 0, 0, 0, 0]));
+    assert_eq!(receivables[0]["dueWithin7Minor"].as_i64(), Some(0));
+    assert_eq!(receivables[0]["dueWithin30Minor"].as_i64(), Some(0));
+
+    // Before the due date the same bill is due soon, which the status stripe
+    // and the payables ranking read from the same fields.
+    let before_due = app.call("reports:receivables", json!({ "asOf": "2026-04-20", "basis": "DUE_DATE" }));
+    assert_eq!(before_due[0]["overdueMinor"].as_i64(), Some(0));
+    assert_eq!(before_due[0]["notDueMinor"].as_i64(), Some(23600));
+    assert_eq!(before_due[0]["dueWithin7Minor"].as_i64(), Some(23600));
+    assert_eq!(before_due[0]["dueWithin30Minor"].as_i64(), Some(23600));
+    assert_eq!(before_due[0]["bucketsMinor"], json!([23600, 0, 0, 0, 0]));
+
     let payables = app.call("reports:payables", json!({ "asOf": "2026-04-30", "basis": "DUE_DATE" }));
     assert!(rows(&payables).is_empty());
 

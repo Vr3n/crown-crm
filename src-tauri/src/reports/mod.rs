@@ -98,13 +98,74 @@ fn profit_loss_report(ctx: &Ctx<'_>, from: &str, to: &str) -> AppResult<Value> {
         }
     }
 
+    let monthly_rows = repo::monthly_account_totals(ctx.db(), company_id, from, to)?;
+    let monthly =
+        monthly_profit_series(monthly_rows, from, total_income_minor, total_expense_minor);
+
     Ok(json!({
         "income": income,
         "expenses": expenses,
         "totalIncomeMinor": total_income_minor,
         "totalExpenseMinor": total_expense_minor,
-        "netProfitMinor": total_income_minor - total_expense_minor
+        "netProfitMinor": total_income_minor - total_expense_minor,
+        "monthly": monthly
     }))
+}
+
+/// One point per month that has ledger activity, ordered by month.
+///
+/// The P&L totals come from `period_balances`, which folds each account's
+/// opening balance in even though an opening balance is not a ledger line. The
+/// difference between those totals and the sum of the monthly lines is added to
+/// the first month so the series always reconciles to the report. Months with no
+/// activity are filled by the renderer, which keeps the axis continuous without
+/// inventing rows here.
+fn monthly_profit_series(
+    rows: Vec<repo::MonthlyTypeTotal>,
+    from: &str,
+    total_income_minor: i64,
+    total_expense_minor: i64,
+) -> Vec<Value> {
+    use std::collections::BTreeMap;
+
+    let mut months: BTreeMap<String, (i64, i64)> = BTreeMap::new();
+    for row in rows {
+        let entry = months.entry(row.month).or_insert((0, 0));
+        match row.account_type.as_str() {
+            "INCOME" => entry.0 += row.total_minor,
+            "EXPENSE" => entry.1 += row.total_minor,
+            _ => {}
+        }
+    }
+
+    let series_income: i64 = months.values().map(|(income, _)| *income).sum();
+    let series_expense: i64 = months.values().map(|(_, expense)| *expense).sum();
+    let income_delta = total_income_minor - series_income;
+    let expense_delta = total_expense_minor - series_expense;
+
+    if months.is_empty() {
+        if income_delta == 0 && expense_delta == 0 {
+            return Vec::new();
+        }
+        months.insert(from.get(0..7).unwrap_or(from).to_string(), (0, 0));
+    }
+
+    if let Some((income, expense)) = months.values_mut().next() {
+        *income += income_delta;
+        *expense += expense_delta;
+    }
+
+    months
+        .into_iter()
+        .map(|(month, (income, expense))| {
+            json!({
+                "month": month,
+                "incomeMinor": income,
+                "expenseMinor": expense,
+                "netProfitMinor": income - expense
+            })
+        })
+        .collect()
 }
 
 fn balance_sheet_report(ctx: &Ctx<'_>, from: &str, to: &str) -> AppResult<Value> {
@@ -159,44 +220,83 @@ fn balance_sheet_report(ctx: &Ctx<'_>, from: &str, to: &str) -> AppResult<Value>
     }))
 }
 
+/// One party's open balance while `group_bills` is aggregating.
+struct PartyBalance {
+    name: String,
+    not_due: i64,
+    overdue: i64,
+    buckets: [i64; 5],
+    due_within_7: i64,
+    due_within_30: i64,
+    total: i64,
+}
+
+/// True when the bill falls due in the next `days` days, counting the due date.
+fn due_within(days_to_due: i64, days: i64) -> bool {
+    (0..=days).contains(&days_to_due)
+}
+
 /// Groups open bills into `ReceivableRow`s, sorted by total descending. Ties
 /// keep the bill order (voucher date, then id), like the stable `Array.sort`.
+///
+/// Buckets use the same ageing rule as `ageing_rows`: every bill, not only the
+/// overdue ones, lands in `split_bucket(days_overdue)`, so the first bucket
+/// includes bills that are not due yet. The not-due/overdue split stays an
+/// exact split at zero days.
 fn group_bills(bills: &[repo::OpenBill]) -> Vec<Value> {
     let mut order: Vec<i64> = Vec::new();
-    let mut rows: HashMap<i64, (String, i64, i64, i64)> = HashMap::new();
+    let mut rows: HashMap<i64, PartyBalance> = HashMap::new();
 
     for bill in bills {
         if !rows.contains_key(&bill.party_id) {
             order.push(bill.party_id);
-            rows.insert(bill.party_id, (bill.party_name.clone(), 0, 0, 0));
+            rows.insert(
+                bill.party_id,
+                PartyBalance {
+                    name: bill.party_name.clone(),
+                    not_due: 0,
+                    overdue: 0,
+                    buckets: [0; 5],
+                    due_within_7: 0,
+                    due_within_30: 0,
+                    total: 0,
+                },
+            );
         }
         if let Some(row) = rows.get_mut(&bill.party_id) {
             if bill.days_overdue > 0 {
-                row.2 += bill.outstanding_minor;
+                row.overdue += bill.outstanding_minor;
             } else {
-                row.1 += bill.outstanding_minor;
+                row.not_due += bill.outstanding_minor;
             }
-            row.3 += bill.outstanding_minor;
+            row.buckets[split_bucket(bill.days_overdue)] += bill.outstanding_minor;
+            if due_within(bill.days_to_due, 7) {
+                row.due_within_7 += bill.outstanding_minor;
+            }
+            if due_within(bill.days_to_due, 30) {
+                row.due_within_30 += bill.outstanding_minor;
+            }
+            row.total += bill.outstanding_minor;
         }
     }
 
-    let mut out: Vec<(i64, String, i64, i64, i64)> = order
+    let mut out: Vec<(i64, PartyBalance)> = order
         .into_iter()
-        .filter_map(|party_id| {
-            rows.get(&party_id)
-                .map(|row| (party_id, row.0.clone(), row.1, row.2, row.3))
-        })
+        .filter_map(|party_id| rows.remove(&party_id).map(|row| (party_id, row)))
         .collect();
-    out.sort_by(|a, b| b.4.cmp(&a.4));
+    out.sort_by(|a, b| b.1.total.cmp(&a.1.total));
 
     out.into_iter()
-        .map(|(party_id, party_name, not_due, overdue, total)| {
+        .map(|(party_id, row)| {
             json!({
                 "partyId": party_id,
-                "partyName": party_name,
-                "notDueMinor": not_due,
-                "overdueMinor": overdue,
-                "totalMinor": total
+                "partyName": row.name,
+                "notDueMinor": row.not_due,
+                "overdueMinor": row.overdue,
+                "totalMinor": row.total,
+                "bucketsMinor": row.buckets,
+                "dueWithin7Minor": row.due_within_7,
+                "dueWithin30Minor": row.due_within_30
             })
         })
         .collect()
@@ -413,27 +513,28 @@ mod tests {
         assert!(as_of_input(&json!({ "asOf": "2026-10-29", "basis": "OTHER" })).is_err());
     }
 
+    fn bill(
+        party_id: i64,
+        name: &str,
+        outstanding: i64,
+        overdue: i64,
+        to_due: i64,
+    ) -> repo::OpenBill {
+        repo::OpenBill {
+            party_id,
+            party_name: name.to_string(),
+            outstanding_minor: outstanding,
+            days_overdue: overdue,
+            days_to_due: to_due,
+        }
+    }
+
     #[test]
     fn bill_rows_group_and_sort_by_total() {
         let bills = vec![
-            repo::OpenBill {
-                party_id: 1,
-                party_name: "A".to_string(),
-                outstanding_minor: 500,
-                days_overdue: 0,
-            },
-            repo::OpenBill {
-                party_id: 2,
-                party_name: "B".to_string(),
-                outstanding_minor: 900,
-                days_overdue: 10,
-            },
-            repo::OpenBill {
-                party_id: 1,
-                party_name: "A".to_string(),
-                outstanding_minor: 700,
-                days_overdue: 5,
-            },
+            bill(1, "A", 500, 0, 20),
+            bill(2, "B", 900, 10, -10),
+            bill(1, "A", 700, 5, -5),
         ];
         let rows = group_bills(&bills);
         assert_eq!(rows.len(), 2);
@@ -441,19 +542,95 @@ mod tests {
         assert_eq!(rows[0]["notDueMinor"], 500);
         assert_eq!(rows[0]["overdueMinor"], 700);
         assert_eq!(rows[0]["totalMinor"], 1200);
+        // Both bills are under 31 days past due, so both sit in 0-30.
+        assert_eq!(rows[0]["bucketsMinor"], json!([1200, 0, 0, 0, 0]));
+        assert_eq!(rows[0]["dueWithin7Minor"], 0);
+        assert_eq!(rows[0]["dueWithin30Minor"], 500);
         assert_eq!(rows[1]["partyId"], 2);
     }
 
     #[test]
+    fn bill_rows_count_bills_due_today_and_next_seven_days() {
+        let rows = group_bills(&[
+            bill(1, "A", 100, 0, 0),
+            bill(1, "A", 200, 0, 7),
+            bill(1, "A", 400, 0, 8),
+            bill(1, "A", 800, 3, -3),
+        ]);
+        assert_eq!(rows[0]["dueWithin7Minor"], 300);
+        assert_eq!(rows[0]["dueWithin30Minor"], 700);
+        assert_eq!(rows[0]["bucketsMinor"], json!([1500, 0, 0, 0, 0]));
+    }
+
+    #[test]
     fn ageing_rows_bucket_each_bill() {
-        let bills = vec![repo::OpenBill {
-            party_id: 7,
-            party_name: "Seven".to_string(),
-            outstanding_minor: 1200,
-            days_overdue: 95,
-        }];
+        let bills = vec![bill(7, "Seven", 1200, 95, -95)];
         let rows = ageing_rows(&bills);
         assert_eq!(rows[0]["bucketsMinor"], json!([0, 0, 0, 1200, 0]));
         assert_eq!(rows[0]["totalMinor"], 1200);
+    }
+
+    #[test]
+    fn monthly_profit_series_folds_opening_balances_into_the_first_month() {
+        let rows = vec![
+            repo::MonthlyTypeTotal {
+                month: "2026-05".to_string(),
+                account_type: "INCOME".to_string(),
+                total_minor: 1000,
+            },
+            repo::MonthlyTypeTotal {
+                month: "2026-05".to_string(),
+                account_type: "EXPENSE".to_string(),
+                total_minor: 400,
+            },
+            repo::MonthlyTypeTotal {
+                month: "2026-06".to_string(),
+                account_type: "INCOME".to_string(),
+                total_minor: 500,
+            },
+        ];
+        let series = monthly_profit_series(rows, "2026-04-01", 2000, 400);
+        assert_eq!(series.len(), 2);
+        assert_eq!(series[0]["month"], "2026-05");
+        assert_eq!(series[0]["incomeMinor"], 1500);
+        assert_eq!(series[0]["expenseMinor"], 400);
+        assert_eq!(series[0]["netProfitMinor"], 1100);
+        assert_eq!(series[1]["incomeMinor"], 500);
+        assert_eq!(series[1]["netProfitMinor"], 500);
+        let income: i64 = series
+            .iter()
+            .map(|p| p["incomeMinor"].as_i64().unwrap())
+            .sum();
+        let expense: i64 = series
+            .iter()
+            .map(|p| p["expenseMinor"].as_i64().unwrap())
+            .sum();
+        assert_eq!(income, 2000);
+        assert_eq!(expense, 400);
+    }
+
+    #[test]
+    fn monthly_profit_series_handles_zero_and_opening_only_periods() {
+        assert!(monthly_profit_series(Vec::new(), "2026-04-01", 0, 0).is_empty());
+
+        let opening_only = monthly_profit_series(Vec::new(), "2026-04-01", 900, 0);
+        assert_eq!(opening_only.len(), 1);
+        assert_eq!(opening_only[0]["month"], "2026-04");
+        assert_eq!(opening_only[0]["incomeMinor"], 900);
+        assert_eq!(opening_only[0]["netProfitMinor"], 900);
+    }
+
+    #[test]
+    fn monthly_profit_series_single_month() {
+        let rows = vec![repo::MonthlyTypeTotal {
+            month: "2026-07".to_string(),
+            account_type: "EXPENSE".to_string(),
+            total_minor: 250,
+        }];
+        let series = monthly_profit_series(rows, "2026-04-01", 0, 250);
+        assert_eq!(series.len(), 1);
+        assert_eq!(series[0]["month"], "2026-07");
+        assert_eq!(series[0]["expenseMinor"], 250);
+        assert_eq!(series[0]["netProfitMinor"], -250);
     }
 }

@@ -58,6 +58,16 @@ export interface ReceivableRow {
   notDueMinor: number
   overdueMinor: number
   totalMinor: number
+  /**
+   * Outstanding by age bucket: 0-30, 31-60, 61-90, 91-180, 180+.
+   * Every bill is bucketed, not only the overdue ones, so the first bucket
+   * includes bills that are not due yet.
+   */
+  bucketsMinor: number[]
+  /** Outstanding on bills due today or in the next seven days. */
+  dueWithin7Minor: number
+  /** Outstanding on bills due today or in the next thirty days. */
+  dueWithin30Minor: number
 }
 
 export interface AgeingRow {
@@ -67,12 +77,25 @@ export interface AgeingRow {
   totalMinor: number
 }
 
+/**
+ * One month of P&L movement. `month` is `YYYY-MM`. Opening balances are folded
+ * into the first month so the series always sums to the report totals; months
+ * without ledger activity are filled by the renderer.
+ */
+export interface ProfitLossMonth {
+  month: string
+  incomeMinor: number
+  expenseMinor: number
+  netProfitMinor: number
+}
+
 export interface ProfitLossReport {
   income: TrialBalanceRow[]
   expenses: TrialBalanceRow[]
   totalIncomeMinor: number
   totalExpenseMinor: number
   netProfitMinor: number
+  monthly: ProfitLossMonth[]
 }
 
 export interface BalanceSheetReport {
