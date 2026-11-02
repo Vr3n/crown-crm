@@ -16,6 +16,7 @@ import { KpiCard } from '@/components/ui/kpi-card'
 import { StatusPill } from '@/components/ui/status-pill'
 import { Button } from '@/components/ui/button'
 import { formatMinor } from '@/lib/money'
+import { grossFromExclusive, splitInclusivePrice } from '../../../../../shared/price'
 
 const TH =
   'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
@@ -55,9 +56,21 @@ export function ItemDetailPage(): React.JSX.Element {
   const stockRow = (stock.data ?? []).find((row) => row.id === itemId)
   const onHand = i?.stockQtyE4 ?? 0
   const value = stockRow?.valueMinor ?? 0
+  const salePrice = i
+    ? i.salePriceIncludesTax
+      ? splitInclusivePrice(i.salePriceMinor, i.gstRateBps, i.cessRateBps)
+      : grossFromExclusive(i.salePriceMinor, i.gstRateBps, i.cessRateBps)
+    : null
+  const landedCost = i
+    ? i.purchasePriceIncludesTax
+      ? splitInclusivePrice(i.purchasePriceMinor, i.gstRateBps, i.cessRateBps)
+      : grossFromExclusive(i.purchasePriceMinor, i.gstRateBps, i.cessRateBps)
+    : null
   const margin =
-    i && i.purchasePriceMinor > 0
-      ? Math.round(((i.salePriceMinor - i.purchasePriceMinor) / i.purchasePriceMinor) * 100)
+    salePrice && landedCost && landedCost.grossMinor > 0
+      ? Math.round(
+          ((salePrice.taxableMinor - landedCost.grossMinor) / landedCost.grossMinor) * 100
+        )
       : null
 
   const movementRows = movements.data ?? []
@@ -116,6 +129,7 @@ export function ItemDetailPage(): React.JSX.Element {
             i.hsnSac ? `HSN ${i.hsnSac}` : null,
             i.uom,
             i.gstRateBps > 0 ? `${(i.gstRateBps / 100).toFixed(0)}% GST` : null,
+            i.cessRateBps > 0 ? `${(i.cessRateBps / 100).toFixed(0)}% cess` : null,
             i.isService ? 'Service' : i.stockGroup
           ]
             .filter(Boolean)
@@ -177,7 +191,7 @@ export function ItemDetailPage(): React.JSX.Element {
         <KpiCard
           label="Margin"
           value={margin === null ? '—' : `${margin > 0 ? '+' : ''}${margin}%`}
-          context={`Sale ${formatMinor(i.salePriceMinor, 'INR')} · Cost ${formatMinor(i.purchasePriceMinor, 'INR')}`}
+          context={`Sale ${formatMinor(salePrice?.grossMinor ?? 0, 'INR')} · Landed ${formatMinor(landedCost?.grossMinor ?? 0, 'INR')}`}
           icon={TrendingUp}
           tone={margin !== null && margin < 0 ? 'stamp' : 'primary'}
         />

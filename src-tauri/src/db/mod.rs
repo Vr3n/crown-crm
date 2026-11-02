@@ -14,6 +14,7 @@ const MIGRATIONS: &[(i64, &str, &str)] = &[
     (1, "voucher_numbering", include_str!("../../migrations/0001_voucher_numbering.sql")),
     (2, "numbering_reset_period", include_str!("../../migrations/0002_numbering_reset_period.sql")),
     (3, "unit_active", include_str!("../../migrations/0003_unit_active.sql")),
+    (4, "item_price_tax", include_str!("../../migrations/0004_item_price_tax.sql")),
 ];
 
 /// Opens the database with the same pragmas Electron used.

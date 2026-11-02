@@ -61,9 +61,14 @@ export interface ItemRow {
   uom: string | null
   uomId: number | null
   gstRateBps: number
+  cessRateBps: number
   isService: boolean
   salePriceMinor: number
   purchasePriceMinor: number
+  /** The sale price is what the customer pays; tax is contained inside it. */
+  salePriceIncludesTax: boolean
+  /** The purchase price is the supplier's base; tax is added on the bill. */
+  purchasePriceIncludesTax: boolean
   openingQtyE4: number
   openingRateMinor: number
   stockQtyE4: number
@@ -85,9 +90,12 @@ export const createItemInputSchema = z.object({
   hsnSac: z.string().max(20).optional().nullable(),
   uomId: z.number().int().positive().optional().nullable(),
   gstRateBps: z.number().int().min(0).max(5000).default(0),
+  cessRateBps: z.number().int().min(0).max(5000).default(0),
   isService: z.boolean().default(false),
   salePriceMinor: z.number().int().min(0).default(0),
   purchasePriceMinor: z.number().int().min(0).default(0),
+  salePriceIncludesTax: z.boolean().default(true),
+  purchasePriceIncludesTax: z.boolean().default(false),
   openingQtyE4: z.number().int().min(0).default(0),
   openingRateMinor: z.number().int().min(0).default(0),
   reorderLevelE4: z.number().int().min(0).default(0)
