@@ -73,7 +73,12 @@ fn trial_balance_rows(ctx: &Ctx<'_>) -> AppResult<Value> {
 /// Shared by profit & loss and the balance sheet, so the balance sheet's
 /// nested `this.profitLoss(...)` call re-checks the permission exactly once
 /// more, the way the TypeScript does.
-fn profit_loss_report(ctx: &Ctx<'_>, from: &str, to: &str) -> AppResult<Value> {
+fn profit_loss_report(
+    ctx: &Ctx<'_>,
+    from: &str,
+    to: &str,
+    include_monthly: bool,
+) -> AppResult<Value> {
     ctx.require_permission(perm::REPORT_VIEW)?;
     let company_id = ctx.company_id()?;
     let rows = repo::period_balances(ctx.db(), company_id, from, to)?;
@@ -98,9 +103,13 @@ fn profit_loss_report(ctx: &Ctx<'_>, from: &str, to: &str) -> AppResult<Value> {
         }
     }
 
-    let monthly_rows = repo::monthly_account_totals(ctx.db(), company_id, from, to)?;
-    let monthly =
-        monthly_profit_series(monthly_rows, from, total_income_minor, total_expense_minor);
+    // The balance sheet only needs the totals, so it skips the monthly query.
+    let monthly = if include_monthly {
+        let monthly_rows = repo::monthly_account_totals(ctx.db(), company_id, from, to)?;
+        monthly_profit_series(monthly_rows, from, total_income_minor, total_expense_minor)
+    } else {
+        Vec::new()
+    };
 
     Ok(json!({
         "income": income,
@@ -202,7 +211,7 @@ fn balance_sheet_report(ctx: &Ctx<'_>, from: &str, to: &str) -> AppResult<Value>
         }
     }
 
-    let profit = profit_loss_report(ctx, from, to)?;
+    let profit = profit_loss_report(ctx, from, to, false)?;
     let profit_minor = profit
         .get("netProfitMinor")
         .and_then(|value| value.as_i64())
@@ -419,7 +428,7 @@ fn stock_movements_report(ctx: &Ctx<'_>, item_id: i64, from: &str, to: &str) -> 
 
 fn channel_profit_loss(ctx: &Ctx<'_>, input: &Value) -> AppResult<Value> {
     let (from, to) = date_range(input)?;
-    profit_loss_report(ctx, &from, &to)
+    profit_loss_report(ctx, &from, &to, true)
 }
 
 fn channel_balance_sheet(ctx: &Ctx<'_>, input: &Value) -> AppResult<Value> {
