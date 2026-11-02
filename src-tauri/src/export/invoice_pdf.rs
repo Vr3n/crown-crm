@@ -421,6 +421,7 @@ struct Block {
 struct Document {
     is_purchase: bool,
     number: String,
+    number_source: String,
     date: String,
     due_date: Option<String>,
     reference_no: Option<String>,
@@ -571,6 +572,14 @@ impl Document {
         Self {
             is_purchase,
             number: text_of(value, "number"),
+            number_source: {
+                let source = text_of(value, "numberSource");
+                if source.is_empty() {
+                    "INTERNAL".to_string()
+                } else {
+                    source
+                }
+            },
             date: text_of(value, "date"),
             due_date: opt_text_of(value, "dueDate"),
             reference_no: opt_text_of(value, "referenceNo"),
@@ -680,9 +689,13 @@ impl Document {
 
     fn invoice_number(&self) -> String {
         if self.is_purchase {
-            self.reference_no
-                .clone()
-                .unwrap_or_else(|| self.number.clone())
+            if self.number_source == "SUPPLIER" {
+                self.number.clone()
+            } else {
+                // A no-supplier-bill purchase has no supplier number; the grid
+                // prints an em dash while the Voucher No. row keeps the PUR number.
+                String::new()
+            }
         } else {
             self.number.clone()
         }
@@ -1223,7 +1236,7 @@ fn draw_meta_grid(sheet: &Sheet, document: &Document, top: f32) -> f32 {
             "Place of Supply".to_string(),
             state_text(document.place_of_supply.as_deref()),
         ));
-        items.push(("Reference No. & Date".to_string(), String::new()));
+        items.push(("Reference No. & Date".to_string(), document.reference_no.clone().unwrap_or_default()));
         items.push((
             "Other References".to_string(),
             document.narration.clone().unwrap_or_default(),
@@ -2083,7 +2096,7 @@ fn sanitize_filename_segment(value: &str) -> String {
 mod tests {
     use super::{
         build, columns_at, content_width, default_filename, geometry, left, rect_edges, right,
-        sanitize_filename_segment, table_columns, table_separators, Align, Edge,
+        sanitize_filename_segment, table_columns, table_separators, Align, Document, Edge,
     };
     use serde_json::{json, Value};
 
@@ -2115,6 +2128,27 @@ mod tests {
         let cash = json!({ "type": "PURCHASE", "number": "PUR/0007", "party": null });
         let name = default_filename(&cash);
         assert!(name.starts_with("Party_Purchase_PUR-0007_"), "{name}");
+    }
+
+    #[test]
+    fn purchase_numbers_use_the_supplier_bill_identity() {
+        let mut value = invoice_fixture(1);
+        value["type"] = json!("PURCHASE");
+        value["number"] = json!("TC/2026-27/583");
+        value["numberSource"] = json!("SUPPLIER");
+        value["referenceNo"] = json!("PO-42");
+
+        let document = Document::from_json(&value);
+        assert_eq!(document.number_label(), "Supplier Bill No.");
+        assert_eq!(document.invoice_number(), "TC/2026-27/583");
+        assert_eq!(document.number, "TC/2026-27/583");
+        assert_eq!(document.reference_no.as_deref(), Some("PO-42"));
+
+        value["number"] = json!("PUR/0001");
+        value["numberSource"] = json!("INTERNAL");
+        let document = Document::from_json(&value);
+        assert_eq!(document.invoice_number(), "");
+        assert_eq!(document.number, "PUR/0001");
     }
 
     #[test]

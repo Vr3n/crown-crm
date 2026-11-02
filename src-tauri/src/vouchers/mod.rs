@@ -102,6 +102,10 @@ struct PostInput {
     place_of_supply_state_code: Option<String>,
     narration: Option<String>,
     reference_no: Option<String>,
+    /// The supplier's printed bill number. Purchase only.
+    supplier_bill_no: Option<String>,
+    /// Set when a purchase has no supplier bill and takes the internal `PUR` series.
+    supplier_bill_missing: bool,
     manual_number: Option<i64>,
     lines: Vec<LineInput>,
     journal_lines: Vec<JournalInput>,
@@ -150,6 +154,37 @@ fn opt_date(input: &Value, key: &str) -> AppResult<Option<String>> {
         return Err(AppError::validation(format!("{key} must be YYYY-MM-DD")));
     }
     Ok(Some(value))
+}
+
+/// A purchase needs exactly one identity: the supplier's bill number or an
+/// explicit "no supplier bill" declaration that falls back to `PUR`.
+fn parse_supplier_bill(
+    voucher_type: &str,
+    number: Option<String>,
+    missing: bool,
+) -> AppResult<(Option<String>, bool)> {
+    if voucher_type == "PURCHASE" {
+        return match (number, missing) {
+            (Some(value), false) => {
+                if let Some(problem) = numbering::validate_supplier_bill_number(&value) {
+                    return Err(AppError::validation(problem));
+                }
+                Ok((Some(value), false))
+            }
+            (None, true) => Ok((None, true)),
+            (Some(_), true) => Err(AppError::validation(
+                "Enter a supplier bill number or tick \"No supplier bill\", not both",
+            )),
+            (None, false) => Err(AppError::validation(
+                "Enter the supplier bill number, or tick \"No supplier bill\"",
+            )),
+        };
+    }
+
+    if number.is_some() || missing {
+        return Err(AppError::validation("A supplier bill number applies to purchase bills only"));
+    }
+    Ok((None, false))
 }
 
 impl LineInput {
@@ -295,6 +330,12 @@ impl PostInput {
             }
         }
 
+        let supplier_bill_no =
+            crate::json::optional_text(input, "supplierBillNo", "Supplier bill number", 32)?;
+        let supplier_bill_missing = opt_bool(input, "supplierBillMissing").unwrap_or(false);
+        let (supplier_bill_no, supplier_bill_missing) =
+            parse_supplier_bill(&voucher_type, supplier_bill_no, supplier_bill_missing)?;
+
         Ok(Self {
             request_id,
             voucher_type,
@@ -304,6 +345,8 @@ impl PostInput {
             place_of_supply_state_code,
             narration: crate::json::optional_text(input, "narration", "Narration", 1000)?,
             reference_no: crate::json::optional_text(input, "referenceNo", "Reference", 80)?,
+            supplier_bill_no,
+            supplier_bill_missing,
             manual_number: opt_positive(input, "manualNumber")?,
             lines,
             journal_lines,
@@ -876,13 +919,67 @@ fn post_in_tx(
         &input.allocations,
     )?;
 
-    let (number, fy, series) = numbering::allocate_number(
-        conn,
-        company_id,
-        &input.voucher_type,
-        &input.date,
-        input.manual_number,
-    )?;
+    let (number, fy, series, number_source, number_normalized) =
+        if input.voucher_type == "PURCHASE" {
+            match (&input.supplier_bill_no, input.supplier_bill_missing) {
+                (Some(bill_no), _) => {
+                    let party_id = party.as_ref().map(|party| party.id).ok_or_else(|| {
+                        AppError::new(codes::PARTY_NOT_ALLOWED, "Select a supplier for this voucher")
+                    })?;
+                    let fy = numbering::financial_year_label(&input.date, company.fy_start_month);
+                    let normalized = numbering::normalize_supplier_bill_number(bill_no);
+                    if normalized.is_empty() {
+                        return Err(AppError::validation(
+                            "Supplier bill number must contain a letter or digit",
+                        ));
+                    }
+                    // The series is scoped per supplier and the table-level
+                    // unique constraint then enforces (company, supplier, fy,
+                    // number). This pre-check catches the normalized form and
+                    // names the existing voucher; the constraint is the backstop.
+                    if let Some((existing_number, existing_date)) = repo::find_duplicate_supplier_bill(
+                        conn,
+                        company_id,
+                        party_id,
+                        &fy,
+                        &normalized,
+                    )? {
+                        return Err(AppError::new(
+                            codes::DUPLICATE_SUPPLIER_BILL,
+                            format!(
+                                "Supplier bill {existing_number} dated {existing_date} is already recorded for this supplier"
+                            ),
+                        ));
+                    }
+                    (
+                        bill_no.clone(),
+                        fy,
+                        format!("SUP{party_id}"),
+                        "SUPPLIER".to_string(),
+                        Some(normalized),
+                    )
+                }
+                (None, _) => {
+                    let (number, fy, series) = numbering::allocate_number(
+                        conn,
+                        company_id,
+                        &input.voucher_type,
+                        &input.date,
+                        input.manual_number,
+                    )?;
+                    (number, fy, series, "INTERNAL".to_string(), None)
+                }
+            }
+        } else {
+            let (number, fy, series) = numbering::allocate_number(
+                conn,
+                company_id,
+                &input.voucher_type,
+                &input.date,
+                input.manual_number,
+            )?;
+            (number, fy, series, "INTERNAL".to_string(), None)
+        };
 
     let due_date = match &input.due_date {
         Some(value) => Some(value.clone()),
@@ -940,11 +1037,15 @@ fn post_in_tx(
         })
         .collect();
 
+    let supplier_numbered = number_source == "SUPPLIER";
+
     let header = repo::NewVoucher {
         company_id,
         voucher_type: input.voucher_type.clone(),
         series,
         number: number.clone(),
+        number_source,
+        number_normalized,
         fy,
         date: input.date.clone(),
         due_date,
@@ -983,7 +1084,14 @@ fn post_in_tx(
             if err.code == codes::CONFLICT
                 && err.message.contains("vouchers.company_id") =>
         {
-            return Err(AppError::new(codes::NUMBER_COLLISION, "Voucher number collision, try again"));
+            return Err(if supplier_numbered {
+                AppError::new(
+                    codes::DUPLICATE_SUPPLIER_BILL,
+                    "This supplier bill number is already recorded for this supplier",
+                )
+            } else {
+                AppError::new(codes::NUMBER_COLLISION, "Voucher number collision, try again")
+            });
         }
         Err(err) => return Err(err),
     };
@@ -1170,6 +1278,8 @@ fn opening_in_tx(
         voucher_type: "OPENING".to_string(),
         series,
         number: number.clone(),
+        number_source: "INTERNAL".to_string(),
+        number_normalized: None,
         fy,
         date: date.to_string(),
         due_date: None,
@@ -1211,7 +1321,7 @@ fn opening_in_tx(
 
 #[cfg(test)]
 mod tests {
-    use super::{add_days, is_date_iso};
+    use super::{add_days, is_date_iso, parse_supplier_bill};
 
     #[test]
     fn recognises_business_dates() {
@@ -1226,5 +1336,37 @@ mod tests {
         assert_eq!(add_days("2026-02-27", 2).as_deref(), Some("2026-03-01"));
         assert_eq!(add_days("2026-12-31", 0).as_deref(), Some("2026-12-31"));
         assert_eq!(add_days("not-a-date", 5), None);
+    }
+
+    #[test]
+    fn a_purchase_needs_exactly_one_supplier_bill_identity() {
+        assert!(parse_supplier_bill("PURCHASE", None, false).is_err());
+        assert!(parse_supplier_bill("PURCHASE", Some("TC/1".into()), true).is_err());
+        assert_eq!(
+            parse_supplier_bill("PURCHASE", None, true).expect("no-bill declaration"),
+            (None, true)
+        );
+        let (number, missing) =
+            parse_supplier_bill("PURCHASE", Some("TC/2026-27/583".into()), false).expect("number");
+        assert_eq!(number.as_deref(), Some("TC/2026-27/583"));
+        assert!(!missing);
+    }
+
+    #[test]
+    fn supplier_bill_numbers_are_one_to_32_printable_characters() {
+        assert!(parse_supplier_bill("PURCHASE", Some("1".repeat(32)), false).is_ok());
+        assert!(parse_supplier_bill("PURCHASE", Some("1".repeat(33)), false).is_err());
+        assert!(parse_supplier_bill("PURCHASE", Some("TC\n583".into()), false).is_err());
+        assert!(parse_supplier_bill("PURCHASE", Some("--- / .".into()), false).is_err());
+    }
+
+    #[test]
+    fn supplier_bill_numbers_belong_to_purchases_only() {
+        assert!(parse_supplier_bill("SALES", Some("TC/1".into()), false).is_err());
+        assert!(parse_supplier_bill("SALES", None, true).is_err());
+        assert_eq!(
+            parse_supplier_bill("SALES", None, false).expect("sales"),
+            (None, false)
+        );
     }
 }

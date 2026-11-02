@@ -218,8 +218,11 @@ Number format: `prefix + padded(last_value + 1) + suffix`. Example: `TC/` + `058
 ```
 id, company_id
 voucher_type          -- see domain model table
-series
-number                text not null
+series                -- internal; supplier-numbered purchases use SUP<party_id>
+number                text not null        -- supplier bill no. or our own number
+number_source         text not null default 'INTERNAL'
+                      -- INTERNAL | SUPPLIER (migration 0005)
+number_normalized     text                 -- duplicate key, null for INTERNAL
 fy
 voucher_date          text not null          -- ISO date
 due_date              text
