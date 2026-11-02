@@ -254,4 +254,59 @@ describe('InvoiceSheet', () => {
     expect(sheet).not.toBeNull()
     expect(within(sheet as HTMLElement).getByText('CANCELLED')).toBeInTheDocument()
   })
+
+  it('gives every table cell exactly one border-owning class set', () => {
+    const { container } = render(
+      <InvoiceSheet
+        document={salesDocument()}
+        caption="ORIGINAL FOR RECIPIENT"
+        page={1}
+        pages={2}
+      />
+    )
+
+    const rows = Array.from(
+      container.querySelectorAll('.invoice-lines tr, .invoice-tax-summary tr')
+    )
+    const cells = Array.from(
+      container.querySelectorAll(
+        '.invoice-lines th, .invoice-lines td, .invoice-tax-summary th, .invoice-tax-summary td'
+      )
+    )
+
+    expect(cells.length).toBeGreaterThan(0)
+    for (const cell of cells) {
+      expect(cell.classList.contains('invoice-cell')).toBe(true)
+      // Alignment is exclusive: a cell is left, centre or right, never two.
+      const aligned = ['is-left', 'is-center', 'is-right'].filter((name) =>
+        cell.classList.contains(name)
+      )
+      expect(aligned).toHaveLength(1)
+    }
+
+    // Only the first cell of each row owns the left edge.
+    for (const row of rows) {
+      const rowCells = Array.from(row.querySelectorAll('th, td'))
+      rowCells.forEach((cell, index) => {
+        expect(cell.classList.contains('is-first')).toBe(index === 0)
+      })
+    }
+
+    const classStructure = [...new Set(cells.map((cell) => cell.className))].sort()
+    expect(classStructure).toMatchInlineSnapshot(`
+      [
+        "invoice-cell is-center",
+        "invoice-cell is-center invoice-mono",
+        "invoice-cell is-center is-head",
+        "invoice-cell is-left",
+        "invoice-cell is-left is-first",
+        "invoice-cell is-left is-first is-head",
+        "invoice-cell is-left is-head",
+        "invoice-cell is-right invoice-mono",
+        "invoice-cell is-right is-first invoice-mono",
+        "invoice-cell is-right is-first is-head",
+        "invoice-cell is-right is-head",
+      ]
+    `)
+  })
 })

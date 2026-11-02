@@ -17,8 +17,9 @@ the party block, the item grid, the rate-wise tax analysis and the footer.
 - Customise and print templates — <https://help.tallysolutions.com/customise-and-print-templates/>
 - GST Rule 48(1), tax invoice copies — <https://taxinformation.cbic.gov.in/content/html/tax_repository/gst/rules/cgst_rules/active/chapter6/rule48_v1.00.html>
 - Rule 48 text mirror — <https://indiankanoon.org/doc/94848871/>
-- Electron `webContents.printToPDF` — <https://www.electronjs.org/docs/latest/api/web-contents#contentsprinttopdfoptions>
-- `PrintToPDFOptions` — <https://www.electronjs.org/docs/latest/api/structures/print-to-pdf-options>
+- `printpdf` 0.7 — <https://docs.rs/printpdf/0.7.0/printpdf/>
+- CSS Paged Media Level 3 — <https://www.w3.org/TR/css-page-3/>
+- CSS `@page` — <https://developer.mozilla.org/en-US/docs/Web/CSS/@page>
 
 What the research settled:
 
@@ -169,9 +170,11 @@ head, sorts by HSN and prints a total row.
 
 | Piece                | File                                                            |
 | -------------------- | --------------------------------------------------------------- |
-| Read model           | `src/main/repositories/invoice.ts`                              |
-| Application lookup   | `src/main/application/invoice.ts`                               |
-| IPC                  | `src/main/ipc/invoice.ts`                                       |
+| Read model           | `src-tauri/src/vouchers/mod.rs` (`invoice_document`)            |
+| Export command       | `src-tauri/src/export/mod.rs` (`export_invoice_pdf`)            |
+| Native PDF builder   | `src-tauri/src/export/invoice_pdf.rs`                           |
+| Geometry spec        | `src/shared/print-geometry.json`                                |
+| Geometry helpers     | `src/shared/print-geometry.ts`                                  |
 | Contracts            | `src/shared/contracts/invoice.ts`                               |
 | Formatting and slabs | `src/shared/invoice.ts`                                         |
 | Amount in words      | `src/shared/amount-in-words.ts`                                 |
@@ -179,8 +182,7 @@ head, sorts by HSN and prints a total row.
 | Print route          | `src/renderer/src/features/invoice/pages/InvoicePrintPage.tsx`  |
 | One A4 copy          | `src/renderer/src/features/invoice/components/InvoiceSheet.tsx` |
 | Print CSS            | `src/renderer/src/features/invoice/invoice-print.css`           |
-| PDF pipeline         | `src/main/export/invoice-pdf.ts`                                |
-| Filename builder     | `src/main/export/invoice-filename.ts`                           |
+| Filename builder     | `invoice_pdf::default_filename`                                 |
 
 `vouchers:invoice` returns the invoice read model. It exists because
 `VoucherDetail` collapses per-line tax into one number and has no party
@@ -189,40 +191,59 @@ returns only SALES and PURCHASE vouchers; any other id is a not-found.
 
 ## PDF pipeline
 
-`invoice:exportPdf` receives only the voucher id. The main process resolves the
-document, builds the filename and opens the save dialog, so the renderer never
-chooses a path and cannot print another company's voucher.
+`invoice:exportPdf` receives only the voucher id. The Rust command resolves the
+document, builds the filename and opens the native save dialog, so the renderer
+never chooses a path and cannot print another company's voucher.
 
-1. A hidden `BrowserWindow` loads `#/print/vouchers/:id` (dev server in
-   development, `loadFile(..., { hash })` in the packaged app).
-2. The window waits for `did-finish-load` (and rejects on `did-fail-load`).
-3. The renderer resolves the query, waits for `document.fonts.ready` and every
-   image's `decode()`, then sets `window.__invoicePrintState = { ready: true }`.
-   It stays `undefined` while the query is in flight, so the main process can
-   never print a skeleton.
-4. The main process polls that flag with a 20 second render timeout, then calls
-   `printToPDF({ printBackground: true, pageSize: 'A4', margins: 0,
-preferCSSPageSize: true })`.
-5. The native save dialog opens with the generated filename. Cancel resolves
-   `{ saved: false }` and writes nothing. A successful write reveals the file
-   and resolves `{ saved: true, filePath }`.
-6. The window is destroyed in `finally`, whether printing succeeded, failed or
-   the user cancelled.
+1. The renderer calls `window.api.invoice.exportPdf(id)`.
+2. `export_invoice_pdf` checks `VOUCHER_VIEW`, then resolves the read model with
+   `vouchers::invoice_document(db, companyId, id)`.
+3. `invoice_pdf::default_filename` builds the suggested name.
+4. The native save dialog opens. Cancel returns `{ saved: false }` and writes
+   nothing.
+5. `invoice_pdf::build` returns the PDF bytes. The builder uses `printpdf`
+   directly, writes both GST copies, and redraws the frame and table header on
+   continuation pages.
+6. The file is written, revealed in the file manager, and the command returns
+   `{ saved: true, filePath }`.
 
-The print page injects `@page { size: A4; margin: 0 }` only while it is
-mounted. Putting that rule in the stylesheet would change the margins of every
-other printable screen.
+There is no hidden BrowserWindow and no `printToPDF` step. The React print
+route is still available for **Print** and for previewing the same layout in
+the webview, but it is not part of the file export path.
 
 ### A4 geometry
 
-Each `.invoice-sheet` is `210mm × 297mm` with `box-sizing: border-box`, 12mm
-side padding, 8mm at the top and 6mm at the bottom. `printToPDF` uses zero
-margins, so the sheet padding is the only margin and nothing is doubled. The
-item table lives in a grid track that takes the remaining height and its rows
-stretch, so a one-line invoice fills the page instead of leaving a white gap;
-a long invoice grows past 297mm. The second sheet starts on a new page
-(`break-after: page` on the first, `auto` on the last), and table headers repeat
-if an invoice runs past one page.
+`src/shared/print-geometry.json` is the single source of page size, margins,
+panel widths, table column weights, row/header heights and border weights. The
+Rust builder reads it with `include_str!` + `serde_json`; the React sheet
+imports the same file. A change to a column weight moves both producers.
+
+The page is A4 (210 × 297 mm). The content margins are 8 mm top, 12 mm left and
+right, 6 mm bottom. The sheet frame sits outside the content at 5 mm top and
+bottom and 6 mm left and right, so it never doubles a panel edge. Border
+classes are `outer` 0.8 pt, `section` 0.5 pt, `cell` 0.4 pt and `total` 0.8 pt.
+
+The native builder draws every box with `rect(x, y, w, h, weight)`, which emits
+four continuous edges. Column x positions are computed once from the shared
+weights and reused for the header, the body cells and the separator lines. The
+description column is left aligned and the numeric columns are flush right
+against the same cell edge as their headers. The React sheet mirrors the same
+weights and alignments with an inline `<colgroup>`; each cell owns its right and
+bottom edge, the first cell owns the left edge, and the header row owns the top
+edge, so no edge is drawn twice. On screen the sheet frame is an inset
+pseudo-element; in print it becomes a fixed frame that repeats on every page.
+
+A long invoice continues inside the item table. The native builder calls
+`continue_page`, which adds a page, redraws the sheet frame, repeats the
+document title and caption, and `draw_lines` repeats the table header. The
+React sheet uses `thead { display: table-header-group }` and
+`break-inside: avoid` on rows.
+
+The print route injects `@page { size: A4; margin: 0 }` only while it is
+mounted, so other printable screens keep their own margins. A report page
+injects its own `@page` while it is mounted instead (see
+[`22-pdf-geometry.md`](./22-pdf-geometry.md)).
+
 
 ## Filename
 
@@ -237,7 +258,7 @@ Acme-Distributors_Sales_INV-0001_20261029-153012.pdf
 TechConnect_Purchase_PUR-0001_20261029-154405.pdf
 ```
 
-Rules (`src/main/export/invoice-filename.ts`):
+Rules (`invoice_pdf::default_filename`):
 
 - The party name comes from the voucher's party snapshot. A cash voucher with
   no party becomes `Party`.
@@ -271,37 +292,31 @@ Rules (`src/main/export/invoice-filename.ts`):
   the purchase form is the right place to record the supplier's number.
 - **No per-invoice template editor.** Titles, terms and the bank block come
   from the company record; there is no Tally-style template designer.
-- **Long invoices.** The sheet grows past 297mm rather than clipping content,
-  and the table header repeats. Two copies remain two copies, but a very long
-  invoice can span more than one page per copy.
+- **Long invoices.** The native builder starts a continuation page, redraws
+  the frame and repeats the table header. The React sheet lets the item table
+  grow past 297 mm, repeats `thead` and keeps each row unbroken. Two copies
+  remain two copies, but a very long invoice can span more than one page per
+  copy.
 
 ## Tests
 
+- `src-tauri/src/export/invoice_pdf.rs` — `rect_edges` emits four continuous
+  edges; column positions fill the content width; the table separators are
+  unique and never land on the outer edge; `build` returns exactly 2 A4 pages
+  for a normal fixture and at least 2 for a 40-line fixture. The tests also
+  write `src-tauri/target/test-output/invoice.pdf` and
+  `invoice-overflow.pdf` for review.
 - `tests/shared/amount-in-words.test.ts` — Indian scales, paise, negatives,
   other currencies and non-finite input.
 - `tests/shared/invoice.test.ts` — Indian digit grouping, money and quantity
   formatting, rate-wise slab grouping, HSN grouping by HSN + rate, the shared
   document title, the number labels, the document tax total, inter-state
   detection and state names.
-- `tests/main/export/invoice-filename.test.ts` — exact example filename,
-  sanitisation, fallbacks and length caps.
 - `tests/renderer/invoice-sheet.test.tsx` — both captions, the `SUPPLIER` and
   `BUYER` panels, the stacked buyer details, the sample item grid, totals,
   amount in words, the HSN/SAC-wise summary, purchase issuer/buyer swap, the
-  omitted supplier terms and bank block, the company logo (sales only) and the
-  cancellation watermark.
-- `tests/e2e/phases-flow.spec.ts` — posts a sales invoice, stubs the native save
-  dialog, clicks **Export PDF**, asserts the filename pattern and the `%PDF`
-  header, then opens the print route and asserts both captions and the
-  `SUPPLIER`/`BUYER` panels.
-
-### Quiet end-to-end runs
-
-`tests/e2e/support/silent.ts` keeps the suite unattended without touching
-production code. After each `electron.launch` the test process stubs
-`shell.showItemInFolder`, `shell.openPath` and `shell.openExternal`, so an export
-never opens Explorer and a backup never opens its folder. It also parks every
-`BrowserWindow` off-screen and out of the taskbar, including windows created
-later (the invoice print window). Off-screen rather than hidden keeps Chromium
-painting, so the phase screenshots still capture real content. Production keeps
-the reveal behaviour: only the tests mute it.
+  omitted supplier terms and bank block, the company logo (sales only), the
+  cancellation watermark, and the border-ownership class structure of every
+  table cell.
+- `scripts/smoke-ui.mjs` — boots the built app and checks the print route
+  renders both captions. It is a smoke check, not a pixel comparison.

@@ -53,7 +53,7 @@ export function Topbar(): React.JSX.Element {
   }, [])
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card px-5">
+    <header className="print:hidden flex h-12 shrink-0 items-center gap-3 border-b border-border bg-card px-5">
       <h1 className="shrink-0 text-[1rem] font-semibold tracking-tight">
         {titleForPath(location.pathname)}
       </h1>
