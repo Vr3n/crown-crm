@@ -9,6 +9,7 @@ function salesDocument(overrides: Partial<InvoiceDocument> = {}): InvoiceDocumen
     id: 7,
     type: 'SALES',
     number: 'INV/0001',
+    numberSource: 'INTERNAL',
     date: '2026-10-29',
     dueDate: '2026-11-28',
     referenceNo: 'PO-42',
@@ -89,8 +90,9 @@ function salesDocument(overrides: Partial<InvoiceDocument> = {}): InvoiceDocumen
 function purchaseDocument(overrides: Partial<InvoiceDocument> = {}): InvoiceDocument {
   return salesDocument({
     type: 'PURCHASE',
-    number: 'PUR/0001',
-    referenceNo: 'TC/2026-27/583',
+    number: 'TC/2026-27/583',
+    numberSource: 'SUPPLIER',
+    referenceNo: 'PO-42',
     narration: 'Office supplies',
     ...overrides
   })
@@ -182,12 +184,12 @@ describe('InvoiceSheet', () => {
 
     expect(screen.getByText('TAX INVOICE')).toBeInTheDocument()
     expect(screen.getByText('Supplier Bill No.')).toBeInTheDocument()
-    expect(screen.getByText('TC/2026-27/583')).toBeInTheDocument()
+    expect(screen.getAllByText('TC/2026-27/583').length).toBe(2)
     expect(screen.getByText('Voucher No.')).toBeInTheDocument()
     expect(screen.queryByText('Our Voucher No.')).toBeNull()
-    expect(screen.getByText('PUR/0001')).toBeInTheDocument()
     expect(screen.getByText('Place of Supply')).toBeInTheDocument()
     expect(screen.getByText('Reference No. & Date')).toBeInTheDocument()
+    expect(screen.getByText('PO-42')).toBeInTheDocument()
     expect(screen.getByText('Office supplies')).toBeInTheDocument()
 
     // The supplier's shorter Tally grid has no transport rows.
@@ -202,6 +204,25 @@ describe('InvoiceSheet', () => {
     // Supplier terms and bank details are not in our books, so they stay out.
     expect(screen.queryByText('Terms & Conditions')).toBeNull()
     expect(screen.queryByText('HDFC Bank')).toBeNull()
+  })
+
+  it('prints an em dash for a purchase with no supplier bill', () => {
+    render(
+      <InvoiceSheet
+        document={purchaseDocument({ number: 'PUR/0001', numberSource: 'INTERNAL' })}
+        caption="ORIGINAL FOR RECIPIENT"
+        page={1}
+        pages={2}
+      />
+    )
+
+    const supplierBill = screen.getByText('Supplier Bill No.').parentElement
+    expect(supplierBill).not.toBeNull()
+    expect(within(supplierBill as HTMLElement).getByText('—')).toBeInTheDocument()
+
+    const voucherNo = screen.getByText('Voucher No.').parentElement
+    expect(voucherNo).not.toBeNull()
+    expect(within(voucherNo as HTMLElement).getByText('PUR/0001')).toBeInTheDocument()
   })
 
   it('renders the company logo on a sale when the profile has one', () => {

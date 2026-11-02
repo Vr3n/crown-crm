@@ -200,7 +200,9 @@ export function InvoiceSheet({
           logo: null
         }
 
-  const invoiceNumber = isPurchase ? (document.referenceNo ?? document.number) : document.number
+  const invoiceNumber = document.number
+  const supplierBillNumber =
+    !isPurchase || document.numberSource === 'SUPPLIER' ? document.number : null
   const deliveryAddress = isPurchase
     ? addressText(company.address, company.city, company.pincode)
     : addressText(party?.shippingAddress || party?.billingAddress)
@@ -310,14 +312,14 @@ export function InvoiceSheet({
              * voucher number and the place of supply carry the extra rows.
              */
             <dl className="invoice-meta">
-              <MetaCell label={invoiceNumberLabel(document.type)} value={invoiceNumber} mono />
+              <MetaCell label={invoiceNumberLabel(document.type)} value={supplierBillNumber} mono />
               <MetaCell label="Dated" value={formatInvoiceDate(document.date)} mono />
               <MetaCell label="Voucher No." value={document.number} mono />
               <MetaCell
                 label="Place of Supply"
                 value={stateText(document.placeOfSupplyStateCode)}
               />
-              <MetaCell label="Reference No. & Date" value={null} />
+              <MetaCell label="Reference No. & Date" value={document.referenceNo} />
               <MetaCell label="Other References" value={document.narration} />
             </dl>
           ) : (
