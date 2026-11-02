@@ -386,6 +386,10 @@ try {
 
   text = await goto('/reports/receivables', [PARTY])
   check('receivables show the invoice', text.includes(PARTY) && text.includes('590.00'))
+  check(
+    'the receivables chart renders with its data table',
+    (await evaluate("!!document.querySelector('[data-chart-data-table]')")) === true
+  )
 
   text = await goto('/reports/trial-balance', ['Sales'])
   check('the trial balance lists Sales', text.includes('Sales'))
@@ -404,6 +408,91 @@ try {
   await goto('/settings/company', [])
   text = await bodyText()
   check('company settings render the profile', text.includes(COMPANY))
+
+  // -------------------------------------------------------------------
+  // A purchase bill is numbered by its supplier
+  // -------------------------------------------------------------------
+  console.log('purchase bill numbers')
+  const supplier = await evaluate(`window.api.parties.create({
+    name: 'Smoke Supplier',
+    isSupplier: true,
+    stateCode: '27',
+    creditDays: 15
+  }).then((row) => row.id)`)
+  check('a supplier can be created', typeof supplier === 'number', String(supplier))
+
+  const supplierBill = 'TC/2026-27/583'
+  // The list defaults to this month, so post on today's date.
+  const purchaseDate = new Date().toISOString().slice(0, 10)
+  const purchaseLine = `{
+    itemId: ${item},
+    description: ${JSON.stringify(ITEM)},
+    hsn: '8471',
+    uom: 'nos',
+    qtyE4: 10000,
+    rateMinor: 18000,
+    discountBps: 0,
+    gstRateBps: 1800
+  }`
+
+  const purchase = await evaluate(`window.api.vouchers.post({
+    requestId: 'ui-pur-0001',
+    type: 'PURCHASE',
+    date: ${JSON.stringify(purchaseDate)},
+    partyId: ${supplier},
+    supplierBillNo: ${JSON.stringify(supplierBill)},
+    lines: [${purchaseLine}]
+  })`)
+  check(
+    'a purchase bill keeps the supplier number',
+    purchase?.number === supplierBill,
+    JSON.stringify(purchase)
+  )
+
+  const duplicate = await evaluate(`window.api.vouchers.post({
+    requestId: 'ui-pur-0002',
+    type: 'PURCHASE',
+    date: ${JSON.stringify(purchaseDate)},
+    partyId: ${supplier},
+    supplierBillNo: ${JSON.stringify(supplierBill.toLowerCase())},
+    lines: [${purchaseLine}]
+  }).then(() => 'posted').catch((error) => error.code)`)
+  check(
+    'the duplicate supplier bill is refused by code',
+    duplicate === 'DUPLICATE_SUPPLIER_BILL',
+    String(duplicate)
+  )
+
+  const noBill = await evaluate(`window.api.vouchers.post({
+    requestId: 'ui-pur-0003',
+    type: 'PURCHASE',
+    date: ${JSON.stringify(purchaseDate)},
+    partyId: ${supplier},
+    supplierBillMissing: true,
+    lines: [${purchaseLine}]
+  })`)
+  check(
+    'a no-bill purchase takes the PUR series',
+    String(noBill?.number).startsWith('PUR/'),
+    JSON.stringify(noBill)
+  )
+
+  text = await goto('/purchases', [supplierBill])
+  check('the purchase list shows the supplier bill number', text.includes(supplierBill))
+
+  text = await goto(`/print/vouchers/${purchase?.id}`, ['ORIGINAL FOR RECIPIENT'])
+  check(
+    'the purchase print shows the supplier bill number',
+    text.toLowerCase().includes('supplier bill no.') && text.includes(supplierBill),
+    text.slice(0, 300)
+  )
+
+  text = await goto(`/print/vouchers/${noBill?.id}`, ['ORIGINAL FOR RECIPIENT'])
+  check(
+    'a no-bill purchase prints the internal PUR number',
+    text.toLowerCase().includes('supplier bill no.') && text.includes('PUR/'),
+    text.slice(0, 300)
+  )
 } catch (error) {
   problems.push(error.message)
   console.error(`smoke-ui: ${error.message}`)
