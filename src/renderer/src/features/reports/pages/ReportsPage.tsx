@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button'
 import { KpiCard, type KpiTone } from '@/components/ui/kpi-card'
 import { formatMinor } from '@/lib/money'
 import { downloadCsv, safeFilename } from '@/lib/export'
+import { useCompanyProfile } from '@/lib/company-queries'
+import { printCssVars } from '../../../../../shared/print-geometry'
 import { cn } from '@/lib/utils'
+import './report-print.css'
 import {
   AlertTriangle,
   ArrowDownLeft,
@@ -22,6 +25,15 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { toast } from 'sonner'
+
+/**
+ * Page counters live in the paged-media margin box. This rule is injected by
+ * the report page only, so another route can keep its own margins.
+ */
+const PRINT_PAGE_STYLE =
+  '@page { size: A4; margin: 14mm 12mm 18mm; @bottom-center { content: "Page " counter(page) " of " counter(pages); } }'
+
+const reportStyle = printCssVars as React.CSSProperties
 
 export type ReportKind =
   | 'receivables'
@@ -66,12 +78,20 @@ export function ReportsPage({ kind }: { kind: ReportKind }): React.JSX.Element {
   const [from, setFrom] = useState(fyStart())
   const [to, setTo] = useState(today())
   const [basis, setBasis] = useState<'BILL_DATE' | 'DUE_DATE'>('DUE_DATE')
+  const company = useCompanyProfile()
+  const companyName = company.data?.name ?? 'Crown Books'
 
   const needsRange =
     kind === 'profit-loss' ||
     kind === 'balance-sheet' ||
     kind === 'sales-register' ||
     kind === 'purchase-register'
+
+  const periodLabel = needsRange ? `${from} to ${to}` : `As of ${to}`
+  const generatedAt = new Date().toLocaleString('en-IN', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  })
 
   const query = useQuery({
     queryKey: ['report', kind, from, to, basis],
@@ -98,38 +118,56 @@ export function ReportsPage({ kind }: { kind: ReportKind }): React.JSX.Element {
   })
 
   return (
-    <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5 p-6">
-      <PageHeader
-        title={TITLES[kind]}
-        description={descriptionFor(kind)}
-        actions={
-          <div className="flex items-end gap-2">
-            {needsRange ? (
-              <>
-                <DateField label="From" value={from} onChange={setFrom} />
-                <DateField label="To" value={to} onChange={setTo} />
-              </>
-            ) : (
-              <>
-                <DateField label="As of" value={to} onChange={setTo} />
-                <label className="flex flex-col gap-1">
-                  <span className="text-[0.6875rem] uppercase tracking-[0.12em] text-muted-foreground">
-                    Basis
-                  </span>
-                  <select
-                    value={basis}
-                    onChange={(e) => setBasis(e.target.value as 'BILL_DATE' | 'DUE_DATE')}
-                    className="h-8 border border-input bg-card px-2 text-[0.875rem]"
-                  >
-                    <option value="DUE_DATE">Due date</option>
-                    <option value="BILL_DATE">Bill date</option>
-                  </select>
-                </label>
-              </>
-            )}
-          </div>
-        }
-      />
+    <div
+      className="report-page mx-auto flex w-full max-w-[1400px] flex-col gap-5 p-6"
+      style={reportStyle}
+    >
+      <style>{PRINT_PAGE_STYLE}</style>
+
+      <div className="report-print-hide">
+        <PageHeader
+          title={TITLES[kind]}
+          description={descriptionFor(kind)}
+          actions={
+            <div className="flex items-end gap-2">
+              {needsRange ? (
+                <>
+                  <DateField label="From" value={from} onChange={setFrom} />
+                  <DateField label="To" value={to} onChange={setTo} />
+                </>
+              ) : (
+                <>
+                  <DateField label="As of" value={to} onChange={setTo} />
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[0.6875rem] uppercase tracking-[0.12em] text-muted-foreground">
+                      Basis
+                    </span>
+                    <select
+                      value={basis}
+                      onChange={(e) => setBasis(e.target.value as 'BILL_DATE' | 'DUE_DATE')}
+                      className="h-8 border border-input bg-card px-2 text-[0.875rem]"
+                    >
+                      <option value="DUE_DATE">Due date</option>
+                      <option value="BILL_DATE">Bill date</option>
+                    </select>
+                  </label>
+                </>
+              )}
+            </div>
+          }
+        />
+      </div>
+
+      <div className="report-print-head">
+        <div>
+          <p className="report-print-company">{companyName}</p>
+          <p className="report-print-title">{TITLES[kind]}</p>
+        </div>
+        <div className="report-print-meta">
+          <p>Generated {generatedAt}</p>
+          <p>{needsRange ? 'Period' : 'As of'}: {periodLabel}</p>
+        </div>
+      </div>
 
       {query.isLoading ? (
         <div className="border border-border bg-card p-8 text-[0.875rem] text-muted-foreground">
@@ -149,6 +187,13 @@ export function ReportsPage({ kind }: { kind: ReportKind }): React.JSX.Element {
           <ReportBody kind={kind} data={query.data.rows as never} />
         </>
       ) : null}
+
+      <div className="report-print-foot">
+        <span>
+          {companyName} · {TITLES[kind]}
+        </span>
+        <span>Generated {generatedAt}</span>
+      </div>
     </div>
   )
 }
@@ -683,8 +728,8 @@ function Table({
   }
 
   return (
-    <div className="border border-border bg-card">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-1.5">
+    <div className="report-table-card border border-border bg-card">
+      <div className="report-table-toolbar flex items-center justify-between gap-2 border-b border-border px-3 py-1.5">
         <span className="text-[0.75rem] text-muted-foreground">
           {rows.length} row{rows.length === 1 ? '' : 's'}
         </span>
@@ -703,7 +748,7 @@ function Table({
           </Button>
         </div>
       </div>
-      <table className="w-full border-collapse text-[0.875rem]">
+      <table className="report-table w-full border-collapse text-[0.875rem]">
         <thead>
           <tr>
             {head.map((cell, index) => (
@@ -755,7 +800,7 @@ function Table({
       {note ? (
         <div
           className={cn(
-            'border-t border-border px-3 py-2 text-[0.75rem]',
+            'report-note border-t border-border px-3 py-2 text-[0.75rem]',
             noteTone === 'ok' ? 'text-success' : 'text-destructive'
           )}
         >

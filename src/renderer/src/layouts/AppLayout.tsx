@@ -32,11 +32,11 @@ export function AppLayout(): React.JSX.Element {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex h-screen overflow-hidden bg-background text-foreground">
+      <div className="app-shell flex h-screen overflow-hidden bg-background text-foreground">
         <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="app-body flex min-w-0 flex-1 flex-col">
           <Topbar />
-          <main ref={mainRef} className="min-h-0 flex-1 overflow-y-auto">
+          <main ref={mainRef} className="app-main min-h-0 flex-1 overflow-y-auto">
             <div key={location.pathname} className="page-in">
               <OnboardingGate>
                 <Outlet />

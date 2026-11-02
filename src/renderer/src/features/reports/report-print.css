@@ -1,0 +1,138 @@
+/*
+ * Generic report / statement print.
+ *
+ * The report page is normally inside the app shell. In print the shell, the
+ * sidebar, the top bar and the table toolbar disappear; the table keeps all of
+ * its rules, repeats its header, and gains a document header and footer with
+ * the company, period, generated timestamp and page number.
+ */
+
+.report-print-head,
+.report-print-foot {
+  display: none;
+}
+
+@media print {
+  .app-shell,
+  .app-body,
+  .app-main {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .report-print-hide,
+  .report-table-toolbar {
+    display: none !important;
+  }
+
+  .report-page {
+    display: block;
+    max-width: none;
+    padding: 0;
+    gap: 0;
+    background: #ffffff;
+    color: #141a1f;
+  }
+
+  .report-print-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8mm;
+    padding-bottom: 2mm;
+    margin-bottom: 3mm;
+    border-bottom: var(--print-border-outer, 0.8pt) solid #141a1f;
+  }
+
+  .report-print-company {
+    font-size: 12pt;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .report-print-title {
+    margin-top: 0.6mm;
+    font-size: 9pt;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4b5359;
+  }
+
+  .report-print-meta {
+    font-size: 7.6pt;
+    line-height: 1.5;
+    text-align: right;
+    color: #4b5359;
+  }
+
+  .report-print-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6mm;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding-top: 1.4mm;
+    border-top: var(--print-border-cell, 0.4pt) solid #9aa0a4;
+    font-size: 7pt;
+    letter-spacing: 0.04em;
+    color: #5a6268;
+  }
+
+  .report-page .report-table-card {
+    border: 0;
+    background: #ffffff;
+  }
+
+  .report-page table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .report-page th,
+  .report-page td {
+    padding: 1.3mm 1.6mm;
+    border: var(--print-border-cell, 0.4pt) solid #6d7479 !important;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .report-page th {
+    font-size: 7pt;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: #f1efe8 !important;
+    color: #141a1f;
+  }
+
+  .report-page th.text-right,
+  .report-page td.text-right {
+    text-align: right;
+  }
+
+  .report-page thead {
+    display: table-header-group;
+  }
+
+  .report-page tbody tr {
+    break-inside: avoid;
+  }
+
+  .report-page tr:last-child td {
+    border-bottom: var(--print-border-total, 0.8pt) solid #141a1f !important;
+  }
+
+  .report-page .report-note {
+    border: var(--print-border-section, 0.5pt) solid #333b40;
+    border-top: 0;
+    padding: 1.6mm 2mm;
+    font-size: 7.4pt;
+  }
+}

@@ -70,7 +70,7 @@ export function Sidebar(): React.JSX.Element {
   return (
     <aside
       className={cn(
-        'flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200',
+        'print:hidden flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200',
         collapsed ? 'w-[64px]' : 'w-[216px]'
       )}
     >
