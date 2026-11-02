@@ -544,6 +544,71 @@ mod tests {
     }
 
     #[test]
+    fn splits_a_2500_inclusive_sale_line_at_18_percent() {
+        let tax = compute_line_tax(
+            &LineTaxInput {
+                qty_e4: 10_000,
+                rate_minor: 250_000,
+                rate_includes_tax: true,
+                discount_bps: 0,
+                gst_rate_bps: 1_800,
+                cess_rate_bps: 0,
+            },
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(tax.taxable_minor, 211_864);
+        assert_eq!(tax.cgst_minor, 19_068);
+        assert_eq!(tax.sgst_minor, 19_068);
+        assert_eq!(tax.cess_minor, 0);
+        assert_eq!(tax.total_minor, 250_000);
+    }
+
+    #[test]
+    fn adds_tax_to_a_1750_exclusive_purchase_line_at_18_percent() {
+        let tax = compute_line_tax(
+            &LineTaxInput {
+                qty_e4: 10_000,
+                rate_minor: 175_000,
+                rate_includes_tax: false,
+                discount_bps: 0,
+                gst_rate_bps: 1_800,
+                cess_rate_bps: 0,
+            },
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(tax.taxable_minor, 175_000);
+        assert_eq!(tax.cgst_minor, 15_750);
+        assert_eq!(tax.sgst_minor, 15_750);
+        assert_eq!(tax.total_minor, 206_500);
+    }
+
+    #[test]
+    fn extracts_cess_from_an_inclusive_price() {
+        let tax = compute_line_tax(
+            &LineTaxInput {
+                qty_e4: 10_000,
+                rate_minor: 250_000,
+                rate_includes_tax: true,
+                discount_bps: 0,
+                gst_rate_bps: 1_800,
+                cess_rate_bps: 1_200,
+            },
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(tax.taxable_minor, 192_308);
+        assert_eq!(tax.cess_minor, 23_077);
+        assert_eq!(tax.cgst_minor, 17_307);
+        assert_eq!(tax.sgst_minor, 17_308);
+        assert_eq!(tax.total_minor, 250_000);
+    }
+
+    #[test]
     fn collapses_a_negative_difference_into_round_off() {
         let totals = compute_invoice_totals(&[], "INVOICE", 0).unwrap();
         assert_eq!(totals.total_minor, 0);
