@@ -9,7 +9,7 @@ import { downloadCsv, safeFilename } from '@/lib/export'
 import { useCompanyProfile } from '@/lib/company-queries'
 import { printCssVars } from '../../../../../shared/print-geometry'
 import { cn } from '@/lib/utils'
-import './report-print.css'
+import '../report-print.css'
 import {
   AlertTriangle,
   ArrowDownLeft,
