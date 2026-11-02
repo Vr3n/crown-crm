@@ -432,9 +432,12 @@ pub struct Item {
     pub uom: Option<String>,
     pub uom_id: Option<i64>,
     pub gst_rate_bps: i64,
+    pub cess_rate_bps: i64,
     pub is_service: bool,
     pub sale_price_minor: i64,
     pub purchase_price_minor: i64,
+    pub sale_price_includes_tax: bool,
+    pub purchase_price_includes_tax: bool,
     pub opening_qty_e4: i64,
     pub opening_rate_minor: i64,
     pub stock_qty_e4: i64,
@@ -454,9 +457,12 @@ impl Item {
             "uom": self.uom,
             "uomId": self.uom_id,
             "gstRateBps": self.gst_rate_bps,
+            "cessRateBps": self.cess_rate_bps,
             "isService": self.is_service,
             "salePriceMinor": self.sale_price_minor,
             "purchasePriceMinor": self.purchase_price_minor,
+            "salePriceIncludesTax": self.sale_price_includes_tax,
+            "purchasePriceIncludesTax": self.purchase_price_includes_tax,
             "openingQtyE4": self.opening_qty_e4,
             "openingRateMinor": self.opening_rate_minor,
             "stockQtyE4": self.stock_qty_e4,
@@ -477,7 +483,8 @@ const ITEM_SELECT: &str = "SELECT i.id, i.name, i.sku, i.hsn_sac, i.uom_id, i.gs
          FROM stock_movements m
          JOIN vouchers v ON v.id = m.voucher_id AND v.status = 'POSTED'
          WHERE m.item_id = i.id
-       ), 0) AS stock_qty
+       ), 0) AS stock_qty,
+       i.cess_rate_bps, i.sale_price_includes_tax, i.purchase_price_includes_tax
      FROM items i
      LEFT JOIN units u ON u.id = i.uom_id
      LEFT JOIN stock_groups sg ON sg.id = i.stock_group_id";
@@ -501,6 +508,9 @@ fn map_item(row: &rusqlite::Row<'_>) -> rusqlite::Result<Item> {
         uom: row.get(14)?,
         stock_group: row.get(15)?,
         stock_qty_e4: row.get(16)?,
+        cess_rate_bps: row.get(17)?,
+        sale_price_includes_tax: row.get::<_, i64>(18)? != 0,
+        purchase_price_includes_tax: row.get::<_, i64>(19)? != 0,
     })
 }
 
@@ -550,9 +560,12 @@ pub struct NewItem {
     pub hsn_sac: Option<String>,
     pub uom_id: Option<i64>,
     pub gst_rate_bps: i64,
+    pub cess_rate_bps: i64,
     pub is_service: bool,
     pub sale_price_minor: i64,
     pub purchase_price_minor: i64,
+    pub sale_price_includes_tax: bool,
+    pub purchase_price_includes_tax: bool,
     pub opening_qty_e4: i64,
     pub opening_rate_minor: i64,
     pub reorder_level_e4: i64,
@@ -561,10 +574,11 @@ pub struct NewItem {
 
 pub fn insert_item(conn: &Connection, company_id: i64, input: &NewItem) -> AppResult<i64> {
     conn.execute(
-        "INSERT INTO items (company_id, name, sku, hsn_sac, uom_id, gst_rate_bps, is_service,
-           sale_price_minor, purchase_price_minor, opening_qty_e4, opening_rate_minor,
-           reorder_level_e4, created_by)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+        "INSERT INTO items (company_id, name, sku, hsn_sac, uom_id, gst_rate_bps, cess_rate_bps,
+           is_service, sale_price_minor, purchase_price_minor, sale_price_includes_tax,
+           purchase_price_includes_tax, opening_qty_e4, opening_rate_minor, reorder_level_e4,
+           created_by)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
         params![
             company_id,
             input.name,
@@ -572,9 +586,12 @@ pub fn insert_item(conn: &Connection, company_id: i64, input: &NewItem) -> AppRe
             input.hsn_sac,
             input.uom_id,
             input.gst_rate_bps,
+            input.cess_rate_bps,
             i64::from(input.is_service),
             input.sale_price_minor,
             input.purchase_price_minor,
+            i64::from(input.sale_price_includes_tax),
+            i64::from(input.purchase_price_includes_tax),
             input.opening_qty_e4,
             input.opening_rate_minor,
             input.reorder_level_e4,
@@ -592,9 +609,12 @@ pub struct ItemPatch {
     pub hsn_sac: Option<Option<String>>,
     pub uom_id: Option<Option<i64>>,
     pub gst_rate_bps: Option<i64>,
+    pub cess_rate_bps: Option<i64>,
     pub is_service: Option<bool>,
     pub sale_price_minor: Option<i64>,
     pub purchase_price_minor: Option<i64>,
+    pub sale_price_includes_tax: Option<bool>,
+    pub purchase_price_includes_tax: Option<bool>,
     pub opening_qty_e4: Option<i64>,
     pub opening_rate_minor: Option<i64>,
     pub reorder_level_e4: Option<i64>,
@@ -644,6 +664,10 @@ pub fn update_item(
         sets.push("gst_rate_bps = ?");
         values.push(gst_rate_bps.into());
     }
+    if let Some(cess_rate_bps) = patch.cess_rate_bps {
+        sets.push("cess_rate_bps = ?");
+        values.push(cess_rate_bps.into());
+    }
     if let Some(is_service) = patch.is_service {
         sets.push("is_service = ?");
         values.push(i64::from(is_service).into());
@@ -655,6 +679,14 @@ pub fn update_item(
     if let Some(purchase_price_minor) = patch.purchase_price_minor {
         sets.push("purchase_price_minor = ?");
         values.push(purchase_price_minor.into());
+    }
+    if let Some(sale_price_includes_tax) = patch.sale_price_includes_tax {
+        sets.push("sale_price_includes_tax = ?");
+        values.push(i64::from(sale_price_includes_tax).into());
+    }
+    if let Some(purchase_price_includes_tax) = patch.purchase_price_includes_tax {
+        sets.push("purchase_price_includes_tax = ?");
+        values.push(i64::from(purchase_price_includes_tax).into());
     }
     if let Some(opening_qty_e4) = patch.opening_qty_e4 {
         sets.push("opening_qty_e4 = ?");

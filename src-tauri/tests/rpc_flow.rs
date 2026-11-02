@@ -418,6 +418,156 @@ fn unauthenticated_reads_are_refused() {
 }
 
 #[test]
+fn item_price_tax_flow() {
+    let mut app = Harness::new("price-tax");
+
+    app.call(
+        "identity:setup",
+        json!({
+            "name": "Price Tax Traders",
+            "ownerFullName": "Owner",
+            "ownerEmail": "owner@price-tax.test",
+            "ownerPassword": "correct-horse",
+            "stateCode": "27",
+            "booksBeginDate": "2026-04-01"
+        }),
+    );
+
+    let units = app.call("units:list", json!({}));
+    let nos_id = units
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|unit| unit["symbol"] == json!("nos"))
+        .and_then(|unit| unit["id"].as_i64())
+        .expect("Nos unit");
+
+    let party = app.call(
+        "parties:create",
+        json!({
+            "name": "Rice Buyer and Seller",
+            "stateCode": "27",
+            "isCustomer": true,
+            "isSupplier": true,
+            "creditDays": 0
+        }),
+    );
+    let party_id = party["id"].as_i64().expect("party id");
+
+    // Create carries both flags and the cess rate through the repository.
+    let item = app.call(
+        "items:create",
+        json!({
+            "name": "Basmati Rice 1kg",
+            "hsnSac": "1006",
+            "uomId": nos_id,
+            "gstRateBps": 1800,
+            "cessRateBps": 0,
+            "isService": false,
+            "salePriceMinor": 250_000,
+            "purchasePriceMinor": 175_000,
+            "salePriceIncludesTax": true,
+            "purchasePriceIncludesTax": false,
+            "openingQtyE4": 0,
+            "openingRateMinor": 0
+        }),
+    );
+    let item_id = item["id"].as_i64().expect("item id");
+    assert_eq!(item["salePriceIncludesTax"], json!(true), "item: {item}");
+    assert_eq!(item["purchasePriceIncludesTax"], json!(false), "item: {item}");
+    assert_eq!(item["cessRateBps"], json!(0));
+
+    let updated = app.call(
+        "items:update",
+        json!({
+            "id": item_id,
+            "salePriceIncludesTax": false,
+            "purchasePriceIncludesTax": true,
+            "cessRateBps": 1200
+        }),
+    );
+    assert_eq!(updated["salePriceIncludesTax"], json!(false), "updated: {updated}");
+    assert_eq!(updated["purchasePriceIncludesTax"], json!(true), "updated: {updated}");
+    assert_eq!(updated["cessRateBps"], json!(1200));
+
+    // Only 0/1 is a stored flag; the renderer sends booleans, scripts may send
+    // the integer form, and anything else is rejected at the boundary.
+    assert_eq!(
+        app.call_err(
+            "items:update",
+            json!({ "id": item_id, "salePriceIncludesTax": 2 })
+        ),
+        "VALIDATION_ERROR"
+    );
+
+    // Put the item back to the customer-facing defaults for the posting checks.
+    app.call(
+        "items:update",
+        json!({
+            "id": item_id,
+            "salePriceIncludesTax": true,
+            "purchasePriceIncludesTax": false,
+            "cessRateBps": 0
+        }),
+    );
+
+    // A sales line at 2500 inclusive splits into 2118.64 + 381.36.
+    let sale = app.call(
+        "vouchers:post",
+        json!({
+            "requestId": "price-tax-sale-0001",
+            "type": "SALES",
+            "date": "2026-04-10",
+            "partyId": party_id,
+            "placeOfSupplyStateCode": "27",
+            "lines": [{
+                "itemId": item_id,
+                "description": "Basmati Rice 1kg",
+                "qtyE4": 10_000,
+                "rateMinor": 250_000,
+                "rateIncludesTax": true,
+                "discountBps": 0,
+                "gstRateBps": 1800
+            }]
+        }),
+    );
+    let sale_id = sale["id"].as_i64().expect("sale id");
+    let sale_detail = app.call("vouchers:get", json!({ "id": sale_id }));
+    assert_eq!(sale_detail["taxableMinor"].as_i64(), Some(211_864), "{sale_detail}");
+    assert_eq!(sale_detail["cgstMinor"].as_i64(), Some(19_068), "{sale_detail}");
+    assert_eq!(sale_detail["sgstMinor"].as_i64(), Some(19_068), "{sale_detail}");
+    assert_eq!(sale_detail["totalMinor"].as_i64(), Some(250_000), "{sale_detail}");
+
+    // A purchase line at 1750 exclusive posts 1750 + 315 input tax, landing at
+    // 2065 for the customer-facing preview.
+    let purchase = app.call(
+        "vouchers:post",
+        json!({
+            "requestId": "price-tax-purchase-0001",
+            "type": "PURCHASE",
+            "date": "2026-04-11",
+            "partyId": party_id,
+            "placeOfSupplyStateCode": "27",
+            "lines": [{
+                "itemId": item_id,
+                "description": "Basmati Rice 1kg",
+                "qtyE4": 10_000,
+                "rateMinor": 175_000,
+                "rateIncludesTax": false,
+                "discountBps": 0,
+                "gstRateBps": 1800
+            }]
+        }),
+    );
+    let purchase_id = purchase["id"].as_i64().expect("purchase id");
+    let purchase_detail = app.call("vouchers:get", json!({ "id": purchase_id }));
+    assert_eq!(purchase_detail["taxableMinor"].as_i64(), Some(175_000), "{purchase_detail}");
+    assert_eq!(purchase_detail["cgstMinor"].as_i64(), Some(15_750), "{purchase_detail}");
+    assert_eq!(purchase_detail["sgstMinor"].as_i64(), Some(15_750), "{purchase_detail}");
+    assert_eq!(purchase_detail["totalMinor"].as_i64(), Some(206_500), "{purchase_detail}");
+}
+
+#[test]
 fn persisted_login_is_restored_after_restart() {
     let root = std::env::temp_dir().join(format!("crown-books-it-remember-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);

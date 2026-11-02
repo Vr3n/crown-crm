@@ -84,6 +84,21 @@ fn range_check(key: &str, number: i64, min: i64, max: i64) -> AppResult<i64> {
     Ok(number)
 }
 
+/// Patch field for a stored 0/1 flag. The renderer sends booleans; accepting
+/// the integer forms keeps the API usable from scripts and older clients.
+fn optional_flag(value: &Value, key: &str) -> AppResult<Option<bool>> {
+    match value.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Bool(flag)) => Ok(Some(*flag)),
+        Some(Value::Number(number)) => match number.as_i64() {
+            Some(0) => Ok(Some(false)),
+            Some(1) => Ok(Some(true)),
+            _ => Err(AppError::validation(format!("{key} must be 0 or 1"))),
+        },
+        Some(_) => Err(AppError::validation(format!("{key} must be 0 or 1"))),
+    }
+}
+
 fn optional_positive_int(value: &Value, key: &str) -> AppResult<Option<i64>> {
     match value.get(key) {
         None | Some(Value::Null) => Ok(None),
@@ -407,9 +422,13 @@ fn create_item(ctx: &mut Ctx<'_>, input: &Value) -> AppResult<Value> {
         hsn_sac: optional_text(input, "hsnSac", "HSN/SAC", 20)?,
         uom_id: optional_positive_int(input, "uomId")?,
         gst_rate_bps: int_or(input, "gstRateBps", 0, 0, 5000)?,
+        cess_rate_bps: int_or(input, "cessRateBps", 0, 0, 5000)?,
         is_service: opt_bool(input, "isService").unwrap_or(false),
         sale_price_minor: int_or(input, "salePriceMinor", 0, 0, i64::MAX)?,
         purchase_price_minor: int_or(input, "purchasePriceMinor", 0, 0, i64::MAX)?,
+        sale_price_includes_tax: optional_flag(input, "salePriceIncludesTax")?.unwrap_or(true),
+        purchase_price_includes_tax: optional_flag(input, "purchasePriceIncludesTax")?
+            .unwrap_or(false),
         opening_qty_e4: int_or(input, "openingQtyE4", 0, 0, i64::MAX)?,
         opening_rate_minor: int_or(input, "openingRateMinor", 0, 0, i64::MAX)?,
         reorder_level_e4: int_or(input, "reorderLevelE4", 0, 0, i64::MAX)?,
@@ -442,9 +461,12 @@ fn update_item(ctx: &mut Ctx<'_>, input: &Value) -> AppResult<Value> {
             },
         },
         gst_rate_bps: optional_int_range(input, "gstRateBps", 0, 5000)?,
+        cess_rate_bps: optional_int_range(input, "cessRateBps", 0, 5000)?,
         is_service: opt_bool(input, "isService"),
         sale_price_minor: optional_int_range(input, "salePriceMinor", 0, i64::MAX)?,
         purchase_price_minor: optional_int_range(input, "purchasePriceMinor", 0, i64::MAX)?,
+        sale_price_includes_tax: optional_flag(input, "salePriceIncludesTax")?,
+        purchase_price_includes_tax: optional_flag(input, "purchasePriceIncludesTax")?,
         opening_qty_e4: optional_int_range(input, "openingQtyE4", 0, i64::MAX)?,
         opening_rate_minor: optional_int_range(input, "openingRateMinor", 0, i64::MAX)?,
         reorder_level_e4: optional_int_range(input, "reorderLevelE4", 0, i64::MAX)?,
@@ -868,6 +890,19 @@ mod tests {
         );
 
         assert!(assert_valid_business_date("2026-02-28", "effective from").is_ok());
+    }
+
+    #[test]
+    fn reads_item_flags_as_booleans_or_zero_one() {
+        assert_eq!(optional_flag(&json!({ "flag": true }), "flag").ok(), Some(Some(true)));
+        assert_eq!(optional_flag(&json!({ "flag": false }), "flag").ok(), Some(Some(false)));
+        assert_eq!(optional_flag(&json!({ "flag": 1 }), "flag").ok(), Some(Some(true)));
+        assert_eq!(optional_flag(&json!({ "flag": 0 }), "flag").ok(), Some(Some(false)));
+        assert_eq!(optional_flag(&json!({ "flag": null }), "flag").ok(), Some(None));
+        assert_eq!(optional_flag(&json!({}), "flag").ok(), Some(None));
+
+        let rejected = optional_flag(&json!({ "flag": 2 }), "flag").err();
+        assert_eq!(rejected.map(|error| error.message).as_deref(), Some("flag must be 0 or 1"));
     }
 
     #[test]

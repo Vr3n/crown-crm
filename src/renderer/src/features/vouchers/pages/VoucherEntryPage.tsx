@@ -4,10 +4,17 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Receipt, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { formatMinor, minorToMajor, parseToMinor } from '@/lib/money'
 import type { ItemRow } from '../../../../../shared/contracts/masters'
 import type { PostVoucherInput } from '../../../../../shared/contracts/vouchers'
+import {
+  applyBps,
+  grossFromExclusive,
+  roundHalfUpDiv,
+  splitInclusivePrice
+} from '../../../../../shared/price'
 import { ItemPicker } from '../components/item-picker'
 import { PartyPicker } from '../components/party-picker'
 
@@ -21,6 +28,7 @@ interface EntryLine {
   qty: string
   uom: string
   rate: string
+  rateIncludesTax: boolean
   disc: string
   gst: string
 }
@@ -30,6 +38,7 @@ interface LinePreview {
   cgst: number
   sgst: number
   igst: number
+  cess: number
   total: number
 }
 
@@ -105,6 +114,7 @@ const HEADERS = [
   'Rate',
   'Disc %',
   'GST %',
+  'Incl. tax',
   'Amount',
   ''
 ]
@@ -138,18 +148,11 @@ function blankLine(): EntryLine {
     qty: '1',
     uom: '',
     rate: '',
+    rateIncludesTax: false,
     disc: '0',
     gst: '0'
   }
 }
-
-function roundHalfUpDiv(numerator: number, denominator: number): number {
-  return (
-    Math.sign(numerator) * Math.floor((Math.abs(numerator) * 2 + denominator) / (2 * denominator))
-  )
-}
-
-const applyBps = (amount: number, bps: number): number => roundHalfUpDiv(amount * bps, 10_000)
 
 function toQtyE4(value: string): number {
   const qty = Number(value)
@@ -163,18 +166,49 @@ function toBps(value: string, max: number): number {
   return Number.isFinite(percent) && percent > 0 ? Math.min(max, Math.round(percent * 100)) : 0
 }
 
-function previewLine(line: EntryLine, intraState: boolean): LinePreview {
+/**
+ * A local preview of one line. It must agree with `compute_line_tax` in
+ * `src-tauri/src/vouchers/posting.rs`, including the item's cess rate, so the
+ * summary and the posted voucher cannot disagree.
+ */
+function previewLine(line: EntryLine, intraState: boolean, cessRateBps = 0): LinePreview {
   const gross = roundHalfUpDiv(toQtyE4(line.qty) * toRateMinor(line.rate), 10_000)
-  const taxable = gross - applyBps(gross, toBps(line.disc, 10_000))
+  const discount = applyBps(gross, toBps(line.disc, 10_000))
+  const net = gross - discount
   const gstRate = toBps(line.gst, 5_000)
-  if (!intraState) {
-    const igst = applyBps(taxable, gstRate)
-    return { taxable, cgst: 0, sgst: 0, igst, total: taxable + igst }
+
+  if (line.rateIncludesTax) {
+    // The typed rate is what the customer pays; extract taxable, GST and cess
+    // from it, then split GST into the tax heads.
+    const split = splitInclusivePrice(net, gstRate, cessRateBps)
+    const { taxableMinor: taxable, gstMinor: gst, cessMinor: cess, grossMinor } = split
+    if (!intraState) {
+      return { taxable, cgst: 0, sgst: 0, igst: gst, cess, total: grossMinor }
+    }
+    const cgst = Math.floor(gst / 2)
+    const sgst = gst - cgst
+    return { taxable, cgst, sgst, igst: 0, cess, total: grossMinor }
   }
+
+  const split = grossFromExclusive(net, gstRate, cessRateBps)
+  const taxable = split.taxableMinor
+  const cess = split.cessMinor
+  if (!intraState) {
+    return {
+      taxable,
+      cgst: 0,
+      sgst: 0,
+      igst: split.gstMinor,
+      cess,
+      total: split.grossMinor
+    }
+  }
+  // Intra-state exclusive lines round each tax head separately, exactly like
+  // `compute_line_tax`: the two halves can differ by one paisa for odd rates.
   const half = Math.floor(gstRate / 2)
   const cgst = applyBps(taxable, half)
   const sgst = applyBps(taxable, gstRate - half)
-  return { taxable, cgst, sgst, igst: 0, total: taxable + cgst + sgst }
+  return { taxable, cgst, sgst, igst: 0, cess, total: taxable + cgst + sgst + cess }
 }
 
 function previewTotals(rows: LinePreview[]): LinePreview & { roundOff: number } {
@@ -182,9 +216,10 @@ function previewTotals(rows: LinePreview[]): LinePreview & { roundOff: number } 
   const cgst = rows.reduce((sum, row) => sum + row.cgst, 0)
   const sgst = rows.reduce((sum, row) => sum + row.sgst, 0)
   const igst = rows.reduce((sum, row) => sum + row.igst, 0)
-  const preRound = taxable + cgst + sgst + igst
+  const cess = rows.reduce((sum, row) => sum + row.cess, 0)
+  const preRound = taxable + cgst + sgst + igst + cess
   const total = roundHalfUpDiv(preRound, 100) * 100
-  return { taxable, cgst, sgst, igst, total, roundOff: total - preRound }
+  return { taxable, cgst, sgst, igst, cess, total, roundOff: total - preRound }
 }
 
 export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Element {
@@ -214,11 +249,18 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
     queryFn: () => window.api.items.list()
   })
 
+  const cessByItem = new Map(items.map((item) => [item.id, item.cessRateBps]))
   const party = parties.find((row) => row.id === partyId) ?? null
   const meta = META[type]
   const effectivePlace = placeOfSupply || party?.stateCode || company?.stateCode || '27'
   const intraState = effectivePlace === (company?.stateCode ?? '27')
-  const previews = lines.map((line) => previewLine(line, intraState))
+  const previews = lines.map((line) =>
+    previewLine(
+      line,
+      intraState,
+      line.itemId === null ? 0 : (cessByItem.get(line.itemId) ?? 0)
+    )
+  )
   const totals = previewTotals(previews)
   const usable = lines.filter((line) => line.description.trim().length > 0)
   const badQty = usable.some((line) => toQtyE4(line.qty) <= 0)
@@ -265,7 +307,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
         uom: line.uom.trim() || null,
         qtyE4: toQtyE4(line.qty),
         rateMinor: toRateMinor(line.rate),
-        rateIncludesTax: false,
+        rateIncludesTax: line.rateIncludesTax,
         discountBps: toBps(line.disc, 10_000),
         gstRateBps: toBps(line.gst, 5_000)
       })),
@@ -333,6 +375,9 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           hsn: item.hsnSac ?? '',
           uom: item.uom ?? '',
           rate: minorToMajor(priceMinor, 'INR'),
+          // Sales inherit the item's customer-facing flag; purchases always
+          // post tax-exclusive so input tax stays a separate line.
+          rateIncludesTax: sale ? item.salePriceIncludesTax : false,
           gst: String(item.gstRateBps / 100),
           qty: line.qty || '1'
         }
@@ -480,15 +525,16 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
         <table className="w-full table-fixed border-collapse text-[0.875rem]">
           <colgroup>
             <col className="w-[3%]" />
-            <col className="w-[16%]" />
-            <col className="w-[22%]" />
+            <col className="w-[15%]" />
+            <col className="w-[18%]" />
             <col className="w-[8%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
             <col className="w-[10%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
-            <col className="w-[11%]" />
+            <col className="w-[6%]" />
+            <col className="w-[10%]" />
             <col className="w-[2%]" />
           </colgroup>
           <thead className="sticky top-0 z-10">
@@ -510,7 +556,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           <tbody>
             {lines.length === 0 ? (
               <tr className="h-9 border-b border-border">
-                <td colSpan={11} className="px-3 text-[0.875rem] text-muted-foreground">
+                <td colSpan={12} className="px-3 text-[0.875rem] text-muted-foreground">
                   No lines yet. Add a line or press Alt+A.
                 </td>
               </tr>
@@ -541,6 +587,17 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                     />
                   </td>
                 ))}
+                <td className="p-0">
+                  <div className="flex h-9 items-center justify-center">
+                    <Checkbox
+                      checked={line.rateIncludesTax}
+                      onCheckedChange={(checked) =>
+                        updateLine(line.key, { rateIncludesTax: checked === true })
+                      }
+                      aria-label={`Rate includes tax for line ${index + 1}`}
+                    />
+                  </div>
+                </td>
                 <td className="px-2 text-right font-mono text-[0.875rem] tabular-nums">
                   {formatMinor(previews[index].total, 'INR')}
                 </td>
@@ -600,6 +657,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           <TotalRow label="CGST" value={totals.cgst} />
           <TotalRow label="SGST" value={totals.sgst} />
           <TotalRow label="IGST" value={totals.igst} />
+          <TotalRow label="Cess" value={totals.cess} />
           <TotalRow label="Round off" value={totals.roundOff} />
           <div className="mt-2 flex items-baseline justify-between border-t border-rule-strong pt-2">
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]">

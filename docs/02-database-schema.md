@@ -168,6 +168,8 @@ gst_rate_bps, cess_rate_bps
 is_service
 track_serial
 sale_price_minor, purchase_price_minor
+sale_price_includes_tax      integer not null default 1   -- 0/1
+purchase_price_includes_tax  integer not null default 0   -- 0/1
 opening_qty_e4, opening_rate_minor
 reorder_level_e4
 is_active, notes
@@ -176,6 +178,11 @@ unique (company_id, sku) where sku is not null
 index (company_id, name)
 index (company_id, hsn_sac)
 ```
+
+`sale_price_minor` and `purchase_price_minor` are the price as typed. The flags
+say whether tax is contained inside that number; the item form does not convert
+between gross and taxable on save. Sales default inclusive, purchases exclusive.
+See `21-item-price-tax.md`.
 
 ### tax_rates
 
@@ -357,6 +364,7 @@ The trial balance is the user facing version of check one.
 
 | Version | Name | Content |
 |---|---|---|
+| 4 | `item_price_tax` | Adds `items.sale_price_includes_tax` (default 1) and `items.purchase_price_includes_tax` (default 0), both `CHECK (... IN (0,1))`. |
 | 32 | `accounting_core` | Drop gym tables, rename tenancy to company, create masters and document tables, seed groups, accounts, units, tax rates, payment methods |
 | 33 | `accounting_indexes` | Reporting indexes measured on 50k vouchers |
 | 34 | `accounting_seed_roles` | Owner, Accountant, Billing Clerk, Auditor with the new permission codes |

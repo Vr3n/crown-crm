@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useForm } from '@tanstack/react-form'
+import { useForm, useStore } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Boxes, CircleSlash, Package, Plus, Search } from 'lucide-react'
 import { toast } from 'sonner'
@@ -37,6 +37,11 @@ import {
 } from '@/components/ui/select'
 import { FIELD_HELP } from '@/lib/form-help'
 import { formatMinor, formatRate, minorToMajor } from '@/lib/money'
+import {
+  grossFromExclusive,
+  splitInclusivePrice,
+  type PriceSplit
+} from '../../../../../shared/price'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type { CreateItemInput, ItemRow, TaxRateRow } from '../../../../../shared/contracts/masters'
@@ -61,25 +66,31 @@ interface ItemForm {
   sku: string
   hsnSac: string
   uomId: string
-  gstRateBps: string
+  /** Composite `gstBps:cessBps` key, because two rows can share a GST rate. */
+  taxRateKey: string
   salePrice: string
   purchasePrice: string
+  salePriceIncludesTax: boolean
   openingQty: string
   openingRate: string
   reorderLevel: string
   isService: boolean
 }
 
-type ItemTextKey = Exclude<keyof ItemForm, 'isService' | 'uomId' | 'gstRateBps'>
+type ItemTextKey = Exclude<
+  keyof ItemForm,
+  'isService' | 'uomId' | 'taxRateKey' | 'salePriceIncludesTax'
+>
 
 const blankForm = (): ItemForm => ({
   name: '',
   sku: '',
   hsnSac: '',
   uomId: '0',
-  gstRateBps: '0',
+  taxRateKey: '0:0',
   salePrice: '0',
   purchasePrice: '0',
+  salePriceIncludesTax: true,
   openingQty: '0',
   openingRate: '0',
   reorderLevel: '0',
@@ -91,9 +102,10 @@ const toForm = (item: ItemRow): ItemForm => ({
   sku: item.sku ?? '',
   hsnSac: item.hsnSac ?? '',
   uomId: String(item.uomId ?? 0),
-  gstRateBps: String(item.gstRateBps),
+  taxRateKey: `${item.gstRateBps}:${item.cessRateBps}`,
   salePrice: minorToMajor(item.salePriceMinor, 'INR'),
   purchasePrice: minorToMajor(item.purchasePriceMinor, 'INR'),
+  salePriceIncludesTax: item.salePriceIncludesTax,
   openingQty: qtyText(item.openingQtyE4),
   openingRate: minorToMajor(item.openingRateMinor, 'INR'),
   // The list row does not expose the reorder level; blank means keep it.
@@ -144,9 +156,27 @@ function StockLevel({ item }: { item: ItemRow }): React.JSX.Element {
   return <span className="font-mono text-[0.875rem] tabular-nums">{quantity(item.stockQtyE4)}</span>
 }
 
-function Margin({ sale, purchase }: { sale: number; purchase: number }): React.JSX.Element {
-  if (purchase <= 0) return <span className="text-muted-foreground">—</span>
-  const percent = Math.round(((sale - purchase) / purchase) * 100)
+/** The gross and taxable view of one side of an item's price. */
+function itemPriceSplit(item: ItemRow, side: 'sale' | 'purchase'): PriceSplit {
+  const priceMinor = side === 'sale' ? item.salePriceMinor : item.purchasePriceMinor
+  const includesTax =
+    side === 'sale' ? item.salePriceIncludesTax : item.purchasePriceIncludesTax
+  return includesTax
+    ? splitInclusivePrice(priceMinor, item.gstRateBps, item.cessRateBps)
+    : grossFromExclusive(priceMinor, item.gstRateBps, item.cessRateBps)
+}
+
+function Margin({
+  saleTaxableMinor,
+  landedCostMinor
+}: {
+  saleTaxableMinor: number
+  landedCostMinor: number
+}): React.JSX.Element {
+  if (landedCostMinor <= 0) return <span className="text-muted-foreground">—</span>
+  const percent = Math.round(
+    ((saleTaxableMinor - landedCostMinor) / landedCostMinor) * 100
+  )
   return (
     <span className={percent < 0 ? 'text-destructive' : 'text-success'}>
       {percent > 0 ? '+' : ''}
@@ -160,9 +190,10 @@ const itemFormSchema = z.object({
   sku: z.string(),
   hsnSac: z.string(),
   uomId: z.string(),
-  gstRateBps: z.string(),
+  taxRateKey: z.string(),
   salePrice: z.string().refine((value) => toMinor(value) >= 0, 'Cannot be negative'),
   purchasePrice: z.string().refine((value) => toMinor(value) >= 0, 'Cannot be negative'),
+  salePriceIncludesTax: z.boolean(),
   openingQty: z.string().refine((value) => toE4(value) >= 0, 'Cannot be negative'),
   openingRate: z.string().refine((value) => toMinor(value) >= 0, 'Cannot be negative'),
   reorderLevel: z.string().refine((value) => toE4(value) >= 0, 'Cannot be negative'),
@@ -476,14 +507,14 @@ export function ItemsPage(): React.JSX.Element {
                   'GST',
                   'Stock',
                   'Sale price',
-                  'Purchase price',
+                  'Landed cost',
                   'Margin',
                   'Status'
                 ].map((heading) => (
                   <th
                     key={heading}
                     scope="col"
-                    className={`${TH} ${['GST', 'Stock', 'Sale price', 'Purchase price', 'Margin'].includes(heading) ? 'text-right' : ''}`}
+                    className={`${TH} ${['GST', 'Stock', 'Sale price', 'Landed cost', 'Margin'].includes(heading) ? 'text-right' : ''}`}
                   >
                     {heading}
                   </th>
@@ -504,73 +535,91 @@ export function ItemsPage(): React.JSX.Element {
                   </td>
                 </tr>
               ) : (
-                rows.map((item) => (
-                  <tr key={item.id} className="hover:bg-muted/40">
-                    <td className={TD}>
-                      <div className="flex items-center gap-1.5">
-                        <Link
-                          to={`/items/${item.id}`}
-                          className="text-[0.9375rem] font-medium hover:text-primary hover:underline"
-                        >
-                          {item.name}
-                        </Link>
-                        {item.isService ? (
-                          <Badge variant="outline" className={TAG}>
-                            Service
-                          </Badge>
-                        ) : null}
-                      </div>
-                      {item.sku ? (
-                        <div className="font-mono text-[0.6875rem] text-muted-foreground">
-                          {item.sku}
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className={`${TD} font-mono text-[0.875rem] text-muted-foreground`}>
-                      {item.hsnSac ?? '--'}
-                    </td>
-                    <td className={`${TD} text-[0.875rem] text-muted-foreground`}>
-                      {item.uom ?? '--'}
-                    </td>
-                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
-                      {formatRate(item.gstRateBps)}
-                    </td>
-                    <td className={`${TD} text-right`}>
-                      <StockLevel item={item} />
-                    </td>
-                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
-                      {formatMinor(item.salePriceMinor, 'INR')}
-                    </td>
-                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
-                      {formatMinor(item.purchasePriceMinor, 'INR')}
-                    </td>
-                    <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
-                      <Margin sale={item.salePriceMinor} purchase={item.purchasePriceMinor} />
-                    </td>
-                    <td className={TD}>
-                      <StatusPill tone={item.isActive ? 'neutral' : 'destructive'}>
-                        {item.isActive ? 'Active' : 'Inactive'}
-                      </StatusPill>
-                    </td>
-                    <td className={`${TD} text-right`}>
-                      <div className="flex justify-end gap-0.5">
-                        <Button variant="ghost" size="xs" onClick={() => show(item)}>
-                          Edit
-                        </Button>
-                        {item.isActive ? (
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            className="text-muted-foreground hover:text-destructive"
-                            onClick={() => setTarget(item)}
+                rows.map((item) => {
+                  const sale = itemPriceSplit(item, 'sale')
+                  const purchase = itemPriceSplit(item, 'purchase')
+                  return (
+                    <tr key={item.id} className="hover:bg-muted/40">
+                      <td className={TD}>
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            to={`/items/${item.id}`}
+                            className="text-[0.9375rem] font-medium hover:text-primary hover:underline"
                           >
-                            Deactivate
-                          </Button>
+                            {item.name}
+                          </Link>
+                          {item.isService ? (
+                            <Badge variant="outline" className={TAG}>
+                              Service
+                            </Badge>
+                          ) : null}
+                        </div>
+                        {item.sku ? (
+                          <div className="font-mono text-[0.6875rem] text-muted-foreground">
+                            {item.sku}
+                          </div>
                         ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className={`${TD} font-mono text-[0.875rem] text-muted-foreground`}>
+                        {item.hsnSac ?? '--'}
+                      </td>
+                      <td className={`${TD} text-[0.875rem] text-muted-foreground`}>
+                        {item.uom ?? '--'}
+                      </td>
+                      <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
+                        {formatRate(item.gstRateBps)}
+                        {item.cessRateBps > 0 ? (
+                          <div className="text-[0.6875rem] text-muted-foreground">
+                            + {formatRate(item.cessRateBps)} cess
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className={`${TD} text-right`}>
+                        <StockLevel item={item} />
+                      </td>
+                      <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
+                        {formatMinor(sale.grossMinor, 'INR')}
+                        <div className="text-[0.6875rem] font-normal text-muted-foreground">
+                          Taxable {formatMinor(sale.taxableMinor, 'INR')}
+                        </div>
+                      </td>
+                      <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
+                        {formatMinor(purchase.grossMinor, 'INR')}
+                        <div className="text-[0.6875rem] font-normal text-muted-foreground">
+                          Taxable {formatMinor(purchase.taxableMinor, 'INR')}
+                        </div>
+                      </td>
+                      <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
+                        <Margin
+                          saleTaxableMinor={sale.taxableMinor}
+                          landedCostMinor={purchase.grossMinor}
+                        />
+                      </td>
+                      <td className={TD}>
+                        <StatusPill tone={item.isActive ? 'neutral' : 'destructive'}>
+                          {item.isActive ? 'Active' : 'Inactive'}
+                        </StatusPill>
+                      </td>
+                      <td className={`${TD} text-right`}>
+                        <div className="flex justify-end gap-0.5">
+                          <Button variant="ghost" size="xs" onClick={() => show(item)}>
+                            Edit
+                          </Button>
+                          {item.isActive ? (
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              className="text-muted-foreground hover:text-destructive"
+                              onClick={() => setTarget(item)}
+                            >
+                              Deactivate
+                            </Button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
@@ -613,7 +662,7 @@ export function ItemsPage(): React.JSX.Element {
  * error clears the moment the value is fixed. Required markers and field help
  * come from the shared form primitives.
  */
-function ItemDialog({
+export function ItemDialog({
   open,
   onOpenChange,
   item,
@@ -631,20 +680,39 @@ function ItemDialog({
   const queryClient = useQueryClient()
   const editing = item !== null
 
-  // Item lines store GST only, so a rate with cess is not selectable here. A
-  // stored legacy rate (for example 12%) stays visible while editing.
+  // A rate is a GST/cess pair, so two rows can share a GST rate. The select
+  // key carries both. A stored legacy rate stays visible while editing.
   const rateOptions = (() => {
-    const byBps = new Map<number, string>()
+    const byKey = new Map<
+      string,
+      { key: string; gstBps: number; cessBps: number; label: string }
+    >()
     for (const rate of taxRates) {
-      if (rate.cessRateBps > 0) continue
-      byBps.set(rate.gstRateBps, rate.description ?? `GST ${formatRate(rate.gstRateBps)}`)
+      const key = `${rate.gstRateBps}:${rate.cessRateBps}`
+      if (byKey.has(key)) continue
+      byKey.set(key, {
+        key,
+        gstBps: rate.gstRateBps,
+        cessBps: rate.cessRateBps,
+        label: rate.description ?? `GST ${formatRate(rate.gstRateBps)}`
+      })
     }
-    if (item && !byBps.has(item.gstRateBps)) {
-      byBps.set(item.gstRateBps, `${formatRate(item.gstRateBps)} (legacy)`)
+    if (item) {
+      const key = `${item.gstRateBps}:${item.cessRateBps}`
+      if (!byKey.has(key)) {
+        const cess =
+          item.cessRateBps > 0 ? ` + ${formatRate(item.cessRateBps)} cess` : ''
+        byKey.set(key, {
+          key,
+          gstBps: item.gstRateBps,
+          cessBps: item.cessRateBps,
+          label: `${formatRate(item.gstRateBps)}${cess} (legacy)`
+        })
+      }
     }
-    return [...byBps.entries()]
-      .map(([bps, label]) => ({ bps, label }))
-      .sort((a, b) => a.bps - b.bps)
+    return [...byKey.values()].sort(
+      (a, b) => a.gstBps - b.gstBps || a.cessBps - b.cessBps
+    )
   })()
 
   const save = useMutation({
@@ -672,15 +740,21 @@ function ItemDialog({
     validators: { onSubmit: itemFormSchema },
     onSubmitInvalid: ({ formApi }) => focusFirstError(formApi),
     onSubmit: ({ value }) => {
+      const [gstPart, cessPart] = value.taxRateKey.split(':')
       const payload: ItemPayload = {
         name: value.name.trim(),
         sku: value.sku.trim() || null,
         hsnSac: value.hsnSac.trim() || null,
         uomId: Number(value.uomId) || null,
-        gstRateBps: Number(value.gstRateBps),
+        gstRateBps: Number(gstPart) || 0,
+        cessRateBps: Number(cessPart) || 0,
         isService: value.isService,
         salePriceMinor: toMinor(value.salePrice),
         purchasePriceMinor: toMinor(value.purchasePrice),
+        salePriceIncludesTax: value.salePriceIncludesTax,
+        // Purchase lines post tax-exclusive; the item form never stores an
+        // inclusive purchase price.
+        purchasePriceIncludesTax: false,
         openingQtyE4: toE4(value.openingQty),
         openingRateMinor: toMinor(value.openingRate)
       }
@@ -696,6 +770,21 @@ function ItemDialog({
       })
     }
   })
+
+  const values = useStore(form.store, (state) => state.values)
+  const selectedRate = rateOptions.find((rate) => rate.key === values.taxRateKey)
+  const gstRateBps = selectedRate?.gstBps ?? 0
+  const cessRateBps = selectedRate?.cessBps ?? 0
+  const saleSplit = values.salePriceIncludesTax
+    ? splitInclusivePrice(toMinor(values.salePrice), gstRateBps, cessRateBps)
+    : grossFromExclusive(toMinor(values.salePrice), gstRateBps, cessRateBps)
+  // A purchase is always entered and posted tax-exclusive; the breakup still
+  // shows the landed cost the supplier's tax produces.
+  const purchaseSplit = grossFromExclusive(
+    toMinor(values.purchasePrice),
+    gstRateBps,
+    cessRateBps
+  )
 
   function textField(name: ItemTextKey): React.JSX.Element {
     const meta = TEXT_FIELDS[name]
@@ -727,6 +816,54 @@ function ItemDialog({
           />
         )}
       </form.Field>
+    )
+  }
+
+  /**
+   * A price field plus its live breakup. The breakup is the only place the form
+   * explains what the typed number means, so it updates on every keystroke.
+   */
+  function priceField(name: 'salePrice' | 'purchasePrice'): React.JSX.Element {
+    const sale = name === 'salePrice'
+    const split = sale ? saleSplit : purchaseSplit
+    const typedMinor = toMinor(values[name])
+    const cessText =
+      cessRateBps > 0
+        ? ` · Cess ${formatRate(cessRateBps)} ${formatMinor(split.cessMinor, 'INR')}`
+        : ''
+    return (
+      <div className="flex flex-col gap-1.5 sm:col-span-2">
+        {textField(name)}
+        <div className="border border-border bg-muted/30 px-2.5 py-2 font-mono text-[0.75rem] tabular-nums text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span>
+              {sale ? 'Sale price' : 'Purchase price'} {formatMinor(typedMinor, 'INR')}
+            </span>
+            {sale ? (
+              <form.Field name="salePriceIncludesTax">
+                {(field) => (
+                  <label
+                    htmlFor="item-sale-includes-tax"
+                    className="flex cursor-pointer items-center gap-1.5 font-sans text-[0.75rem] text-foreground"
+                  >
+                    <Checkbox
+                      id="item-sale-includes-tax"
+                      checked={field.state.value}
+                      onCheckedChange={(checked) => field.handleChange(checked === true)}
+                    />
+                    Price includes tax
+                  </label>
+                )}
+              </form.Field>
+            ) : null}
+          </div>
+          <p className="mt-1 leading-relaxed">
+            {sale
+              ? `Taxable ${formatMinor(split.taxableMinor, 'INR')} · GST ${formatRate(gstRateBps)} ${formatMinor(split.gstMinor, 'INR')}${cessText} · Customer pays ${formatMinor(split.grossMinor, 'INR')}`
+              : `GST ${formatRate(gstRateBps)} ${formatMinor(split.gstMinor, 'INR')}${cessText} · Landed ${formatMinor(split.grossMinor, 'INR')}`}
+          </p>
+        </div>
+      </div>
     )
   }
 
@@ -798,11 +935,11 @@ function ItemDialog({
             </form.Field>
 
             <form.Field
-              name="gstRateBps"
+              name="taxRateKey"
               validators={{
-                onBlur: ({ value }) => itemFieldError('gstRateBps', value),
-                onChange: ({ value }) => itemFieldError('gstRateBps', value),
-                onSubmit: ({ value }) => itemFieldError('gstRateBps', value)
+                onBlur: ({ value }) => itemFieldError('taxRateKey', value),
+                onChange: ({ value }) => itemFieldError('taxRateKey', value),
+                onSubmit: ({ value }) => itemFieldError('taxRateKey', value)
               }}
             >
               {(field) => (
@@ -823,11 +960,11 @@ function ItemDialog({
                         void field.validate('blur')
                       }}
                     >
-                      <SelectValue />
+                      <SelectValue placeholder="Choose a GST rate" />
                     </SelectTrigger>
                     <SelectContent>
                       {rateOptions.map((rate) => (
-                        <SelectItem key={rate.bps} value={String(rate.bps)}>
+                        <SelectItem key={rate.key} value={rate.key}>
                           {rate.label}
                         </SelectItem>
                       ))}
@@ -855,8 +992,8 @@ function ItemDialog({
               )}
             </form.Field>
 
-            {textField('salePrice')}
-            {textField('purchasePrice')}
+            {priceField('purchasePrice')}
+            {priceField('salePrice')}
             {textField('openingQty')}
             {textField('openingRate')}
             {textField('reorderLevel')}
