@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "description": "Single geometry source for the printed invoice. Millimetres for coordinates and sizes, points for stroke weights. Read by the Rust printpdf builder and the React sheet.",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297
+  },
+  "marginsMm": {
+    "top": 8,
+    "right": 12,
+    "bottom": 6,
+    "left": 12
+  },
+  "frameMm": {
+    "top": 5,
+    "right": 6,
+    "bottom": 5,
+    "left": 6
+  },
+  "panels": {
+    "headGapMm": 5,
+    "metaWidthMm": 92,
+    "buyerGapMm": 4.5,
+    "bottomGapMm": 5,
+    "totalsWidthMm": 76,
+    "declarationSplitMm": 118,
+    "signatoryWidthMm": 62
+  },
+  "itemTable": {
+    "headerHeightMm": 7,
+    "rowHeightMm": 7.2,
+    "bottomMm": 268,
+    "minHeightMm": 52,
+    "columns": [
+      { "key": "sno", "weight": 7, "align": "right" },
+      { "key": "description", "weight": 39, "align": "left" },
+      { "key": "hsn", "weight": 13, "align": "center" },
+      { "key": "qty", "weight": 11, "align": "right" },
+      { "key": "rate", "weight": 15, "align": "right" },
+      { "key": "per", "weight": 8, "align": "center" },
+      { "key": "discount", "weight": 10, "align": "right" },
+      { "key": "amount", "weight": 19, "align": "right" }
+    ]
+  },
+  "taxSummary": {
+    "headerHeightMm": 6.4,
+    "rowHeightMm": 6.2,
+    "columns": {
+      "hsn": 16,
+      "taxable": 18,
+      "rate": 11,
+      "tax": 15,
+      "cessRate": 10,
+      "cess": 14,
+      "total": 18
+    }
+  },
+  "borderPt": {
+    "outer": 0.8,
+    "section": 0.5,
+    "cell": 0.4,
+    "total": 0.8
+  },
+  "text": {
+    "cellPaddingXMm": 1.5,
+    "cellPaddingYMm": 1.3
+  }
+}
