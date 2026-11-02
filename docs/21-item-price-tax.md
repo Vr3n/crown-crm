@@ -66,8 +66,10 @@ this change adds tests for those paths rather than a second calculator.
 - **Voucher entry** fills the line rate from the item's typed price. Sales and
   credit notes inherit `salePriceIncludesTax`; purchases and debit notes start
   exclusive. Each line has an **Incl. tax** toggle that changes the preview's
-  taxable/tax split and is submitted as `rateIncludesTax`. Purchase lines always
-  post tax-exclusive so input tax stays a separate ledger line.
+  taxable/tax split and is submitted as `rateIncludesTax`. The preview also
+  reads the selected item's cess rate, so its taxable, GST, cess and total agree
+  with `compute_line_tax` on the server. Purchase lines always post
+  tax-exclusive so input tax stays a separate ledger line.
 
 ## State machine
 

@@ -9,6 +9,12 @@ import { cn } from '@/lib/utils'
 import { formatMinor, minorToMajor, parseToMinor } from '@/lib/money'
 import type { ItemRow } from '../../../../../shared/contracts/masters'
 import type { PostVoucherInput } from '../../../../../shared/contracts/vouchers'
+import {
+  applyBps,
+  grossFromExclusive,
+  roundHalfUpDiv,
+  splitInclusivePrice
+} from '../../../../../shared/price'
 import { ItemPicker } from '../components/item-picker'
 import { PartyPicker } from '../components/party-picker'
 
@@ -32,6 +38,7 @@ interface LinePreview {
   cgst: number
   sgst: number
   igst: number
+  cess: number
   total: number
 }
 
@@ -147,14 +154,6 @@ function blankLine(): EntryLine {
   }
 }
 
-function roundHalfUpDiv(numerator: number, denominator: number): number {
-  return (
-    Math.sign(numerator) * Math.floor((Math.abs(numerator) * 2 + denominator) / (2 * denominator))
-  )
-}
-
-const applyBps = (amount: number, bps: number): number => roundHalfUpDiv(amount * bps, 10_000)
-
 function toQtyE4(value: string): number {
   const qty = Number(value)
   return Number.isFinite(qty) && qty > 0 ? Math.round(qty * 10_000) : 0
@@ -167,32 +166,49 @@ function toBps(value: string, max: number): number {
   return Number.isFinite(percent) && percent > 0 ? Math.min(max, Math.round(percent * 100)) : 0
 }
 
-function previewLine(line: EntryLine, intraState: boolean): LinePreview {
+/**
+ * A local preview of one line. It must agree with `compute_line_tax` in
+ * `src-tauri/src/vouchers/posting.rs`, including the item's cess rate, so the
+ * summary and the posted voucher cannot disagree.
+ */
+function previewLine(line: EntryLine, intraState: boolean, cessRateBps = 0): LinePreview {
   const gross = roundHalfUpDiv(toQtyE4(line.qty) * toRateMinor(line.rate), 10_000)
   const discount = applyBps(gross, toBps(line.disc, 10_000))
   const net = gross - discount
   const gstRate = toBps(line.gst, 5_000)
+
   if (line.rateIncludesTax) {
-    // The typed rate is what the customer pays; extract the taxable value and
-    // split the tax exactly like `compute_line_tax` does for an inclusive line.
-    const taxable = roundHalfUpDiv(net * 10_000, 10_000 + gstRate)
-    const tax = net - taxable
+    // The typed rate is what the customer pays; extract taxable, GST and cess
+    // from it, then split GST into the tax heads.
+    const split = splitInclusivePrice(net, gstRate, cessRateBps)
+    const { taxableMinor: taxable, gstMinor: gst, cessMinor: cess, grossMinor } = split
     if (!intraState) {
-      return { taxable, cgst: 0, sgst: 0, igst: tax, total: net }
+      return { taxable, cgst: 0, sgst: 0, igst: gst, cess, total: grossMinor }
     }
-    const cgst = Math.floor(tax / 2)
-    const sgst = tax - cgst
-    return { taxable, cgst, sgst, igst: 0, total: net }
+    const cgst = Math.floor(gst / 2)
+    const sgst = gst - cgst
+    return { taxable, cgst, sgst, igst: 0, cess, total: grossMinor }
   }
-  const taxable = net
+
+  const split = grossFromExclusive(net, gstRate, cessRateBps)
+  const taxable = split.taxableMinor
+  const cess = split.cessMinor
   if (!intraState) {
-    const igst = applyBps(taxable, gstRate)
-    return { taxable, cgst: 0, sgst: 0, igst, total: taxable + igst }
+    return {
+      taxable,
+      cgst: 0,
+      sgst: 0,
+      igst: split.gstMinor,
+      cess,
+      total: split.grossMinor
+    }
   }
+  // Intra-state exclusive lines round each tax head separately, exactly like
+  // `compute_line_tax`: the two halves can differ by one paisa for odd rates.
   const half = Math.floor(gstRate / 2)
   const cgst = applyBps(taxable, half)
   const sgst = applyBps(taxable, gstRate - half)
-  return { taxable, cgst, sgst, igst: 0, total: taxable + cgst + sgst }
+  return { taxable, cgst, sgst, igst: 0, cess, total: taxable + cgst + sgst + cess }
 }
 
 function previewTotals(rows: LinePreview[]): LinePreview & { roundOff: number } {
@@ -200,9 +216,10 @@ function previewTotals(rows: LinePreview[]): LinePreview & { roundOff: number } 
   const cgst = rows.reduce((sum, row) => sum + row.cgst, 0)
   const sgst = rows.reduce((sum, row) => sum + row.sgst, 0)
   const igst = rows.reduce((sum, row) => sum + row.igst, 0)
-  const preRound = taxable + cgst + sgst + igst
+  const cess = rows.reduce((sum, row) => sum + row.cess, 0)
+  const preRound = taxable + cgst + sgst + igst + cess
   const total = roundHalfUpDiv(preRound, 100) * 100
-  return { taxable, cgst, sgst, igst, total, roundOff: total - preRound }
+  return { taxable, cgst, sgst, igst, cess, total, roundOff: total - preRound }
 }
 
 export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Element {
@@ -232,11 +249,18 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
     queryFn: () => window.api.items.list()
   })
 
+  const cessByItem = new Map(items.map((item) => [item.id, item.cessRateBps]))
   const party = parties.find((row) => row.id === partyId) ?? null
   const meta = META[type]
   const effectivePlace = placeOfSupply || party?.stateCode || company?.stateCode || '27'
   const intraState = effectivePlace === (company?.stateCode ?? '27')
-  const previews = lines.map((line) => previewLine(line, intraState))
+  const previews = lines.map((line) =>
+    previewLine(
+      line,
+      intraState,
+      line.itemId === null ? 0 : (cessByItem.get(line.itemId) ?? 0)
+    )
+  )
   const totals = previewTotals(previews)
   const usable = lines.filter((line) => line.description.trim().length > 0)
   const badQty = usable.some((line) => toQtyE4(line.qty) <= 0)
@@ -633,6 +657,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           <TotalRow label="CGST" value={totals.cgst} />
           <TotalRow label="SGST" value={totals.sgst} />
           <TotalRow label="IGST" value={totals.igst} />
+          <TotalRow label="Cess" value={totals.cess} />
           <TotalRow label="Round off" value={totals.roundOff} />
           <div className="mt-2 flex items-baseline justify-between border-t border-rule-strong pt-2">
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em]">
