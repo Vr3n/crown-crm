@@ -54,6 +54,15 @@ impl Harness {
             Err(err) => err.code,
         }
     }
+
+    fn call_error(&mut self, channel: &str, payload: Value) -> cb::error::AppError {
+        let args: Vec<Value> = if payload.is_null() { Vec::new() } else { vec![payload] };
+        let mut ctx = cb::state::Ctx::new(&mut self.inner, &self.paths, None);
+        match cb::rpc::dispatch(&mut ctx, channel, &args) {
+            Ok(data) => panic!("{channel} was expected to fail, returned {data}"),
+            Err(err) => err,
+        }
+    }
 }
 
 impl Drop for Harness {
@@ -548,6 +557,7 @@ fn item_price_tax_flow() {
             "date": "2026-04-11",
             "partyId": party_id,
             "placeOfSupplyStateCode": "27",
+            "supplierBillMissing": true,
             "lines": [{
                 "itemId": item_id,
                 "description": "Basmati Rice 1kg",
@@ -565,6 +575,244 @@ fn item_price_tax_flow() {
     assert_eq!(purchase_detail["cgstMinor"].as_i64(), Some(15_750), "{purchase_detail}");
     assert_eq!(purchase_detail["sgstMinor"].as_i64(), Some(15_750), "{purchase_detail}");
     assert_eq!(purchase_detail["totalMinor"].as_i64(), Some(206_500), "{purchase_detail}");
+}
+
+#[test]
+fn supplier_bill_numbering_flow() {
+    let mut app = Harness::new("supplier-bill");
+
+    app.call(
+        "identity:setup",
+        json!({
+            "name": "Supplier Bill Traders",
+            "ownerFullName": "Owner",
+            "ownerEmail": "owner@supplier-bill.test",
+            "ownerPassword": "correct-horse",
+            "stateCode": "27",
+            "booksBeginDate": "2026-04-01"
+        }),
+    );
+
+    let units = app.call("units:list", json!({}));
+    let nos_id = units
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|unit| unit["symbol"] == json!("nos"))
+        .and_then(|unit| unit["id"].as_i64())
+        .expect("Nos unit");
+
+    let supplier_a = app.call(
+        "parties:create",
+        json!({
+            "name": "Supplier A",
+            "stateCode": "27",
+            "isSupplier": true,
+            "creditDays": 0
+        }),
+    )["id"]
+        .as_i64()
+        .expect("supplier A id");
+    let supplier_b = app.call(
+        "parties:create",
+        json!({
+            "name": "Supplier B",
+            "stateCode": "27",
+            "isSupplier": true,
+            "creditDays": 0
+        }),
+    )["id"]
+        .as_i64()
+        .expect("supplier B id");
+
+    let item = app.call(
+        "items:create",
+        json!({
+            "name": "Packing Tape",
+            "hsnSac": "3919",
+            "uomId": nos_id,
+            "gstRateBps": 1800,
+            "cessRateBps": 0,
+            "isService": false,
+            "salePriceMinor": 10_000,
+            "purchasePriceMinor": 8_000,
+            "salePriceIncludesTax": true,
+            "purchasePriceIncludesTax": false,
+            "openingQtyE4": 0,
+            "openingRateMinor": 0
+        }),
+    );
+    let item_id = item["id"].as_i64().expect("item id");
+
+    let line = json!({
+        "itemId": item_id,
+        "description": "Packing Tape",
+        "qtyE4": 10_000,
+        "rateMinor": 8_000,
+        "rateIncludesTax": false,
+        "discountBps": 0,
+        "gstRateBps": 1800
+    });
+
+    // The number is stored exactly as typed, trimmed at the ends only.
+    let first = app.call(
+        "vouchers:post",
+        json!({
+            "requestId": "supplier-bill-post-0001",
+            "type": "PURCHASE",
+            "date": "2026-04-10",
+            "partyId": supplier_a,
+            "placeOfSupplyStateCode": "27",
+            "supplierBillNo": "  TC/2026-27/583  ",
+            "lines": [line.clone()]
+        }),
+    );
+    let first_id = first["id"].as_i64().expect("first purchase id");
+    assert_eq!(first["number"], json!("TC/2026-27/583"), "first: {first}");
+
+    let detail = app.call("vouchers:get", json!({ "id": first_id }));
+    assert_eq!(detail["number"], json!("TC/2026-27/583"), "detail: {detail}");
+    assert_eq!(detail["numberSource"], json!("SUPPLIER"), "detail: {detail}");
+
+    // Series is scoped per supplier so the table-level unique constraint
+    // enforces (company, supplier, fy, number), and the normalized form is kept
+    // only for duplicate detection.
+    let (series, normalized): (String, String) = app
+        .inner
+        .conn
+        .query_row(
+            "SELECT series, number_normalized FROM vouchers WHERE id = ?1",
+            [first_id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .expect("stored supplier bill columns");
+    assert_eq!(series, format!("SUP{supplier_a}"));
+    assert_eq!(normalized, "TC202627583");
+
+    // A differently spaced and punctuated form is the same bill.
+    let duplicate = app.call_error(
+        "vouchers:post",
+        json!({
+            "requestId": "supplier-bill-post-0002",
+            "type": "PURCHASE",
+            "date": "2026-05-01",
+            "partyId": supplier_a,
+            "placeOfSupplyStateCode": "27",
+            "supplierBillNo": "tc 2026-27.583",
+            "lines": [line.clone()]
+        }),
+    );
+    assert_eq!(duplicate.code, "DUPLICATE_SUPPLIER_BILL", "duplicate: {duplicate:?}");
+    assert!(duplicate.message.contains("TC/2026-27/583"), "{}", duplicate.message);
+    assert!(duplicate.message.contains("2026-04-10"), "{}", duplicate.message);
+
+    // The same number belongs to a different supplier's series.
+    let other = app.call(
+        "vouchers:post",
+        json!({
+            "requestId": "supplier-bill-post-0003",
+            "type": "PURCHASE",
+            "date": "2026-04-10",
+            "partyId": supplier_b,
+            "placeOfSupplyStateCode": "27",
+            "supplierBillNo": "TC/2026-27/583",
+            "lines": [line.clone()]
+        }),
+    );
+    assert_eq!(other["number"], json!("TC/2026-27/583"), "other: {other}");
+
+    // A supplier may reuse the number in a later financial year.
+    let later = app.call(
+        "vouchers:post",
+        json!({
+            "requestId": "supplier-bill-post-0004",
+            "type": "PURCHASE",
+            "date": "2027-04-05",
+            "partyId": supplier_a,
+            "placeOfSupplyStateCode": "27",
+            "supplierBillNo": "TC/2026-27/583",
+            "lines": [line.clone()]
+        }),
+    );
+    let later_id = later["id"].as_i64().expect("later purchase id");
+    let later_detail = app.call("vouchers:get", json!({ "id": later_id }));
+    assert_eq!(later_detail["numberSource"], json!("SUPPLIER"), "{later_detail}");
+
+    // The print read model carries the same identity decision.
+    let invoice = app.call("vouchers:invoice", json!({ "id": first_id }));
+    assert_eq!(invoice["number"], json!("TC/2026-27/583"), "invoice: {invoice}");
+    assert_eq!(invoice["numberSource"], json!("SUPPLIER"), "invoice: {invoice}");
+
+    let listed = app.call("vouchers:list", json!({ "type": "PURCHASE" }));
+    assert!(
+        rows(&listed).iter().all(|row| row["numberSource"].is_string()),
+        "list rows carry numberSource: {listed}"
+    );
+
+    // Cancelling frees the live series slot and the number can be re-entered.
+    app.call(
+        "vouchers:cancel",
+        json!({ "id": first_id, "reason": "Entered twice" }),
+    );
+    let cancelled = app.call("vouchers:get", json!({ "id": first_id }));
+    assert_eq!(cancelled["status"], json!("CANCELLED"), "{cancelled}");
+    let cancelled_series: String = app
+        .inner
+        .conn
+        .query_row(
+            "SELECT series FROM vouchers WHERE id = ?1",
+            [first_id],
+            |row| row.get(0),
+        )
+        .expect("cancelled series");
+    assert_eq!(cancelled_series, format!("SUP{supplier_a}/C{first_id}"));
+
+    let reentered = app.call(
+        "vouchers:post",
+        json!({
+            "requestId": "supplier-bill-post-0005",
+            "type": "PURCHASE",
+            "date": "2026-04-10",
+            "partyId": supplier_a,
+            "placeOfSupplyStateCode": "27",
+            "supplierBillNo": "TC/2026-27/583",
+            "lines": [line.clone()]
+        }),
+    );
+    assert_eq!(reentered["number"], json!("TC/2026-27/583"), "reentered: {reentered}");
+
+    // A declared no-supplier-bill purchase takes the internal PUR sequence.
+    let no_bill = app.call(
+        "vouchers:post",
+        json!({
+            "requestId": "supplier-bill-post-0006",
+            "type": "PURCHASE",
+            "date": "2026-04-12",
+            "partyId": supplier_a,
+            "placeOfSupplyStateCode": "27",
+            "supplierBillMissing": true,
+            "lines": [line]
+        }),
+    );
+    let no_bill_id = no_bill["id"].as_i64().expect("no-bill purchase id");
+    let no_bill_number = no_bill["number"].as_str().expect("no-bill number");
+    assert!(no_bill_number.starts_with("PUR/"), "{no_bill_number}");
+    let no_bill_detail = app.call("vouchers:get", json!({ "id": no_bill_id }));
+    assert_eq!(no_bill_detail["numberSource"], json!("INTERNAL"), "{no_bill_detail}");
+
+    let no_bill_invoice = app.call("vouchers:invoice", json!({ "id": no_bill_id }));
+    assert_eq!(no_bill_invoice["numberSource"], json!("INTERNAL"), "{no_bill_invoice}");
+
+    let no_bill_series: String = app
+        .inner
+        .conn
+        .query_row(
+            "SELECT series FROM vouchers WHERE id = ?1",
+            [no_bill_id],
+            |row| row.get(0),
+        )
+        .expect("no-bill series");
+    assert_eq!(no_bill_series, "PUR");
 }
 
 #[test]

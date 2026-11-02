@@ -629,6 +629,7 @@ fn every_feature() {
             "dueDate": "2026-07-01",
             "partyId": supplier_id,
             "referenceNo": "MW/118",
+            "supplierBillMissing": true,
             "lines": [{
                 "itemId": widget_id,
                 "description": "Widget",
@@ -1100,6 +1101,7 @@ fn every_feature() {
                 "date": "2026-07-04",
                 "partyId": supplier_id,
                 "manualNumber": 9,
+                "supplierBillMissing": true,
                 "lines": [sales_line(widget_id, 10000, 8000, 1200)]
             })
         ),

@@ -173,6 +173,7 @@ struct InvoiceHeader {
     id: i64,
     voucher_type: String,
     number: String,
+    number_source: String,
     date: String,
     due_date: Option<String>,
     reference_no: Option<String>,
@@ -200,7 +201,7 @@ pub fn find_for_print(conn: &Connection, company_id: i64, id: i64) -> AppResult<
             "SELECT id, voucher_type, number, voucher_date, due_date, reference_no, narration,
                     place_of_supply_state_code, status, bank_account_id, party_id, taxable_minor,
                     cgst_minor, sgst_minor, igst_minor, cess_minor, discount_minor,
-                    round_off_minor, total_minor, total_qty_e4
+                    round_off_minor, total_minor, total_qty_e4, number_source
              FROM vouchers WHERE company_id = ?1 AND id = ?2",
             params![company_id, id],
             |row| {
@@ -225,6 +226,7 @@ pub fn find_for_print(conn: &Connection, company_id: i64, id: i64) -> AppResult<
                     round_off_minor: row.get(17)?,
                     total_minor: row.get(18)?,
                     total_qty_e4: row.get(19)?,
+                    number_source: row.get(20)?,
                 })
             },
         )
@@ -377,6 +379,7 @@ pub fn find_for_print(conn: &Connection, company_id: i64, id: i64) -> AppResult<
         "id": header.id,
         "type": header.voucher_type,
         "number": header.number,
+        "numberSource": header.number_source,
         "date": header.date,
         "dueDate": header.due_date,
         "referenceNo": header.reference_no,

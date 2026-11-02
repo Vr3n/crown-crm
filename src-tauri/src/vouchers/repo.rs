@@ -202,6 +202,10 @@ pub struct NewVoucher {
     pub voucher_type: String,
     pub series: String,
     pub number: String,
+    /// `INTERNAL` or `SUPPLIER`; mirrors `vouchers.number_source`.
+    pub number_source: String,
+    /// Comparison form of a supplier bill number, null for internal numbering.
+    pub number_normalized: Option<String>,
     pub fy: String,
     pub date: String,
     pub due_date: Option<String>,
@@ -266,18 +270,21 @@ pub fn insert(
 ) -> AppResult<i64> {
     conn.execute(
         "INSERT INTO vouchers (
-           company_id, voucher_type, series, number, fy, voucher_date, due_date, party_id,
+           company_id, voucher_type, series, number, number_source, number_normalized, fy,
+           voucher_date, due_date, party_id,
            place_of_supply_state_code, narration, reference_no, status, taxable_minor, cgst_minor,
            sgst_minor, igst_minor, cess_minor, discount_minor, round_off_minor, total_minor,
            total_qty_e4, payment_method_id, instrument_no, bank_account_id, reversal_of_voucher_id,
            idempotency_key, created_by, posted_at, posted_by
-         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 'POSTED', ?12, ?13, ?14, ?15,
-           ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28)",
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 'POSTED', ?14, ?15,
+           ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30)",
         params![
             header.company_id,
             header.voucher_type,
             header.series,
             header.number,
+            header.number_source,
+            header.number_normalized,
             header.fy,
             header.date,
             header.due_date,
@@ -409,6 +416,7 @@ struct DetailHeader {
     id: i64,
     voucher_type: String,
     number: String,
+    number_source: String,
     voucher_date: String,
     due_date: Option<String>,
     party_id: Option<i64>,
@@ -448,7 +456,7 @@ pub fn find_detail(conn: &Connection, company_id: i64, id: i64) -> AppResult<Opt
                     place_of_supply_state_code, narration, reference_no, status, created_at,
                     created_by, posted_by, cancelled_at, cancelled_by, cancel_reason,
                     taxable_minor, cgst_minor, sgst_minor, igst_minor, cess_minor, discount_minor,
-                    round_off_minor, total_minor, total_qty_e4
+                    round_off_minor, total_minor, total_qty_e4, number_source
              FROM vouchers WHERE company_id = ?1 AND id = ?2",
             params![company_id, id],
             |row| {
@@ -478,6 +486,7 @@ pub fn find_detail(conn: &Connection, company_id: i64, id: i64) -> AppResult<Opt
                     round_off_minor: row.get(22)?,
                     total_minor: row.get(23)?,
                     total_qty_e4: row.get(24)?,
+                    number_source: row.get(25)?,
                 })
             },
         )
@@ -559,6 +568,7 @@ pub fn find_detail(conn: &Connection, company_id: i64, id: i64) -> AppResult<Opt
         "id": header.id,
         "type": header.voucher_type,
         "number": header.number,
+        "numberSource": header.number_source,
         "date": header.voucher_date,
         "dueDate": header.due_date,
         "partyId": header.party_id,
@@ -627,7 +637,7 @@ pub struct ListQuery {
 pub fn list(conn: &Connection, company_id: i64, input: &ListQuery) -> AppResult<Vec<Value>> {
     let mut sql = String::from(
         "SELECT v.id, v.voucher_type, v.number, v.voucher_date, v.total_minor, v.status,
-                v.created_at, p.name, v.narration
+                v.created_at, p.name, v.narration, v.number_source
          FROM vouchers v LEFT JOIN parties p ON p.id = v.party_id
          WHERE v.company_id = ?",
     );
@@ -676,6 +686,7 @@ pub fn list(conn: &Connection, company_id: i64, input: &ListQuery) -> AppResult<
             "id": row.get::<_, i64>(0)?,
             "type": row.get::<_, String>(1)?,
             "number": row.get::<_, String>(2)?,
+            "numberSource": row.get::<_, String>(9)?,
             "date": row.get::<_, String>(3)?,
             "partyName": row.get::<_, Option<String>>(7)?,
             "narration": row.get::<_, Option<String>>(8)?,
@@ -767,6 +778,28 @@ fn map_outstanding_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Value> {
     }))
 }
 
+/// The first live purchase voucher with the same supplier, financial year and
+/// normalized supplier bill number. Cancelled vouchers do not reserve a number,
+/// so they are excluded here and the series scoping frees their unique slot too.
+pub fn find_duplicate_supplier_bill(
+    conn: &Connection,
+    company_id: i64,
+    party_id: i64,
+    fy: &str,
+    number_normalized: &str,
+) -> AppResult<Option<(String, String)>> {
+    Ok(conn
+        .query_row(
+            "SELECT number, voucher_date FROM vouchers
+             WHERE company_id = ?1 AND voucher_type = 'PURCHASE' AND party_id = ?2
+               AND fy = ?3 AND number_normalized = ?4 AND status <> 'CANCELLED'
+             ORDER BY id LIMIT 1",
+            params![company_id, party_id, fy, number_normalized],
+            |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+        )
+        .optional()?)
+}
+
 pub fn cancel(
     conn: &Connection,
     company_id: i64,
@@ -774,9 +807,16 @@ pub fn cancel(
     reason: &str,
     actor_id: Option<i64>,
 ) -> AppResult<()> {
+    // A supplier-numbered purchase keeps its typed number, but its live series
+    // slot (`SUP<party_id>`) must be freed so the same bill can be entered
+    // again after a cancellation. Appending `/C<id>` keeps the original series
+    // visible while the table-level UNIQUE (company, type, series, fy, number)
+    // no longer matches the cancelled row.
     conn.execute(
         "UPDATE vouchers
-         SET status = 'CANCELLED', cancelled_at = ?1, cancelled_by = ?2, cancel_reason = ?3
+         SET status = 'CANCELLED', cancelled_at = ?1, cancelled_by = ?2, cancel_reason = ?3,
+             series = CASE WHEN number_source = 'SUPPLIER'
+                           THEN series || '/C' || id ELSE series END
          WHERE company_id = ?4 AND id = ?5",
         params![now_sqlite(), actor_id, reason, company_id, id],
     )?;
