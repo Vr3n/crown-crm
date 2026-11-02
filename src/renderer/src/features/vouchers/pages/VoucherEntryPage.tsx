@@ -226,11 +226,15 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const partyRef = useRef<HTMLButtonElement>(null)
+  const supplierBillRef = useRef<HTMLInputElement>(null)
   const role = type === 'SALES' || type === 'CREDIT_NOTE' ? 'CUSTOMER' : 'SUPPLIER'
+  const isPurchase = type === 'PURCHASE'
   const [partyId, setPartyId] = useState<number | null>(null)
   const [partyOpen, setPartyOpen] = useState(false)
   const [date, setDate] = useState(todayIso())
   const [dueDate, setDueDate] = useState('')
+  const [supplierBillNo, setSupplierBillNo] = useState('')
+  const [supplierBillMissing, setSupplierBillMissing] = useState(false)
   const [reference, setReference] = useState('')
   const [placeOfSupply, setPlaceOfSupply] = useState('')
   const [narration, setNarration] = useState('')
@@ -264,15 +268,19 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
   const totals = previewTotals(previews)
   const usable = lines.filter((line) => line.description.trim().length > 0)
   const badQty = usable.some((line) => toQtyE4(line.qty) <= 0)
+  const supplierBillMissingValue = isPurchase && supplierBillMissing
+  const missingSupplierBill = isPurchase && !supplierBillMissingValue && !supplierBillNo.trim()
   const reason = !party
     ? `Select a ${role === 'CUSTOMER' ? 'customer' : 'supplier'} to post.`
-    : usable.length === 0
-      ? 'Add at least one line with a description.'
-      : badQty
-        ? 'Each line needs a quantity greater than zero.'
-        : totals.total <= 0
-          ? 'The voucher total must be greater than zero.'
-          : ''
+    : missingSupplierBill
+      ? 'Enter the supplier bill number, or tick "No supplier bill".'
+      : usable.length === 0
+        ? 'Add at least one line with a description.'
+        : badQty
+          ? 'Each line needs a quantity greater than zero.'
+          : totals.total <= 0
+            ? 'The voucher total must be greater than zero.'
+            : ''
 
   const post = useMutation({
     mutationFn: (input: PostVoucherInput) => window.api.vouchers.post(input),
@@ -284,6 +292,12 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
   })
 
   useEffect(() => partyRef.current?.focus(), [])
+
+  // Reading order on a purchase: supplier, then the supplier's bill number.
+  // This runs after the party popover closes, so its focus restore does not win.
+  useEffect(() => {
+    if (isPurchase && partyId !== null && !partyOpen) supplierBillRef.current?.focus()
+  }, [isPurchase, partyId, partyOpen])
 
   const addLine = useCallback((): void => {
     setLines((current) => [...current, blankLine()])
@@ -299,6 +313,8 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
       partyId: party?.id ?? null,
       placeOfSupplyStateCode: effectivePlace,
       referenceNo: reference.trim() || null,
+      supplierBillNo: supplierBillMissingValue ? null : supplierBillNo.trim() || null,
+      supplierBillMissing: supplierBillMissingValue,
       narration: narration.trim() || null,
       lines: usable.map((line) => ({
         itemId: line.itemId,
@@ -390,8 +406,19 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
   }
 
   const postError = post.error instanceof Error ? post.error.message : 'Could not post the voucher.'
+  const postErrorCode =
+    post.error instanceof Error ? (post.error as Error & { code?: string }).code : undefined
+  const duplicateSupplierBill = postErrorCode === 'DUPLICATE_SUPPLIER_BILL'
+
+  useEffect(() => {
+    if (duplicateSupplierBill) supplierBillRef.current?.focus()
+  }, [duplicateSupplierBill])
 
   const accent = ACCENT[meta.accent]
+  const headerIdentity =
+    isPurchase && !supplierBillMissingValue && supplierBillNo.trim()
+      ? supplierBillNo.trim()
+      : meta.series
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 p-6 pb-24">
@@ -414,7 +441,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                   accent.text
                 )}
               >
-                {meta.series} · {meta.title}
+                {headerIdentity} · {meta.title}
               </p>
               <h1 className="mt-1 font-heading text-[1.5rem] font-semibold leading-none tracking-tight">
                 New {meta.title.toLowerCase()}
@@ -460,6 +487,75 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                 chosen. Press F4 from anywhere on the page.
               </p>
             ) : null}
+
+            {isPurchase ? (
+              <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-3">
+                <label
+                  htmlFor="supplier-bill-no"
+                  className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                >
+                  Supplier bill no.
+                  <span aria-hidden className="ml-0.5 text-stamp">
+                    *
+                  </span>
+                  <span className="sr-only"> (required)</span>
+                </label>
+                <input
+                  id="supplier-bill-no"
+                  ref={supplierBillRef}
+                  value={supplierBillNo}
+                  onChange={(event) => setSupplierBillNo(event.target.value)}
+                  disabled={supplierBillMissingValue}
+                  maxLength={32}
+                  autoComplete="off"
+                  placeholder="Exactly as printed"
+                  aria-invalid={duplicateSupplierBill || undefined}
+                  aria-describedby={
+                    duplicateSupplierBill
+                      ? 'supplier-bill-no-error supplier-bill-no-help'
+                      : 'supplier-bill-no-help'
+                  }
+                  className={cn(
+                    INPUT,
+                    'font-mono',
+                    supplierBillMissingValue && 'opacity-50',
+                    duplicateSupplierBill && 'border-destructive'
+                  )}
+                />
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="supplier-bill-missing"
+                    checked={supplierBillMissingValue}
+                    onCheckedChange={(checked) => {
+                      const missing = checked === true
+                      setSupplierBillMissing(missing)
+                      if (missing) setSupplierBillNo('')
+                    }}
+                    aria-describedby="supplier-bill-no-help"
+                  />
+                  <label htmlFor="supplier-bill-missing" className="text-[0.8125rem]">
+                    No supplier bill
+                  </label>
+                </div>
+                {duplicateSupplierBill ? (
+                  <p
+                    id="supplier-bill-no-error"
+                    role="alert"
+                    className="text-[0.8125rem] leading-snug text-destructive"
+                  >
+                    {postError}
+                  </p>
+                ) : null}
+                <p
+                  id="supplier-bill-no-help"
+                  className="text-[0.75rem] leading-snug text-muted-foreground"
+                >
+                  {supplierBillMissingValue
+                    ? 'No supplier bill: this purchase takes the internal PUR number and the print shows an em dash as the supplier bill no.'
+                    : 'Type it exactly as printed; duplicate numbers are refused per supplier and financial year.'}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -485,7 +581,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
               <input
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                placeholder="Order or bill reference"
+                placeholder="Order or other reference"
                 aria-label="Reference"
                 className={cn(INPUT, 'placeholder:text-muted-foreground/60')}
               />
@@ -677,7 +773,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
         </div>
       </div>
 
-      {post.isError ? (
+      {post.isError && !duplicateSupplierBill ? (
         <p
           role="alert"
           className="border border-destructive/40 bg-destructive/5 px-3 py-2 text-[0.875rem] text-destructive"
