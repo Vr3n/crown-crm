@@ -11,10 +11,13 @@
 //! which matches the CSS layout; `printpdf` counts from the bottom and is
 //! flipped in [`Sheet::text`] and [`Sheet::rule`].
 
+use std::sync::OnceLock;
+
 use printpdf::{
     BuiltinFont, Color, IndirectFontRef, Line, Mm, PdfDocument, PdfDocumentReference,
     PdfLayerReference, Point, Rgb,
 };
+use serde::Deserialize;
 use serde_json::Value;
 
 use crate::error::{AppError, AppResult};
@@ -23,14 +26,276 @@ use crate::export::invoice_format::{
 };
 use crate::json::{array, field};
 
-const PAGE_W: f32 = 210.0;
-const PAGE_H: f32 = 297.0;
-const MARGIN: f32 = 12.0;
-const LEFT: f32 = MARGIN;
-const RIGHT: f32 = PAGE_W - MARGIN;
-const TOP: f32 = 10.0;
-const BOTTOM: f32 = 287.0;
-const TABLE_BOTTOM: f32 = 268.0;
+// ---------------------------------------------------------------------------
+// Shared geometry
+// ---------------------------------------------------------------------------
+
+/// `../src/shared/print-geometry.json` is the only place these numbers live.
+/// The React sheet imports the same file, so a border can never drift between
+/// the native PDF and the print preview.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Geometry {
+    page: PageSize,
+    margins_mm: Insets,
+    frame_mm: Insets,
+    panels: Panels,
+    item_table: ItemTable,
+    tax_summary: TaxSummary,
+    border_pt: BorderWeights,
+    text: TextMetrics,
+}
+
+#[derive(Debug, Deserialize, Clone, Copy)]
+#[serde(rename_all = "camelCase")]
+struct PageSize {
+    width_mm: f32,
+    height_mm: f32,
+}
+
+#[derive(Debug, Deserialize, Clone, Copy)]
+#[serde(rename_all = "camelCase")]
+struct Insets {
+    top: f32,
+    right: f32,
+    bottom: f32,
+    left: f32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Panels {
+    head_gap_mm: f32,
+    meta_width_mm: f32,
+    buyer_gap_mm: f32,
+    bottom_gap_mm: f32,
+    totals_width_mm: f32,
+    declaration_split_mm: f32,
+    #[allow(dead_code)]
+    signatory_width_mm: f32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ItemTable {
+    header_height_mm: f32,
+    row_height_mm: f32,
+    bottom_mm: f32,
+    #[allow(dead_code)]
+    min_height_mm: f32,
+    columns: Vec<ItemColumn>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ItemColumn {
+    weight: f32,
+    align: Align,
+}
+
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq)]
+#[serde(rename_all = "lowercase")]
+enum Align {
+    Left,
+    Center,
+    Right,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TaxSummary {
+    header_height_mm: f32,
+    row_height_mm: f32,
+    columns: TaxSummaryColumns,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TaxSummaryColumns {
+    hsn: f32,
+    taxable: f32,
+    rate: f32,
+    tax: f32,
+    cess_rate: f32,
+    cess: f32,
+    total: f32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BorderWeights {
+    outer: f32,
+    section: f32,
+    cell: f32,
+    total: f32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TextMetrics {
+    cell_padding_x_mm: f32,
+    #[allow(dead_code)]
+    cell_padding_y_mm: f32,
+}
+
+static GEOMETRY: OnceLock<Geometry> = OnceLock::new();
+
+fn geometry() -> &'static Geometry {
+    GEOMETRY.get_or_init(|| {
+        serde_json::from_str(include_str!("../../../src/shared/print-geometry.json"))
+            .expect("src/shared/print-geometry.json must be valid geometry")
+    })
+}
+
+fn page_w() -> f32 {
+    geometry().page.width_mm
+}
+
+fn page_h() -> f32 {
+    geometry().page.height_mm
+}
+
+fn left() -> f32 {
+    geometry().margins_mm.left
+}
+
+fn right() -> f32 {
+    page_w() - geometry().margins_mm.right
+}
+
+fn top() -> f32 {
+    geometry().margins_mm.top
+}
+
+fn bottom() -> f32 {
+    page_h() - geometry().margins_mm.bottom
+}
+
+fn content_width() -> f32 {
+    right() - left()
+}
+
+fn table_bottom() -> f32 {
+    geometry().item_table.bottom_mm
+}
+
+#[derive(Debug, Clone, Copy)]
+enum BorderClass {
+    Outer,
+    Section,
+    Cell,
+    Total,
+}
+
+fn border_pt(class: BorderClass) -> f32 {
+    let weights = &geometry().border_pt;
+    match class {
+        BorderClass::Outer => weights.outer,
+        BorderClass::Section => weights.section,
+        BorderClass::Cell => weights.cell,
+        BorderClass::Total => weights.total,
+    }
+}
+
+/// One straight rule in top-left page coordinates.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Edge {
+    x1: f32,
+    y1: f32,
+    x2: f32,
+    y2: f32,
+    weight: f32,
+}
+
+/// A rectangle is exactly four continuous edges. Using this for every panel
+/// keeps the frame complete and makes a missing side impossible.
+fn rect_edges(x: f32, y: f32, w: f32, h: f32, weight: f32) -> [Edge; 4] {
+    [
+        Edge {
+            x1: x,
+            y1: y,
+            x2: x + w,
+            y2: y,
+            weight,
+        },
+        Edge {
+            x1: x + w,
+            y1: y,
+            x2: x + w,
+            y2: y + h,
+            weight,
+        },
+        Edge {
+            x1: x,
+            y1: y + h,
+            x2: x + w,
+            y2: y + h,
+            weight,
+        },
+        Edge {
+            x1: x,
+            y1: y,
+            x2: x,
+            y2: y + h,
+            weight,
+        },
+    ]
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Column {
+    x: f32,
+    width: f32,
+}
+
+impl Column {
+    fn right(self) -> f32 {
+        self.x + self.width
+    }
+}
+
+/// Column x positions are computed once from the shared weights and reused for
+/// header text, cell text, and separators.
+fn columns_at(weights: &[f32], start: f32, width: f32) -> Vec<Column> {
+    let total: f32 = weights.iter().sum();
+    let mut x = start;
+    let mut result = Vec::with_capacity(weights.len());
+    for weight in weights {
+        let column_width = weight / total * width;
+        result.push(Column {
+            x,
+            width: column_width,
+        });
+        x += column_width;
+    }
+    result
+}
+
+fn table_columns() -> Vec<Column> {
+    let weights: Vec<f32> = geometry()
+        .item_table
+        .columns
+        .iter()
+        .map(|column| column.weight)
+        .collect();
+    columns_at(&weights, left(), content_width())
+}
+
+/// The only interior column separators a table may draw: one per shared
+/// boundary, no line on the outer left or right edge.
+fn table_separators(columns: &[Column], top: f32, bottom: f32) -> Vec<Edge> {
+    columns
+        .iter()
+        .skip(1)
+        .map(|column| Edge {
+            x1: column.x,
+            y1: top,
+            x2: column.x,
+            y2: bottom,
+            weight: border_pt(BorderClass::Cell),
+        })
+        .collect()
+}
 
 /// Millimetres per typographic point.
 const MM_PER_PT: f32 = 0.352_777_8;
@@ -589,15 +854,23 @@ fn build_hsn_summary(lines: &[LineItem]) -> Vec<HsnRow> {
 // Text helpers
 // ---------------------------------------------------------------------------
 
+/// Conservative average glyph width in em for the built-in Helvetica faces.
+/// The PDF has no text measurement API without embedding font metrics, so the
+/// estimate deliberately errs wide: right-aligned text must stop before the
+/// cell edge, never cross it.
+const AVG_GLYPH_EM: f32 = 0.66;
+
 fn text_width(text: &str, size: f32) -> f32 {
-    text.chars().count() as f32 * size * 0.5 * MM_PER_PT
+    text.chars().count() as f32 * size * AVG_GLYPH_EM * MM_PER_PT
 }
 
 /// Greedy word wrap against an approximate Helvetica advance width. The PDF
 /// has no text measurement API without font metrics, and the invoice only needs
 /// to avoid overflow, not to justify.
 fn wrap(text: &str, width_mm: f32, size: f32) -> Vec<String> {
-    let limit = (width_mm / (size * 0.5 * MM_PER_PT)).floor().max(1.0) as usize;
+    let limit = (width_mm / (size * AVG_GLYPH_EM * MM_PER_PT))
+        .floor()
+        .max(1.0) as usize;
     let mut lines: Vec<String> = Vec::new();
     let mut current = String::new();
 
@@ -638,7 +911,9 @@ fn truncate(text: &str, width_mm: f32, size: f32) -> String {
     if text_width(text, size) <= width_mm {
         return text.to_string();
     }
-    let limit = (width_mm / (size * 0.5 * MM_PER_PT)).floor().max(1.0) as usize;
+    let limit = (width_mm / (size * AVG_GLYPH_EM * MM_PER_PT))
+        .floor()
+        .max(1.0) as usize;
     let keep = limit.saturating_sub(2);
     let mut out: String = text.chars().take(keep).collect();
     out.push_str("..");
@@ -664,20 +939,6 @@ fn address_text(parts: &[Option<&str>]) -> String {
         .filter(|part| !part.is_empty())
         .collect::<Vec<_>>()
         .join(", ")
-}
-
-/// Column x offsets and widths for a table that must fill the content width
-/// exactly. Weights keep the tables aligned whatever columns are visible.
-fn columns(weights: &[f32]) -> Vec<(f32, f32)> {
-    let total: f32 = weights.iter().sum();
-    let mut x = LEFT;
-    let mut result = Vec::with_capacity(weights.len());
-    for weight in weights {
-        let width = weight / total * (RIGHT - LEFT);
-        result.push((x, width));
-        x += width;
-    }
-    result
 }
 
 // ---------------------------------------------------------------------------
@@ -707,11 +968,12 @@ impl Sheet {
         } else {
             &self.fonts.regular
         };
-        self.layer.use_text(text, size, Mm(x), Mm(PAGE_H - y), font);
+        self.layer
+            .use_text(text, size, Mm(x), Mm(page_h() - y), font);
     }
 
     fn text_right(&self, right: f32, y: f32, size: f32, bold: bool, color: Color, text: &str) {
-        let x = (right - text_width(text, size)).max(LEFT);
+        let x = (right - text_width(text, size)).max(left());
         self.text(x, y, size, bold, color, text);
     }
 
@@ -720,58 +982,80 @@ impl Sheet {
         self.text(x, y, size, bold, color, text);
     }
 
-    fn rule(&self, x1: f32, x2: f32, y: f32) {
+    fn draw_edge(&self, edge: Edge) {
         self.layer.set_outline_color(line_color());
-        self.layer.set_outline_thickness(0.35);
+        self.layer.set_outline_thickness(edge.weight);
         self.layer.add_line(Line {
             points: vec![
-                (Point::new(Mm(x1), Mm(PAGE_H - y)), false),
-                (Point::new(Mm(x2), Mm(PAGE_H - y)), false),
+                (Point::new(Mm(edge.x1), Mm(page_h() - edge.y1)), false),
+                (Point::new(Mm(edge.x2), Mm(page_h() - edge.y2)), false),
             ],
             is_closed: false,
         });
     }
 
-    fn vertical(&self, x: f32, top: f32, bottom: f32) {
-        self.layer.set_outline_color(line_color());
-        self.layer.set_outline_thickness(0.25);
-        self.layer.add_line(Line {
-            points: vec![
-                (Point::new(Mm(x), Mm(PAGE_H - top)), false),
-                (Point::new(Mm(x), Mm(PAGE_H - bottom)), false),
-            ],
-            is_closed: false,
+    fn horizontal(&self, x1: f32, x2: f32, y: f32, weight: f32) {
+        self.draw_edge(Edge {
+            x1,
+            y1: y,
+            x2,
+            y2: y,
+            weight,
         });
     }
 
-    fn rect(&self, left: f32, top: f32, right: f32, bottom: f32) {
-        self.rule(left, right, top);
-        self.rule(left, right, bottom);
-        self.vertical(left, top, bottom);
-        self.vertical(right, top, bottom);
+    fn vertical(&self, x: f32, from: f32, to: f32, weight: f32) {
+        self.draw_edge(Edge {
+            x1: x,
+            y1: from,
+            x2: x,
+            y2: to,
+            weight,
+        });
+    }
+
+    /// A panel is always four edges. `w` and `h` are the full box size.
+    fn rect(&self, x: f32, y: f32, w: f32, h: f32, weight: f32) {
+        for edge in rect_edges(x, y, w, h, weight) {
+            self.draw_edge(edge);
+        }
+    }
+
+    /// The sheet frame sits outside the content margins and is redrawn on every
+    /// page, including continuation pages.
+    fn draw_frame(&self) {
+        let frame = geometry().frame_mm;
+        self.rect(
+            frame.left,
+            frame.top,
+            page_w() - frame.left - frame.right,
+            page_h() - frame.top - frame.bottom,
+            border_pt(BorderClass::Outer),
+        );
     }
 
     fn add_page(&mut self) {
-        let (page, layer) = self.doc.add_page(Mm(PAGE_W), Mm(PAGE_H), "Invoice");
+        let (page, layer) = self.doc.add_page(Mm(page_w()), Mm(page_h()), "Invoice");
         let next = self.doc.get_page(page).get_layer(layer);
         self.layer = next;
-        self.y = TOP;
+        self.y = top();
     }
 
-    /// Starts a continuation page with a compact header, so a very long invoice
-    /// still reads as the same document.
+    /// Starts a continuation page with the frame and a compact header, so a very
+    /// long invoice still reads as the same document.
     fn continue_page(&mut self, caption: &str) {
         self.add_page();
-        self.y = 13.0;
-        self.text_center(PAGE_W / 2.0, self.y, 12.0, true, ink(), DOCUMENT_TITLE);
-        self.text_right(RIGHT, self.y, 7.5, false, muted(), caption);
-        self.y = 17.0;
-        self.rule(LEFT, RIGHT, self.y);
-        self.y = 22.0;
+        self.draw_frame();
+        self.y = top() + 5.0;
+        self.text_center(page_w() / 2.0, self.y, 12.0, true, ink(), DOCUMENT_TITLE);
+        self.text_right(right(), self.y, 7.5, false, muted(), caption);
+        self.y = top() + 9.0;
+        self.horizontal(left(), right(), self.y, border_pt(BorderClass::Section));
+        self.y = top() + 13.5;
     }
 
     fn ensure(&mut self, needed: f32, caption: &str) {
-        if self.y + needed > BOTTOM {
+        if self.y + needed > bottom() {
             self.continue_page(caption);
         }
     }
@@ -793,13 +1077,14 @@ fn draw_copy(sheet: &mut Sheet, document: &Document, caption: &str, page: u32, p
     let has_cess = hsn_rows.iter().any(|row| row.cess_minor != 0);
     let tax_total = document.tax_total();
 
-    sheet.y = 13.0;
-    sheet.text_center(PAGE_W / 2.0, sheet.y, 15.0, true, ink(), DOCUMENT_TITLE);
-    sheet.text_right(RIGHT, sheet.y, 8.0, false, muted(), caption);
+    sheet.draw_frame();
+    sheet.y = top() + 5.0;
+    sheet.text_center(page_w() / 2.0, sheet.y, 15.0, true, ink(), DOCUMENT_TITLE);
+    sheet.text_right(right(), sheet.y, 8.0, false, muted(), caption);
 
     if document.cancelled {
         sheet.text_center(
-            PAGE_W / 2.0,
+            page_w() / 2.0,
             150.0,
             42.0,
             true,
@@ -808,83 +1093,96 @@ fn draw_copy(sheet: &mut Sheet, document: &Document, caption: &str, page: u32, p
         );
     }
 
-    sheet.y = 17.0;
-    sheet.rule(LEFT, RIGHT, sheet.y);
-    sheet.y = 21.5;
+    sheet.y = top() + 9.0;
+    sheet.horizontal(left(), right(), sheet.y, border_pt(BorderClass::Section));
+    sheet.y = top() + 13.0;
 
-    let supplier_top = sheet.y;
-    let mut supplier_y = supplier_top;
-    sheet.text(LEFT, supplier_y, 6.5, false, muted(), "SUPPLIER");
-    supplier_y += 4.4;
-    sheet.text(LEFT, supplier_y, 11.0, true, ink(), &issuer.name);
-    supplier_y += 5.4;
+    let head_top = sheet.y;
+    let panels = &geometry().panels;
+    let meta_x = right() - panels.meta_width_mm;
+    let supplier_width = meta_x - panels.head_gap_mm - left();
+    let supplier_text_x = left() + 2.0;
+    let mut supplier_y = head_top;
+    sheet.text(
+        supplier_text_x,
+        supplier_y + 3.4,
+        6.5,
+        false,
+        muted(),
+        "SUPPLIER",
+    );
+    supplier_y += 6.4;
+    sheet.text(
+        supplier_text_x,
+        supplier_y + 4.0,
+        11.0,
+        true,
+        ink(),
+        &issuer.name,
+    );
+    supplier_y += 6.0;
     if let Some(legal_name) = &issuer.legal_name {
         if legal_name != &issuer.name {
-            sheet.text(LEFT, supplier_y, 8.0, false, ink(), legal_name);
+            sheet.text(
+                supplier_text_x,
+                supplier_y + 3.4,
+                8.0,
+                false,
+                ink(),
+                legal_name,
+            );
             supplier_y += 4.0;
         }
     }
     if let Some(address) = &issuer.address {
-        for line in wrap(address, 112.0, 8.0) {
-            sheet.text(LEFT, supplier_y, 8.0, false, ink(), &line);
+        for line in wrap(address, supplier_width - 4.0, 8.0) {
+            sheet.text(supplier_text_x, supplier_y + 3.4, 8.0, false, ink(), &line);
             supplier_y += 3.9;
         }
     }
     let city_line = address_text(&[issuer.city.as_deref(), issuer.pincode.as_deref()]);
     if !city_line.is_empty() {
-        sheet.text(LEFT, supplier_y, 8.0, false, ink(), &city_line);
+        sheet.text(
+            supplier_text_x,
+            supplier_y + 3.4,
+            8.0,
+            false,
+            ink(),
+            &city_line,
+        );
         supplier_y += 3.9;
     }
-    supplier_y += 1.2;
-    sheet.text(
-        LEFT,
-        supplier_y,
-        8.0,
-        false,
-        ink(),
-        &format!("Phone: {}", dash(issuer.phone.as_deref())),
-    );
-    supplier_y += 4.0;
-    sheet.text(
-        LEFT,
-        supplier_y,
-        8.0,
-        false,
-        ink(),
-        &format!("Email: {}", dash(issuer.email.as_deref())),
-    );
-    supplier_y += 4.0;
-    sheet.text(
-        LEFT,
-        supplier_y,
-        8.0,
-        false,
-        ink(),
-        &format!("GSTIN/UIN: {}", dash(issuer.gstin.as_deref())),
-    );
-    supplier_y += 4.0;
-    sheet.text(
-        LEFT,
-        supplier_y,
-        8.0,
-        false,
-        ink(),
-        &format!("PAN/IT No.: {}", dash(issuer.pan.as_deref())),
-    );
-    supplier_y += 4.0;
-    sheet.text(
-        LEFT,
-        supplier_y,
-        8.0,
-        false,
-        ink(),
-        &format!("State: {}", state_text(issuer.state_code.as_deref())),
-    );
-    supplier_y += 4.0;
+    supplier_y += 1.6;
+    for value in [
+        format!("Phone: {}", dash(issuer.phone.as_deref())),
+        format!("Email: {}", dash(issuer.email.as_deref())),
+        format!("GSTIN/UIN: {}", dash(issuer.gstin.as_deref())),
+        format!("PAN/IT No.: {}", dash(issuer.pan.as_deref())),
+        format!("State: {}", state_text(issuer.state_code.as_deref())),
+    ] {
+        sheet.text(supplier_text_x, supplier_y + 3.4, 8.0, false, ink(), &value);
+        supplier_y += 4.0;
+    }
+    supplier_y += 1.4;
 
-    let meta_bottom = draw_meta_grid(sheet, document, supplier_top);
+    let meta_bottom = draw_meta_grid(sheet, document, head_top);
+    let head_bottom = supplier_y.max(meta_bottom);
 
-    sheet.y = supplier_y.max(meta_bottom) + 4.0;
+    sheet.rect(
+        left(),
+        head_top,
+        supplier_width,
+        head_bottom - head_top,
+        border_pt(BorderClass::Section),
+    );
+    sheet.horizontal(
+        left(),
+        left() + supplier_width,
+        head_top + 6.4,
+        border_pt(BorderClass::Cell),
+    );
+
+    sheet.y = head_bottom + panels.buyer_gap_mm;
     draw_buyer(sheet, &buyer);
     draw_lines(sheet, document, caption);
     draw_bottom(
@@ -903,9 +1201,14 @@ fn draw_copy(sheet: &mut Sheet, document: &Document, caption: &str, page: u32, p
 /// The right-hand Tally grid: two label/value columns, plus the full-width
 /// place of delivery on a sales invoice.
 fn draw_meta_grid(sheet: &Sheet, document: &Document, top: f32) -> f32 {
-    let column_x = [130.0, 164.0];
-    let column_width = 32.0;
+    let panels = &geometry().panels;
+    let x = right() - panels.meta_width_mm;
+    let width = panels.meta_width_mm;
+    let half = width / 2.0;
+    let mid_x = x + half;
+    let pad = geometry().text.cell_padding_x_mm;
     let mut y = top;
+    let mut separators: Vec<f32> = Vec::new();
 
     let mut items: Vec<(String, String)> = Vec::new();
     items.push((
@@ -946,69 +1249,89 @@ fn draw_meta_grid(sheet: &Sheet, document: &Document, top: f32) -> f32 {
 
     for row in items.chunks(2) {
         for (index, (label, value)) in row.iter().enumerate() {
-            let x = column_x[index];
-            sheet.text(x, y, 6.2, false, muted(), label);
-            let value = truncate(&dash(Some(value.as_str())), column_width, 7.4);
-            sheet.text_right(x + column_width, y + 3.4, 7.4, false, ink(), &value);
+            let cell_x = x + index as f32 * half;
+            sheet.text(cell_x + pad, y + 3.2, 6.2, false, muted(), label);
+            let value = truncate(&dash(Some(value.as_str())), half - pad * 2.0, 7.4);
+            sheet.text(cell_x + pad, y + 6.4, 7.4, false, ink(), &value);
         }
         y += 8.2;
+        separators.push(y);
     }
 
-    if document.is_purchase {
-        return y;
+    let delivery_top = y;
+
+    if !document.is_purchase {
+        // Place of Delivery spans the full grid width.
+        sheet.text(x + pad, y + 3.2, 6.2, false, muted(), "Place of Delivery");
+        y += 4.2;
+        let delivery = document.delivery_address();
+        let mut address = if delivery.is_empty() {
+            "—".to_string()
+        } else {
+            delivery
+        };
+        address.push_str(&format!(
+            "  ·  State: {}",
+            state_text(document.delivery_state().as_deref())
+        ));
+        for line in wrap(&address, width - pad * 2.0, 7.2) {
+            sheet.text(x + pad, y + 3.4, 7.2, false, ink(), &line);
+            y += 3.6;
+        }
+
+        if let Some(due_date) = &document.due_date {
+            sheet.text(
+                x + pad,
+                y + 4.0,
+                7.2,
+                true,
+                ink(),
+                &format!("Due {}", format_date(due_date)),
+            );
+            y += 4.4;
+        }
     }
 
-    // Place of Delivery spans the full grid width.
-    sheet.text(column_x[0], y, 6.2, false, muted(), "Place of Delivery");
-    y += 3.4;
-    let delivery = document.delivery_address();
-    let mut address = if delivery.is_empty() {
-        "—".to_string()
-    } else {
-        delivery
-    };
-    address.push_str(&format!(
-        "  ·  State: {}",
-        state_text(document.delivery_state().as_deref())
-    ));
-    for line in wrap(&address, RIGHT - column_x[0], 7.2) {
-        sheet.text(column_x[0], y, 7.2, false, ink(), &line);
-        y += 3.6;
+    let bottom = y + 1.4;
+    sheet.rect(x, top, width, bottom - top, border_pt(BorderClass::Section));
+    sheet.vertical(
+        mid_x,
+        top,
+        if document.is_purchase {
+            bottom
+        } else {
+            delivery_top
+        },
+        border_pt(BorderClass::Cell),
+    );
+    for separator in separators {
+        if separator < bottom - 0.1 {
+            sheet.horizontal(x, x + width, separator, border_pt(BorderClass::Cell));
+        }
     }
 
-    if let Some(due_date) = &document.due_date {
-        sheet.text(
-            column_x[0],
-            y + 0.6,
-            7.2,
-            true,
-            ink(),
-            &format!("Due {}", format_date(due_date)),
-        );
-        y += 4.4;
-    }
-
-    y + 1.0
+    bottom
 }
 
 fn draw_buyer(sheet: &mut Sheet, buyer: &Block) {
     let top = sheet.y;
-    let mut y = top + 4.2;
+    let pad = geometry().text.cell_padding_x_mm;
+    let mut y = top;
 
-    sheet.text(LEFT, y, 6.5, false, muted(), "BUYER");
-    y += 4.8;
-    sheet.text(LEFT, y, 9.5, true, ink(), &buyer.name);
-    y += 4.8;
+    sheet.text(left() + 2.0, y + 3.4, 6.5, false, muted(), "BUYER");
+    y += 6.4;
+    sheet.text(left() + 2.0, y + 4.2, 9.5, true, ink(), &buyer.name);
+    y += 5.2;
 
     let address = dash(buyer.address.as_deref());
-    for line in wrap(&address, RIGHT - LEFT - 4.0, 8.0) {
-        sheet.text(LEFT + 1.5, y, 8.0, false, ink(), &line);
+    for line in wrap(&address, content_width() - pad * 2.0, 8.0) {
+        sheet.text(left() + pad, y + 3.4, 8.0, false, ink(), &line);
         y += 3.9;
     }
 
     sheet.text(
-        LEFT + 1.5,
-        y,
+        left() + pad,
+        y + 3.4,
         7.6,
         false,
         ink(),
@@ -1020,8 +1343,8 @@ fn draw_buyer(sheet: &mut Sheet, buyer: &Block) {
     );
     y += 4.0;
     sheet.text(
-        LEFT + 1.5,
-        y,
+        left() + pad,
+        y + 3.4,
         7.6,
         false,
         ink(),
@@ -1032,13 +1355,19 @@ fn draw_buyer(sheet: &mut Sheet, buyer: &Block) {
             state_text(buyer.state_code.as_deref())
         ),
     );
-    y += 4.4;
+    y += 4.2;
 
-    sheet.rect(LEFT, top, RIGHT, y);
+    sheet.rect(
+        left(),
+        top,
+        content_width(),
+        y - top,
+        border_pt(BorderClass::Section),
+    );
+    sheet.horizontal(left(), right(), top + 6.4, border_pt(BorderClass::Cell));
     sheet.y = y + 4.5;
 }
 
-const TABLE_WEIGHTS: [f32; 8] = [6.0, 40.0, 13.0, 11.0, 15.0, 8.0, 10.0, 19.0];
 const TABLE_HEAD: [&str; 8] = [
     "S.No",
     "Description of Goods",
@@ -1050,27 +1379,73 @@ const TABLE_HEAD: [&str; 8] = [
     "Amount",
 ];
 
-fn draw_table_header(sheet: &mut Sheet) {
-    let columns = columns(&TABLE_WEIGHTS);
-    let top = sheet.y;
-    let height = 7.0;
-    let baseline = top + 4.8;
+fn draw_aligned(
+    sheet: &Sheet,
+    column: &Column,
+    align: Align,
+    baseline: f32,
+    size: f32,
+    bold: bool,
+    text: &str,
+    pad: f32,
+) {
+    match align {
+        Align::Left => sheet.text(column.x + pad, baseline, size, bold, ink(), text),
+        Align::Center => sheet.text_center(
+            column.x + column.width / 2.0,
+            baseline,
+            size,
+            bold,
+            ink(),
+            text,
+        ),
+        Align::Right => sheet.text_right(column.right() - pad, baseline, size, bold, ink(), text),
+    }
+}
 
-    for (index, (x, width)) in columns.iter().enumerate() {
-        let label = TABLE_HEAD[index];
-        if index == 1 {
-            sheet.text(x + 1.5, baseline, 7.2, true, ink(), label);
-        } else if index == 4 || index == 7 {
-            sheet.text_right(x + width - 1.5, baseline, 7.2, true, ink(), label);
-        } else {
-            sheet.text_center(x + width / 2.0, baseline, 7.2, true, ink(), label);
-        }
+fn draw_table_header(sheet: &mut Sheet) {
+    let columns = table_columns();
+    let spec = &geometry().item_table;
+    let pad = geometry().text.cell_padding_x_mm;
+    let top = sheet.y;
+
+    let wrapped: Vec<Vec<String>> = columns
+        .iter()
+        .zip(&spec.columns)
+        .enumerate()
+        .map(|(index, (column, _))| wrap(TABLE_HEAD[index], column.width - pad * 2.0, 7.2))
+        .collect();
+    let lines = wrapped.iter().map(Vec::len).max().unwrap_or(1);
+    let height = spec.header_height_mm.max(lines as f32 * 3.2 + 2.6);
+
+    sheet.rect(
+        left(),
+        top,
+        content_width(),
+        height,
+        border_pt(BorderClass::Cell),
+    );
+    for edge in table_separators(&columns, top, top + height) {
+        sheet.draw_edge(edge);
     }
 
-    sheet.rule(LEFT, RIGHT, top);
-    sheet.rule(LEFT, RIGHT, top + height);
-    for (x, _) in columns.iter().skip(1) {
-        sheet.vertical(*x, top, top + height);
+    for (index, label_lines) in wrapped.iter().enumerate() {
+        let column = columns[index];
+        let align = spec.columns[index].align;
+        let block_height = label_lines.len() as f32 * 3.2;
+        let first = top + (height - block_height) / 2.0 + 2.6;
+        for (line_index, line) in label_lines.iter().enumerate() {
+            draw_aligned(
+                sheet,
+                &column,
+                align,
+                first + line_index as f32 * 3.2,
+                7.2,
+                true,
+                line,
+                pad,
+            );
+        }
     }
     sheet.y = top + height;
 }
@@ -1078,13 +1453,15 @@ fn draw_table_header(sheet: &mut Sheet) {
 fn draw_lines(sheet: &mut Sheet, document: &Document, caption: &str) {
     sheet.ensure(24.0, caption);
     draw_table_header(sheet);
-    let columns = columns(&TABLE_WEIGHTS);
+    let columns = table_columns();
+    let spec = &geometry().item_table;
+    let pad = geometry().text.cell_padding_x_mm;
 
     for (index, line) in document.lines.iter().enumerate() {
-        let description_lines = wrap(&line.description, columns[1].1 - 4.0, 7.4);
-        let height = (description_lines.len() as f32 * 3.6 + 2.8).max(7.2);
+        let description_lines = wrap(&line.description, columns[1].width - pad * 2.0, 7.4);
+        let height = (description_lines.len() as f32 * 3.6 + 2.8).max(spec.row_height_mm);
 
-        if sheet.y + height > TABLE_BOTTOM {
+        if sheet.y + height > table_bottom() {
             sheet.continue_page(caption);
             draw_table_header(sheet);
         }
@@ -1092,85 +1469,63 @@ fn draw_lines(sheet: &mut Sheet, document: &Document, caption: &str) {
         let top = sheet.y;
         let baseline = top + 4.6;
 
-        sheet.text_center(
-            columns[0].0 + columns[0].1 / 2.0,
-            baseline,
-            7.4,
-            false,
-            ink(),
-            &(index + 1).to_string(),
-        );
-        for (offset, text) in description_lines.iter().enumerate() {
-            sheet.text(
-                columns[1].0 + 1.5,
-                top + 4.4 + offset as f32 * 3.6,
-                7.4,
-                false,
-                ink(),
-                text,
-            );
+        sheet.vertical(left(), top, top + height, border_pt(BorderClass::Cell));
+        sheet.vertical(right(), top, top + height, border_pt(BorderClass::Cell));
+        for edge in table_separators(&columns, top, top + height) {
+            sheet.draw_edge(edge);
         }
-        sheet.text_center(
-            columns[2].0 + columns[2].1 / 2.0,
-            baseline,
-            7.4,
-            false,
-            ink(),
-            &dash(line.hsn.as_deref()),
-        );
-        sheet.text_center(
-            columns[3].0 + columns[3].1 / 2.0,
-            baseline,
-            7.4,
-            false,
-            ink(),
-            &format_qty(line.qty_e4),
-        );
-        sheet.text_right(
-            columns[4].0 + columns[4].1 - 1.5,
-            baseline,
-            7.4,
-            false,
-            ink(),
-            &format_amount(line.rate_minor),
-        );
-        sheet.text_center(
-            columns[5].0 + columns[5].1 / 2.0,
-            baseline,
-            7.4,
-            false,
-            ink(),
-            &dash(line.uom.as_deref()),
-        );
-        sheet.text_center(
-            columns[6].0 + columns[6].1 / 2.0,
-            baseline,
-            7.4,
-            false,
-            ink(),
-            &format_percent(line.discount_bps),
-        );
-        sheet.text_right(
-            columns[7].0 + columns[7].1 - 1.5,
-            baseline,
-            7.4,
-            false,
-            ink(),
-            &format_amount(line.taxable_minor),
-        );
+        sheet.horizontal(left(), right(), top + height, border_pt(BorderClass::Cell));
 
-        for (x, _) in columns.iter().skip(1) {
-            sheet.vertical(*x, top, top + height);
+        let values = [
+            (index + 1).to_string(),
+            String::new(),
+            dash(line.hsn.as_deref()),
+            format_qty(line.qty_e4),
+            format_amount(line.rate_minor),
+            dash(line.uom.as_deref()),
+            format_percent(line.discount_bps),
+            format_amount(line.taxable_minor),
+        ];
+        for (column_index, value) in values.iter().enumerate() {
+            if column_index == 1 {
+                for (offset, text) in description_lines.iter().enumerate() {
+                    sheet.text(
+                        columns[1].x + pad,
+                        top + 4.4 + offset as f32 * 3.6,
+                        7.4,
+                        false,
+                        ink(),
+                        text,
+                    );
+                }
+            } else {
+                draw_aligned(
+                    sheet,
+                    &columns[column_index],
+                    spec.columns[column_index].align,
+                    baseline,
+                    7.4,
+                    false,
+                    value,
+                    pad,
+                );
+            }
         }
-        sheet.rule(LEFT, RIGHT, top + height);
+
         sheet.y = top + height;
     }
 
     if document.lines.is_empty() {
         let top = sheet.y;
-        sheet.text(LEFT + 2.0, top + 4.6, 7.4, false, muted(), "No items.");
-        sheet.rule(LEFT, RIGHT, top + 7.2);
-        sheet.y = top + 7.2;
+        let height = spec.row_height_mm;
+        sheet.vertical(left(), top, top + height, border_pt(BorderClass::Cell));
+        sheet.vertical(right(), top, top + height, border_pt(BorderClass::Cell));
+        for edge in table_separators(&columns, top, top + height) {
+            sheet.draw_edge(edge);
+        }
+        sheet.text(left() + pad, top + 4.6, 7.4, false, muted(), "No items.");
+        sheet.horizontal(left(), right(), top + height, border_pt(BorderClass::Cell));
+        sheet.y = top + height;
     }
 }
 
@@ -1186,18 +1541,18 @@ fn draw_bottom(
     caption: &str,
 ) {
     sheet.ensure(50.0, caption);
-    sheet.y += 4.0;
+    sheet.y += geometry().panels.bottom_gap_mm;
     let top = sheet.y;
 
     // Bank block (sales only): a purchase bill keeps the supplier's bank, which
     // we do not store.
     if !document.is_purchase {
         if let Some(bank) = &document.bank {
-            sheet.text(LEFT, top, 6.5, false, muted(), "BANK DETAILS");
-            sheet.text(LEFT, top + 4.6, 8.2, true, ink(), &bank.name);
+            sheet.text(left(), top, 6.5, false, muted(), "BANK DETAILS");
+            sheet.text(left(), top + 4.6, 8.2, true, ink(), &bank.name);
             if let Some(code) = &bank.code {
                 sheet.text(
-                    LEFT,
+                    left(),
                     top + 9.0,
                     7.8,
                     false,
@@ -1209,71 +1564,58 @@ fn draw_bottom(
     }
 
     // Totals: one tax row per rate, so a bill mixing 5% and 18% shows four rows.
-    let mut y = top + 1.0;
-    let label_x = 138.0;
-    sheet.text(label_x, y, 7.6, false, ink(), "Taxable Value");
-    sheet.text_right(
-        RIGHT,
-        y,
-        7.6,
-        false,
-        ink(),
-        &format_amount(document.totals.taxable_minor),
-    );
-    y += 5.0;
-
+    let mut rows: Vec<(String, i64)> =
+        vec![("Taxable Value".to_string(), document.totals.taxable_minor)];
     for slab in &document.slabs {
         if inter_state {
-            sheet.text(
-                label_x,
-                y,
-                7.6,
-                false,
-                ink(),
-                &format!("IGST @ {}", format_percent(slab.gst_rate_bps)),
-            );
-            sheet.text_right(RIGHT, y, 7.6, false, ink(), &format_amount(slab.igst_minor));
-            y += 5.0;
+            rows.push((
+                format!("IGST @ {}", format_percent(slab.gst_rate_bps)),
+                slab.igst_minor,
+            ));
         } else {
             let half = format_percent(slab.gst_rate_bps / 2);
-            sheet.text(label_x, y, 7.6, false, ink(), &format!("CGST @ {half}"));
-            sheet.text_right(RIGHT, y, 7.6, false, ink(), &format_amount(slab.cgst_minor));
-            y += 5.0;
-            sheet.text(label_x, y, 7.6, false, ink(), &format!("SGST @ {half}"));
-            sheet.text_right(RIGHT, y, 7.6, false, ink(), &format_amount(slab.sgst_minor));
-            y += 5.0;
+            rows.push((format!("CGST @ {half}"), slab.cgst_minor));
+            rows.push((format!("SGST @ {half}"), slab.sgst_minor));
             if slab.cess_minor != 0 {
-                sheet.text(label_x, y, 7.6, false, ink(), "Cess");
-                sheet.text_right(RIGHT, y, 7.6, false, ink(), &format_amount(slab.cess_minor));
-                y += 5.0;
+                rows.push(("Cess".to_string(), slab.cess_minor));
             }
         }
     }
-
     if document.totals.round_off_minor != 0 {
-        sheet.text(label_x, y, 7.6, false, ink(), "Round Off");
+        rows.push(("Round Off".to_string(), document.totals.round_off_minor));
+    }
+
+    let totals_width = geometry().panels.totals_width_mm;
+    let totals_x = right() - totals_width;
+    let label_x = totals_x + 2.0;
+    let body_top = top + 1.0;
+    let row_height = 5.0;
+    let mut y = body_top;
+    for (label, value) in &rows {
+        sheet.text(label_x, y + 3.6, 7.6, false, ink(), label);
         sheet.text_right(
-            RIGHT,
-            y,
+            right() - 2.0,
+            y + 3.6,
             7.6,
             false,
             ink(),
-            &format_amount(document.totals.round_off_minor),
+            &format_amount(*value),
         );
-        y += 5.0;
+        y += row_height;
     }
 
-    y += 1.2;
-    sheet.rule(label_x, RIGHT, y - 3.4);
-    sheet.text(label_x, y + 1.4, 9.2, true, ink(), "Total");
+    let grand_top = y + 1.0;
+    let grand_height = 8.0;
+    let grand_bottom = grand_top + grand_height;
     let currency_prefix = if document.company.currency == "INR" {
         "Rs. "
     } else {
         ""
     };
+    sheet.text(label_x, grand_top + 5.4, 9.2, true, ink(), "Total");
     sheet.text_right(
-        RIGHT,
-        y + 1.4,
+        right() - 2.0,
+        grand_top + 5.4,
         9.2,
         true,
         ink(),
@@ -1282,37 +1624,51 @@ fn draw_bottom(
             format_amount(document.totals.total_minor)
         ),
     );
-    y += 6.0;
 
-    sheet.y = y.max(top + 14.0) + 2.0;
+    // The totals box owns its whole outer edge; only the row separators are
+    // drawn inside it.
+    sheet.rect(
+        totals_x,
+        body_top,
+        totals_width,
+        grand_bottom - body_top,
+        border_pt(BorderClass::Section),
+    );
+    for index in 0..rows.len().saturating_sub(1) {
+        let separator = body_top + (index + 1) as f32 * row_height;
+        sheet.horizontal(totals_x, right(), separator, border_pt(BorderClass::Cell));
+    }
+    sheet.horizontal(totals_x, right(), grand_top, border_pt(BorderClass::Total));
+
+    sheet.y = grand_bottom.max(top + 18.0) + 2.0;
 
     // Amount in words.
     sheet.ensure(16.0, caption);
-    sheet.rule(LEFT, RIGHT, sheet.y);
+    sheet.horizontal(left(), right(), sheet.y, border_pt(BorderClass::Section));
     sheet.y += 4.4;
-    sheet.text(LEFT, sheet.y, 6.4, false, muted(), "AMOUNT (IN WORDS)");
-    sheet.text_right(RIGHT, sheet.y, 6.8, false, muted(), "E. & E.O.");
+    sheet.text(left(), sheet.y, 6.4, false, muted(), "AMOUNT (IN WORDS)");
+    sheet.text_right(right(), sheet.y, 6.8, false, muted(), "E. & E.O.");
     sheet.y += 3.6;
     for line in wrap(
         &amount_in_words(document.totals.total_minor, &document.company.currency),
-        RIGHT - LEFT,
+        content_width(),
         7.8,
     ) {
-        sheet.text(LEFT, sheet.y, 7.8, false, ink(), &line);
+        sheet.text(left(), sheet.y, 7.8, false, ink(), &line);
         sheet.y += 4.0;
     }
 
     draw_hsn_summary(sheet, document, hsn_rows, inter_state, has_cess, caption);
 
     if tax_total != 0 {
-        sheet.ensure(8.0, caption);
-        sheet.y += 2.0;
+        sheet.ensure(10.0, caption);
+        sheet.y += 4.4;
         let text = format!(
             "Tax Amount (in words): {}",
             amount_in_words(tax_total, &document.company.currency)
         );
-        for line in wrap(&text, RIGHT - LEFT, 7.4) {
-            sheet.text(LEFT, sheet.y, 7.4, false, ink(), &line);
+        for line in wrap(&text, content_width(), 7.4) {
+            sheet.text(left(), sheet.y, 7.4, false, ink(), &line);
             sheet.y += 3.8;
         }
     }
@@ -1321,15 +1677,22 @@ fn draw_bottom(
     if !terms.is_empty() {
         sheet.ensure(14.0, caption);
         sheet.y += 2.0;
-        sheet.text(LEFT, sheet.y, 6.4, false, muted(), "TERMS & CONDITIONS");
+        sheet.text(left(), sheet.y, 6.4, false, muted(), "TERMS & CONDITIONS");
         sheet.y += 4.0;
         for (index, term) in terms.iter().enumerate() {
-            for (line_index, line) in
-                wrap(&format!("{}. {term}", index + 1), RIGHT - LEFT - 4.0, 7.4)
-                    .iter()
-                    .enumerate()
+            for (line_index, line) in wrap(
+                &format!("{}. {term}", index + 1),
+                content_width() - 4.0,
+                7.4,
+            )
+            .iter()
+            .enumerate()
             {
-                let x = if line_index == 0 { LEFT } else { LEFT + 4.0 };
+                let x = if line_index == 0 {
+                    left()
+                } else {
+                    left() + 4.0
+                };
                 sheet.text(x, sheet.y, 7.4, false, ink(), line);
                 sheet.y += 3.7;
             }
@@ -1337,6 +1700,28 @@ fn draw_bottom(
     }
 
     draw_declaration(sheet, document, issuer, caption);
+}
+
+fn tax_columns(inter_state: bool, has_cess: bool) -> (Vec<Column>, Vec<Align>) {
+    let spec = &geometry().tax_summary.columns;
+    let mut weights = vec![spec.hsn, spec.taxable];
+    let mut aligns = vec![Align::Left, Align::Right];
+
+    if inter_state {
+        weights.extend([spec.rate, spec.tax]);
+        aligns.extend([Align::Center, Align::Right]);
+    } else {
+        weights.extend([spec.rate, spec.tax, spec.rate, spec.tax]);
+        aligns.extend([Align::Center, Align::Right, Align::Center, Align::Right]);
+    }
+    if has_cess {
+        weights.extend([spec.cess_rate, spec.cess]);
+        aligns.extend([Align::Center, Align::Right]);
+    }
+    weights.push(spec.total);
+    aligns.push(Align::Right);
+
+    (columns_at(&weights, left(), content_width()), aligns)
 }
 
 fn draw_hsn_summary(
@@ -1347,10 +1732,15 @@ fn draw_hsn_summary(
     has_cess: bool,
     caption: &str,
 ) {
-    sheet.ensure(10.0 + rows.len() as f32 * 6.0 + 8.0, caption);
+    let spec = &geometry().tax_summary;
+    let pad = geometry().text.cell_padding_x_mm;
+    sheet.ensure(
+        14.0 + (rows.len() as f32 + 1.0) * spec.row_height_mm + 8.0,
+        caption,
+    );
     sheet.y += 3.0;
     sheet.text(
-        LEFT,
+        left(),
         sheet.y,
         6.4,
         false,
@@ -1359,121 +1749,159 @@ fn draw_hsn_summary(
     );
     sheet.y += 3.4;
 
-    let mut weights: Vec<f32> = vec![16.0, 18.0];
     let mut head: Vec<&str> = vec!["HSN/SAC", "Taxable Value"];
     if inter_state {
-        weights.extend([12.0, 16.0]);
         head.extend(["IGST Rate", "IGST Amount"]);
     } else {
-        weights.extend([11.0, 15.0, 11.0, 15.0]);
         head.extend(["CGST Rate", "CGST Amount", "SGST Rate", "SGST Amount"]);
     }
     if has_cess {
-        weights.extend([10.0, 14.0]);
         head.extend(["Cess Rate", "Cess Amount"]);
     }
-    weights.push(18.0);
     head.push("Total Tax Amount");
 
-    let columns = columns(&weights);
+    let (columns, aligns) = tax_columns(inter_state, has_cess);
     let top = sheet.y;
-    let head_height = 6.4;
-    for (index, (x, width)) in columns.iter().enumerate() {
-        sheet.text_center(x + width / 2.0, top + 4.2, 6.6, true, ink(), head[index]);
+    let wrapped: Vec<Vec<String>> = columns
+        .iter()
+        .zip(&head)
+        .map(|(column, label)| wrap(label, column.width - pad * 2.0, 6.6))
+        .collect();
+    let head_lines = wrapped.iter().map(Vec::len).max().unwrap_or(1);
+    let head_height = spec.header_height_mm.max(head_lines as f32 * 3.0 + 2.4);
+
+    sheet.rect(
+        left(),
+        top,
+        content_width(),
+        head_height,
+        border_pt(BorderClass::Cell),
+    );
+    for edge in table_separators(&columns, top, top + head_height) {
+        sheet.draw_edge(edge);
     }
-    sheet.rule(LEFT, RIGHT, top);
-    sheet.rule(LEFT, RIGHT, top + head_height);
+    for (index, label_lines) in wrapped.iter().enumerate() {
+        let block_height = label_lines.len() as f32 * 3.0;
+        let first = top + (head_height - block_height) / 2.0 + 2.4;
+        for (line_index, line) in label_lines.iter().enumerate() {
+            draw_aligned(
+                sheet,
+                &columns[index],
+                aligns[index],
+                first + line_index as f32 * 3.0,
+                6.6,
+                true,
+                line,
+                pad,
+            );
+        }
+    }
     sheet.y = top + head_height;
 
-    let amount_cell = |sheet: &Sheet, column: usize, y: f32, value: i64| {
-        let (x, width) = columns[column];
-        sheet.text_right(x + width - 1.5, y, 7.0, false, ink(), &format_amount(value));
-    };
-    let rate_cell = |sheet: &Sheet, column: usize, y: f32, value: i64| {
-        let (x, width) = columns[column];
-        sheet.text_center(
-            x + width / 2.0,
-            y,
-            7.0,
-            false,
-            ink(),
-            &format_percent(value),
-        );
+    let draw_row = |sheet: &mut Sheet, values: &[String], bold: bool| {
+        let top = sheet.y;
+        let baseline = top + 4.4;
+        let height = spec.row_height_mm;
+        sheet.vertical(left(), top, top + height, border_pt(BorderClass::Cell));
+        sheet.vertical(right(), top, top + height, border_pt(BorderClass::Cell));
+        for edge in table_separators(&columns, top, top + height) {
+            sheet.draw_edge(edge);
+        }
+        for (index, value) in values.iter().enumerate() {
+            draw_aligned(
+                sheet,
+                &columns[index],
+                aligns[index],
+                baseline,
+                7.0,
+                bold,
+                value,
+                pad,
+            );
+        }
+        sheet.horizontal(left(), right(), top + height, border_pt(BorderClass::Cell));
+        sheet.y = top + height;
     };
 
     for row in rows {
-        let top = sheet.y;
-        let baseline = top + 4.4;
-        sheet.text(
-            LEFT + 1.5,
-            baseline,
-            7.0,
-            false,
-            ink(),
-            &dash(row.hsn.as_deref()),
-        );
-        amount_cell(sheet, 1, baseline, row.taxable_minor);
+        let mut values = vec![dash(row.hsn.as_deref()), format_amount(row.taxable_minor)];
         if inter_state {
-            rate_cell(sheet, 2, baseline, row.gst_rate_bps);
-            amount_cell(sheet, 3, baseline, row.igst_minor);
+            values.push(format_percent(row.gst_rate_bps));
+            values.push(format_amount(row.igst_minor));
         } else {
-            rate_cell(sheet, 2, baseline, row.gst_rate_bps / 2);
-            amount_cell(sheet, 3, baseline, row.cgst_minor);
-            rate_cell(sheet, 4, baseline, row.gst_rate_bps / 2);
-            amount_cell(sheet, 5, baseline, row.sgst_minor);
+            values.push(format_percent(row.gst_rate_bps / 2));
+            values.push(format_amount(row.cgst_minor));
+            values.push(format_percent(row.gst_rate_bps / 2));
+            values.push(format_amount(row.sgst_minor));
         }
-        let total_column = columns.len() - 1;
         if has_cess {
-            rate_cell(sheet, total_column - 2, baseline, row.gst_rate_bps);
-            amount_cell(sheet, total_column - 1, baseline, row.cess_minor);
+            values.push(format_percent(row.gst_rate_bps));
+            values.push(format_amount(row.cess_minor));
         }
-        amount_cell(sheet, total_column, baseline, row.tax_minor);
-        sheet.rule(LEFT, RIGHT, top + 6.2);
-        sheet.y = top + 6.2;
+        values.push(format_amount(row.tax_minor));
+        draw_row(sheet, &values, false);
     }
 
     // Total row.
-    let top = sheet.y;
-    let baseline = top + 4.6;
-    sheet.text(LEFT + 1.5, baseline, 7.2, true, ink(), "Total");
-    amount_cell(sheet, 1, baseline, document.totals.taxable_minor);
+    let mut values = vec![
+        "Total".to_string(),
+        format_amount(document.totals.taxable_minor),
+    ];
     if inter_state {
-        amount_cell(sheet, 3, baseline, document.totals.igst_minor);
+        values.push(String::new());
+        values.push(format_amount(document.totals.igst_minor));
     } else {
-        amount_cell(sheet, 3, baseline, document.totals.cgst_minor);
-        amount_cell(sheet, 5, baseline, document.totals.sgst_minor);
+        values.push(String::new());
+        values.push(format_amount(document.totals.cgst_minor));
+        values.push(String::new());
+        values.push(format_amount(document.totals.sgst_minor));
     }
-    let total_column = columns.len() - 1;
     if has_cess {
-        amount_cell(
+        values.push(String::new());
+        values.push(format_amount(document.totals.cess_minor));
+    }
+    values.push(format_amount(document.tax_total()));
+
+    let top = sheet.y;
+    let height = spec.row_height_mm;
+    sheet.vertical(left(), top, top + height, border_pt(BorderClass::Cell));
+    sheet.vertical(right(), top, top + height, border_pt(BorderClass::Cell));
+    for edge in table_separators(&columns, top, top + height) {
+        sheet.draw_edge(edge);
+    }
+    let baseline = top + 4.6;
+    for (index, value) in values.iter().enumerate() {
+        draw_aligned(
             sheet,
-            total_column - 1,
+            &columns[index],
+            aligns[index],
             baseline,
-            document.totals.cess_minor,
+            7.2,
+            true,
+            value,
+            pad,
         );
     }
-    amount_cell(sheet, total_column, baseline, document.tax_total());
-    sheet.rule(LEFT, RIGHT, top);
-    sheet.rule(LEFT, RIGHT, top + 7.0);
-    sheet.y = top + 7.0;
+    sheet.horizontal(left(), right(), top + height, border_pt(BorderClass::Total));
+    sheet.y = top + height;
 }
 
 fn draw_declaration(sheet: &mut Sheet, document: &Document, issuer: &Block, caption: &str) {
     sheet.ensure(30.0, caption);
     sheet.y += 3.0;
     let top = sheet.y;
-    let split = LEFT + 118.0;
+    let split = left() + geometry().panels.declaration_split_mm;
 
-    sheet.text(LEFT, top + 4.0, 6.4, false, muted(), "DECLARATION");
+    sheet.text(left(), top + 4.0, 6.4, false, muted(), "DECLARATION");
     let declaration = "We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.";
     let mut y = top + 8.0;
-    for line in wrap(declaration, split - LEFT - 3.0, 7.2) {
-        sheet.text(LEFT, y, 7.2, false, ink(), &line);
+    for line in wrap(declaration, split - left() - 3.0, 7.2) {
+        sheet.text(left(), y, 7.2, false, ink(), &line);
         y += 3.6;
     }
     if document.is_purchase {
         sheet.text(
-            LEFT,
+            left(),
             y + 2.0,
             7.2,
             false,
@@ -1499,17 +1927,23 @@ fn draw_declaration(sheet: &mut Sheet, document: &Document, issuer: &Block, capt
         "Authorised Signatory",
     );
 
-    sheet.rect(LEFT, top, RIGHT, top + 24.0);
-    sheet.vertical(split, top, top + 24.0);
+    sheet.rect(
+        left(),
+        top,
+        content_width(),
+        24.0,
+        border_pt(BorderClass::Section),
+    );
+    sheet.vertical(split, top, top + 24.0, border_pt(BorderClass::Cell));
     sheet.y = top + 26.0;
 }
 
 fn draw_footer(sheet: &Sheet, document: &Document, caption: &str, page: u32, pages: u32) {
-    let y = PAGE_H - 8.0;
-    sheet.rule(LEFT, RIGHT, y - 4.0);
-    sheet.text(LEFT, y, 6.4, false, muted(), &document.jurisdiction());
+    let y = page_h() - 8.0;
+    sheet.horizontal(left(), right(), y - 4.0, border_pt(BorderClass::Section));
+    sheet.text(left(), y, 6.4, false, muted(), &document.jurisdiction());
     sheet.text_center(
-        PAGE_W / 2.0,
+        page_w() / 2.0,
         y,
         6.4,
         false,
@@ -1517,7 +1951,7 @@ fn draw_footer(sheet: &Sheet, document: &Document, caption: &str, page: u32, pag
         "This is a Computer Generated Invoice",
     );
     sheet.text_right(
-        RIGHT,
+        right(),
         y,
         6.4,
         false,
@@ -1533,7 +1967,7 @@ fn draw_footer(sheet: &Sheet, document: &Document, caption: &str, page: u32, pag
 /// Renders both GST copies of one invoice.
 pub fn build(value: &Value) -> AppResult<Vec<u8>> {
     let document = Document::from_json(value);
-    let (pdf, page, layer) = PdfDocument::new("Tax Invoice", Mm(PAGE_W), Mm(PAGE_H), "Invoice");
+    let (pdf, page, layer) = PdfDocument::new("Tax Invoice", Mm(page_w()), Mm(page_h()), "Invoice");
     let fonts = Fonts {
         regular: pdf
             .add_builtin_font(BuiltinFont::Helvetica)
@@ -1547,7 +1981,7 @@ pub fn build(value: &Value) -> AppResult<Vec<u8>> {
         doc: pdf,
         layer,
         fonts,
-        y: TOP,
+        y: top(),
     };
 
     for (index, caption) in COPY_CAPTIONS.iter().enumerate() {
@@ -1647,8 +2081,11 @@ fn sanitize_filename_segment(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{default_filename, sanitize_filename_segment};
-    use serde_json::json;
+    use super::{
+        build, columns_at, content_width, default_filename, geometry, left, rect_edges, right,
+        sanitize_filename_segment, table_columns, table_separators, Align, Edge,
+    };
+    use serde_json::{json, Value};
 
     #[test]
     fn sanitises_filename_segments() {
@@ -1678,5 +2115,262 @@ mod tests {
         let cash = json!({ "type": "PURCHASE", "number": "PUR/0007", "party": null });
         let name = default_filename(&cash);
         assert!(name.starts_with("Party_Purchase_PUR-0007_"), "{name}");
+    }
+
+    #[test]
+    fn a_rect_emits_four_continuous_edges() {
+        let edges = rect_edges(10.0, 20.0, 30.0, 40.0, 0.5);
+        assert_eq!(
+            edges,
+            [
+                Edge {
+                    x1: 10.0,
+                    y1: 20.0,
+                    x2: 40.0,
+                    y2: 20.0,
+                    weight: 0.5
+                },
+                Edge {
+                    x1: 40.0,
+                    y1: 20.0,
+                    x2: 40.0,
+                    y2: 60.0,
+                    weight: 0.5
+                },
+                Edge {
+                    x1: 10.0,
+                    y1: 60.0,
+                    x2: 40.0,
+                    y2: 60.0,
+                    weight: 0.5
+                },
+                Edge {
+                    x1: 10.0,
+                    y1: 20.0,
+                    x2: 10.0,
+                    y2: 60.0,
+                    weight: 0.5
+                },
+            ]
+        );
+
+        // Every edge is non-degenerate and no edge appears twice.
+        for edge in edges {
+            assert!((edge.x1 - edge.x2).abs() + (edge.y1 - edge.y2).abs() > 0.0);
+        }
+        let mut unique = edges.to_vec();
+        unique.sort_by(|left, right| {
+            (left.x1, left.y1, left.x2, left.y2)
+                .partial_cmp(&(right.x1, right.y1, right.x2, right.y2))
+                .expect("test coordinates are finite")
+        });
+        unique.dedup_by(|left, right| {
+            (left.x1 - right.x1).abs() < f32::EPSILON
+                && (left.y1 - right.y1).abs() < f32::EPSILON
+                && (left.x2 - right.x2).abs() < f32::EPSILON
+                && (left.y2 - right.y2).abs() < f32::EPSILON
+        });
+        assert_eq!(unique.len(), 4);
+    }
+
+    #[test]
+    fn table_columns_fill_the_content_width() {
+        let columns = table_columns();
+        let total: f32 = columns.iter().map(|column| column.width).sum();
+        assert!((total - content_width()).abs() < 0.001, "{total}");
+
+        assert!((columns.first().expect("columns").x - left()).abs() < 0.001);
+        assert!((columns.last().expect("columns").right() - right()).abs() < 0.001);
+        for pair in columns.windows(2) {
+            assert!((pair[0].right() - pair[1].x).abs() < 0.001);
+        }
+
+        // The description is left aligned; amount and quantity flush right.
+        let spec = &geometry().item_table.columns;
+        assert_eq!(spec[1].align, Align::Left);
+        assert_eq!(spec[3].align, Align::Right);
+        assert_eq!(spec[4].align, Align::Right);
+        assert_eq!(spec[7].align, Align::Right);
+    }
+
+    #[test]
+    fn table_separators_are_unique_and_inside_the_frame() {
+        let columns = table_columns();
+        let separators = table_separators(&columns, 100.0, 120.0);
+        assert_eq!(separators.len(), columns.len() - 1);
+
+        let xs: Vec<f32> = separators.iter().map(|edge| edge.x1).collect();
+        let mut unique = xs.clone();
+        unique.sort_by(|left, right| left.partial_cmp(right).expect("finite separator"));
+        unique.dedup_by(|left, right| (*left - *right).abs() < 0.001);
+        assert_eq!(unique.len(), xs.len());
+
+        for separator in &separators {
+            assert!(separator.x1 > left() + 0.01);
+            assert!(separator.x1 < right() - 0.01);
+        }
+    }
+
+    fn fixture_line(index: usize) -> Value {
+        json!({
+            "id": index + 1,
+            "description": format!("SSD 256GB item {index}"),
+            "hsn": "8471",
+            "uom": "NOS",
+            "qtyE4": 10_000,
+            "rateMinor": 1_000_000,
+            "discountBps": 0,
+            "gstRateBps": 1800,
+            "taxableMinor": 1_000_000,
+            "cgstMinor": 90_000,
+            "sgstMinor": 90_000,
+            "igstMinor": 0,
+            "cessMinor": 0,
+            "totalMinor": 1_180_000
+        })
+    }
+
+    fn invoice_fixture(line_count: usize) -> Value {
+        let lines: Vec<Value> = (0..line_count).map(fixture_line).collect();
+        let taxable = 1_000_000_i64 * line_count as i64;
+        let cgst = 90_000_i64 * line_count as i64;
+        let sgst = 90_000_i64 * line_count as i64;
+        let total = 1_180_000_i64 * line_count as i64;
+
+        json!({
+            "id": 7,
+            "type": "SALES",
+            "number": "INV/0001",
+            "date": "2026-10-29",
+            "dueDate": "2026-11-28",
+            "referenceNo": "PO-42",
+            "narration": null,
+            "placeOfSupplyStateCode": "27",
+            "status": "POSTED",
+            "company": {
+                "name": "Acme Distributors",
+                "legalName": null,
+                "gstin": "27AABFU4477G1ZY",
+                "pan": "AABFU4477G",
+                "stateCode": "27",
+                "address": "12 Market Road",
+                "city": "Pune",
+                "pincode": "411001",
+                "phone": "9876543210",
+                "email": "owner@acme.in",
+                "currency": "INR",
+                "invoiceTerms": "Goods once sold are not taken back."
+            },
+            "party": {
+                "id": 3,
+                "name": "Acme Distributor",
+                "gstin": "27AABFU4477G1ZY",
+                "pan": null,
+                "stateCode": "27",
+                "billingAddress": "88 Buyer Street, Pune",
+                "shippingAddress": null,
+                "phone": "9000000001",
+                "email": null
+            },
+            "lines": lines,
+            "taxSlabs": [{
+                "gstRateBps": 1800,
+                "taxableMinor": taxable,
+                "cgstMinor": cgst,
+                "sgstMinor": sgst,
+                "igstMinor": 0,
+                "cessMinor": 0,
+                "taxMinor": cgst + sgst
+            }],
+            "bank": { "name": "HDFC Bank", "code": "BANK-01" },
+            "totals": {
+                "taxableMinor": taxable,
+                "cgstMinor": cgst,
+                "sgstMinor": sgst,
+                "igstMinor": 0,
+                "cessMinor": 0,
+                "discountMinor": 0,
+                "roundOffMinor": 0,
+                "totalMinor": total,
+                "totalQtyE4": 10_000_i64 * line_count as i64
+            }
+        })
+    }
+
+    /// The MediaBox is the page rectangle in points: A4 is 595.28 x 841.89.
+    fn page_boxes(bytes: &[u8]) -> Vec<(f32, f32)> {
+        let text = String::from_utf8_lossy(bytes);
+        let mut rest = text.as_ref();
+        let mut boxes = Vec::new();
+        while let Some(index) = rest.find("/MediaBox") {
+            rest = &rest[index + "/MediaBox".len()..];
+            let Some(start) = rest.find('[') else {
+                break;
+            };
+            let Some(end_offset) = rest[start..].find(']') else {
+                break;
+            };
+            let end = start + end_offset;
+            let numbers: Vec<f32> = rest[start + 1..end]
+                .split_whitespace()
+                .filter_map(|number| number.parse().ok())
+                .collect();
+            if numbers.len() == 4 {
+                boxes.push((numbers[2], numbers[3]));
+            }
+            rest = &rest[end + 1..];
+        }
+        boxes
+    }
+
+    #[test]
+    fn builds_two_a4_pages_for_a_normal_invoice() {
+        let bytes = build(&invoice_fixture(3)).expect("build normal invoice");
+        let boxes = page_boxes(&bytes);
+
+        assert_eq!(boxes.len(), 2, "one page per GST copy");
+        for (width, height) in &boxes {
+            assert!((width - 595.28).abs() < 1.0, "A4 width: {width}");
+            assert!((height - 841.89).abs() < 1.0, "A4 height: {height}");
+        }
+
+        // Proof artefact for the PR: open it and check the frame, the panels and
+        // the header/column alignment on both copies.
+        let output = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("target")
+            .join("test-output");
+        std::fs::create_dir_all(&output).expect("create test-output");
+        std::fs::write(output.join("invoice.pdf"), &bytes).expect("write invoice.pdf");
+    }
+
+    #[test]
+    fn overflows_to_continuation_pages_and_keeps_a4() {
+        let bytes = build(&invoice_fixture(40)).expect("build overflowing invoice");
+        let boxes = page_boxes(&bytes);
+
+        assert!(
+            boxes.len() >= 2,
+            "an overflowing invoice must span more than one page"
+        );
+        for (width, height) in &boxes {
+            assert!((width - 595.28).abs() < 1.0, "A4 width: {width}");
+            assert!((height - 841.89).abs() < 1.0, "A4 height: {height}");
+        }
+
+        let output = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("target")
+            .join("test-output");
+        std::fs::create_dir_all(&output).expect("create test-output");
+        std::fs::write(output.join("invoice-overflow.pdf"), &bytes)
+            .expect("write invoice-overflow.pdf");
+    }
+
+    #[test]
+    fn columns_at_is_exact_for_arbitrary_weights() {
+        let columns = columns_at(&[1.0, 2.0, 3.0], 10.0, 60.0);
+        assert_eq!(columns.len(), 3);
+        assert!((columns[0].width - 10.0).abs() < 0.001);
+        assert!((columns[1].x - 20.0).abs() < 0.001);
+        assert!((columns[2].right() - 70.0).abs() < 0.001);
     }
 }
