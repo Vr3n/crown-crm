@@ -122,6 +122,36 @@ pub fn financial_year_label(date_iso: &str, start_month: i64) -> String {
     format!("{start_year}-{:02}", (start_year + 1).rem_euclid(100))
 }
 
+/// The comparison form of a supplier bill number: case, spaces and the
+/// separators `/`, `-` and `.` do not distinguish two bills. Printing always
+/// uses the number exactly as typed; this form only feeds duplicate detection.
+pub fn normalize_supplier_bill_number(value: &str) -> String {
+    value
+        .trim()
+        .to_uppercase()
+        .chars()
+        .filter(|ch| !ch.is_whitespace() && !matches!(ch, '/' | '-' | '.'))
+        .collect()
+}
+
+/// Validates a trimmed supplier bill number before it becomes a voucher number.
+pub fn validate_supplier_bill_number(value: &str) -> Option<String> {
+    let length = value.chars().count();
+    if length == 0 {
+        return Some("Supplier bill number is required".to_string());
+    }
+    if length > 32 {
+        return Some("Supplier bill number must be 32 characters or fewer".to_string());
+    }
+    if value.chars().any(char::is_control) {
+        return Some("Supplier bill number cannot contain control characters".to_string());
+    }
+    if normalize_supplier_bill_number(value).is_empty() {
+        return Some("Supplier bill number must contain a letter or digit".to_string());
+    }
+    None
+}
+
 pub fn resolve_tokens(template: &str, date: &str, fy: &str) -> String {
     let mut parts = date.split('-');
     let year = parts.next().unwrap_or("");
@@ -452,5 +482,42 @@ pub fn dispatch(ctx: &mut Ctx<'_>, channel: &str, args: &[Value]) -> Option<AppR
             Ok(json!(list(ctx.db(), company_id)?))
         })()),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        financial_year_label, normalize_supplier_bill_number, validate_supplier_bill_number,
+    };
+
+    #[test]
+    fn normalises_supplier_bill_numbers_for_comparison() {
+        assert_eq!(normalize_supplier_bill_number("  tc/2026-27/583 "), "TC202627583");
+        assert_eq!(normalize_supplier_bill_number("A b-c.d"), "ABCD");
+        assert_eq!(normalize_supplier_bill_number("--- / ."), "");
+        assert_eq!(normalize_supplier_bill_number("INV 001"), "INV001");
+    }
+
+    #[test]
+    fn accepts_a_supplier_bill_number_of_one_to_32_characters() {
+        assert_eq!(validate_supplier_bill_number("T"), None);
+        assert_eq!(validate_supplier_bill_number(&"9".repeat(32)), None);
+        assert!(validate_supplier_bill_number("").is_some());
+        assert!(validate_supplier_bill_number(&"9".repeat(33)).is_some());
+    }
+
+    #[test]
+    fn rejects_control_characters_and_separator_only_numbers() {
+        assert!(validate_supplier_bill_number("TC/1\n583").is_some());
+        assert!(validate_supplier_bill_number("--- / .").is_some());
+    }
+
+    #[test]
+    fn derives_the_financial_year_from_the_company_start_month() {
+        assert_eq!(financial_year_label("2026-04-01", 4), "2026-27");
+        assert_eq!(financial_year_label("2027-03-31", 4), "2026-27");
+        assert_eq!(financial_year_label("2026-01-15", 1), "2026-27");
+        assert_eq!(financial_year_label("2025-12-31", 1), "2025-26");
     }
 }

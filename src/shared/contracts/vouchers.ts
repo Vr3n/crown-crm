@@ -13,6 +13,10 @@ export const voucherTypeSchema = z.enum([
 ])
 export type VoucherType = z.infer<typeof voucherTypeSchema>
 
+/** Where `vouchers.number` came from. A purchase with no supplier bill is internal. */
+export const voucherNumberSourceSchema = z.enum(['INTERNAL', 'SUPPLIER'])
+export type VoucherNumberSource = z.infer<typeof voucherNumberSourceSchema>
+
 export interface VoucherLineInput {
   itemId?: number | null
   description: string
@@ -65,6 +69,10 @@ export const postVoucherInputSchema = z.object({
   placeOfSupplyStateCode: z.string().max(2).optional().nullable(),
   narration: z.string().max(1000).optional().nullable(),
   referenceNo: z.string().max(80).optional().nullable(),
+  /** The supplier's printed bill number; purchase bills only. */
+  supplierBillNo: z.string().trim().min(1).max(32).optional().nullable(),
+  /** Declares a purchase with no supplier bill, which takes the internal PUR series. */
+  supplierBillMissing: z.boolean().optional(),
   /** Only honoured when the series allows manual overrides. */
   manualNumber: z.number().int().positive().optional().nullable(),
   lines: z.array(voucherLineInputSchema).default([]),
@@ -106,6 +114,7 @@ export interface VoucherListRow {
   id: number
   type: VoucherType
   number: string
+  numberSource: VoucherNumberSource
   date: string
   partyName: string | null
   narration: string | null
@@ -141,6 +150,7 @@ export interface VoucherDetail {
   id: number
   type: VoucherType
   number: string
+  numberSource: VoucherNumberSource
   date: string
   dueDate: string | null
   partyId: number | null

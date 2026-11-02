@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { VoucherNumberSource } from './vouchers'
+
 /**
  * Read model for the printable sales invoice / purchase bill. It is
  * deliberately separate from `VoucherDetail`: a tax invoice needs the company
@@ -87,6 +89,7 @@ export interface InvoiceDocument {
   id: number
   type: 'SALES' | 'PURCHASE'
   number: string
+  numberSource: VoucherNumberSource
   date: string
   dueDate: string | null
   referenceNo: string | null
