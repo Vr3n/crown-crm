@@ -4,6 +4,7 @@ import { Chart } from '@tanstack/charts/react'
 import { scaleBand } from '@tanstack/charts/scales/band'
 import { scaleLinear } from '@tanstack/charts/scales/linear'
 import { tooltip } from '@tanstack/charts/tooltip'
+import { ChartDataTable, ChartLegend } from './chart-frame'
 import type { AgeingBucket, MonthlyTotals } from '../../../../shared/contracts/dashboard'
 
 const SALES = 'oklch(0.55 0.07 235)'
@@ -13,64 +14,6 @@ const PAYABLE = 'oklch(0.55 0.12 32)'
 
 const axisFormat = (value: number): string =>
   new Intl.NumberFormat('en-IN', { notation: 'compact', maximumFractionDigits: 1 }).format(value)
-
-function Legend({ items }: { items: { label: string; color: string }[] }): React.JSX.Element {
-  return (
-    <ul className="flex flex-wrap items-center gap-4" aria-label="Chart legend">
-      {items.map((item) => (
-        <li key={item.label} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground">
-          <span
-            className="inline-block size-2.5"
-            style={{ backgroundColor: item.color }}
-            aria-hidden
-          />
-          {item.label}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-function DataTable({
-  caption,
-  columns,
-  rows
-}: {
-  caption: string
-  columns: string[]
-  rows: (string | number)[][]
-}): React.JSX.Element {
-  return (
-    <details className="mt-2 text-[0.75rem]">
-      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-        Show data table
-      </summary>
-      <table className="mt-2 w-full border-collapse text-left">
-        <caption className="sr-only">{caption}</caption>
-        <thead>
-          <tr className="border-b border-border">
-            {columns.map((column) => (
-              <th key={column} className="px-2 py-1 font-medium text-muted-foreground">
-                {column}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr key={index} className="border-b border-border last:border-0">
-              {row.map((cell, cellIndex) => (
-                <td key={cellIndex} className="px-2 py-1 font-mono tabular-nums">
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </details>
-  )
-}
 
 /** Six month sales and purchases, grouped so both series share a baseline. */
 export function MonthlyFlowChart({ monthly }: { monthly: MonthlyTotals[] }): React.JSX.Element {
@@ -122,7 +65,7 @@ export function MonthlyFlowChart({ monthly }: { monthly: MonthlyTotals[] }): Rea
 
   return (
     <figure className="min-w-0">
-      <Legend
+      <ChartLegend
         items={[
           { label: 'Sales', color: SALES },
           { label: 'Purchases', color: PURCHASES }
@@ -134,7 +77,7 @@ export function MonthlyFlowChart({ monthly }: { monthly: MonthlyTotals[] }): Rea
         ariaLabel="Sales and purchases for the last six months"
         className="mt-2 text-foreground"
       />
-      <DataTable
+      <ChartDataTable
         caption="Sales and purchases for the last six months"
         columns={['Month', 'Sales', 'Purchases']}
         rows={monthly.map((month) => [
@@ -197,7 +140,7 @@ export function AgeingChart({ ageing }: { ageing: AgeingBucket[] }): React.JSX.E
 
   return (
     <figure className="min-w-0">
-      <Legend
+      <ChartLegend
         items={[
           { label: 'Receivable', color: RECEIVABLE },
           { label: 'Payable', color: PAYABLE }
@@ -209,7 +152,7 @@ export function AgeingChart({ ageing }: { ageing: AgeingBucket[] }): React.JSX.E
         ariaLabel="Open receivables and payables by age"
         className="mt-2 text-foreground"
       />
-      <DataTable
+      <ChartDataTable
         caption="Open receivables and payables by age"
         columns={['Age', 'Receivable', 'Payable']}
         rows={ageing.map((bucket) => [
