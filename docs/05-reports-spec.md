@@ -38,6 +38,63 @@ Rule: every report is a read of vouchers, ledger lines, stock movements and allo
 6. Printed reports carry company name, period, generation timestamp and page numbers.
 7. Zero rows show a composed empty state, not a blank grid.
 
+### 2.1 Report visuals
+
+Charts are the visual layer over the table, never the only source of a number.
+Area for time, bars for comparison. No pie, no donut, at most two charts per
+screen. Every chart has an accessible name, a legend when it has more than one
+series, and a data-table fallback carrying the exact values.
+
+| Report | Primary chart | Secondary chart |
+|---|---|---|
+| Receivables | Outstanding by ageing bucket, one horizontal stacked bar | Top 8 customers by overdue, horizontal bars |
+| Payables | Outstanding by ageing bucket, one horizontal stacked bar | Top 8 suppliers due within 30 days, horizontal bars |
+| Ageing | Buckets per party, horizontal stacked bars | None |
+| Sales register | Monthly taxable value, area with a GST overlay line | CGST, SGST and IGST by month, stacked bars |
+| Purchase register | Monthly taxable purchases, area with an input tax line | CGST, SGST and IGST by month, stacked bars |
+| Profit and loss | Income and expense areas with a net profit line | Expense composition, horizontal bars |
+| Trial balance | None, the report is structural | None |
+| Balance sheet | None, the report is structural | None |
+
+Rules:
+
+1. The same RPC rows feed the chart and the table, so a chart total equals the
+   table total. Bucket charts are built from every row. A "top N" chart is
+   explicitly a ranking and says so in its title.
+2. Ageing and the bucket charts fold every party past the visible limit into
+   one `Other parties (n)` row, so folding never changes the totals.
+3. The 0-30 bucket includes bills that are not due yet, matching the ageing
+   report. The not due/overdue split stays an exact split at zero days.
+4. Monthly register series fill months with no documents with zeros so the time
+   axis is continuous. Totals still equal the register totals.
+5. The P&L monthly series comes from posted ledger lines. Account opening
+   balances are not ledger lines, so the difference between the report totals
+   and the monthly line totals is folded into the first month. The series
+   therefore always reconciles to `totalIncomeMinor`, `totalExpenseMinor` and
+   `netProfitMinor`.
+6. Money stays in integer minor units through shaping. Formatting happens only
+   at the component edge.
+7. An empty report draws no chart at all; the composed empty state is the only
+   thing on the page.
+8. Charts are screen-only. Print and CSV/XLSX show the table, whose columns and
+   totals are unchanged.
+
+### 2.2 Table semantics
+
+Rows stay neutral, with horizontal rules only and no zebra striping.
+
+- Status is a 3px left stripe plus a word and an icon: overdue (destructive),
+  due within seven days (warning), current or settled (success), posted
+  (neutral). Colour never carries the state alone.
+- Amounts: negative destructive, credit or settled success, zero muted.
+- The header carries the report module's accent as a 2px top rule over a paper
+  tint.
+- Totals sit on a muted band behind a strong top rule, bold and uncoloured.
+- Profit and loss and the balance sheet mark sections with a tinted group
+  header row.
+- Export parity: colour and grouping are screen-only. CSV and XLSX receive the
+  same columns, data rows and totals as before.
+
 ## 3. Dashboard
 
 Four question cards, then detail.
@@ -75,6 +132,10 @@ Sort default: overdue descending, then amount descending.
 
 Total row must equal the sum of the visible rows.
 
+The screen leads with an ageing-bucket composition and a top-eight overdue
+ranking. Both read the same party rows as the table; the ranking is explicitly
+a top-eight subset.
+
 ## 5. Ageing
 
 Same data as receivables, pivoted.
@@ -90,6 +151,10 @@ Controls:
 - as of date
 
 The report is a pure function of posted bills, allocations and notes dated on or before the as of date. A cancellation after the as of date does not change history.
+
+Party rows lead with horizontal stacked bars, one layer per bucket. The ten
+largest parties are shown and the rest are folded into one `Other parties (n)`
+row, so the chart totals still equal the table totals.
 
 ## 6. Party statement
 
@@ -149,6 +214,10 @@ Profit before tax
 
 Every line drills to the ledger. Percent of net sales column for the accountant.
 
+The screen leads with monthly income and expense areas and a net profit line,
+then an expense composition ranking. The monthly series is derived from ledger
+lines and reconciles to the totals; see §2.1 rule 5.
+
 ## 10. Balance sheet
 
 ```
@@ -171,6 +240,10 @@ Date | Invoice | Party | GSTIN | Place of supply | Taxable | CGST | SGST | IGST 
 ```
 
 Group by month, with subtotals. Purchase register mirrors it and adds input tax.
+
+Each register leads with monthly taxable value as an area and the tax as an
+overlay line, then a monthly CGST/SGST/IGST stack. The chart months and the
+table rows come from one query.
 
 Both registers have an "invoice wise" and a "rate wise" view. The rate wise view is the precursor to the HSN summary.
 
