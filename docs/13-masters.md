@@ -61,11 +61,28 @@ seed only inserts rates when the company has none.
 
 ### Item integration
 
-The item form reads only current rows whose cess is zero, because item and voucher
-lines currently store GST only. A legacy rate already stored on an item (for
-example 12%) is added to the picker as **legacy** while editing, so opening and
-saving an old item does not silently change its rate. New item selections come
-from the tax-rate master.
+The item form reads current tax-rate rows and keeps both numbers in the rate:
+
+- A GST rate and an optional cess rate are stored on the item as `gst_rate_bps`
+  and `cess_rate_bps`. Cess-bearing rows are selectable; the label states the
+  cess (`GST 18% + 12% cess`).
+- A legacy rate already stored on an item (for example 12%) is added to the
+  picker as **legacy** while editing, so opening and saving an old item does not
+  silently change its rate. New selections come from the tax-rate master.
+- The item stores each price as typed plus an `..._includes_tax` flag. Sales
+  default to inclusive (`2500` means the customer pays 2500); purchases default
+  to exclusive (`1750` plus supplier tax). The form never converts the stored
+  number.
+- The form shows a live breakup under both price fields, using the item's GST
+  and cess. The sale flag can be toggled; purchase lines always post
+  tax-exclusive, so the purchase breakup is always the landed cost.
+- The item list shows the customer-facing sale gross and the landed purchase
+  cost, with taxable value as secondary text.
+- A voucher line inherits the item's sale flag for sales and credit notes.
+  Purchases and debit notes always start exclusive. The line has an **Incl.
+  tax** toggle that changes the interpretation without changing the typed rate.
+
+See `21-item-price-tax.md` for the arithmetic and the full state machine.
 
 ## Permission model
 
@@ -80,6 +97,17 @@ The settings pages hide mutation controls when the signed-in role lacks
 
 ## Tests
 
+- `src-tauri/src/masters/mod.rs` tests the flag reader: booleans and `0/1` are
+  accepted, anything else is rejected.
+- `src-tauri/tests/rpc_flow.rs::item_price_tax_flow` creates and updates an item
+  with both flags and a cess rate, then posts one inclusive sale line and one
+  exclusive purchase line.
+- `tests/shared/price.test.ts` covers 2500 @ 18%, 1750 @ 18%, zero-rated and
+  cess-bearing prices.
+- `tests/renderer/item-dialog.test.tsx` covers the live breakups, the sale flag,
+  cess-bearing rates and the payload flags.
+- `tests/renderer/voucher-line-tax.test.tsx` covers the per-line inclusive
+  toggle recalculating the preview.
 - `tests/main/application/masters.test.ts` covers seeded units, custom unit
   creation, duplicate names/symbols, usage guards, retire/reactivate, GST 2.0
   seeds, overlap rejection, effective-dated revision, retirement and permission
@@ -97,6 +125,10 @@ The settings pages hide mutation controls when the signed-in role lacks
 - Units are not convertible (no base unit or conversion factor). Items store a
   quantity in their chosen unit; a later module can add conversion without
   changing the stored quantity scale.
-- Cess on an item is not captured yet. Tax-rate rows can carry cess for future
-  modules, but the item picker excludes them rather than silently dropping it.
+- An item has one GST rate and one cess rate for both directions of trade. A
+  one-off supplier rate is overridden on the voucher line, not in the item
+  master.
+- The purchase price flag is stored and returned by the API, but the item form
+  only edits the sale flag and always saves purchases as exclusive. Purchase
+  voucher lines always post tax-exclusive.
 - Tax-rate history has no “delete”. Ending a row keeps old invoices explainable.
