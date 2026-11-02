@@ -360,7 +360,47 @@ Charts use `@tanstack/charts` with the `--chart-1` to `--chart-5` tokens, at
 most two per screen, always with an accessible name and a data table fallback.
 They are not decorative: each answers a question the page already asks.
 
-### 13.6 What was deliberately not done
+Report charts use the report accent for the primary series and the chart tokens
+for the rest. Area carries time, bars carry comparison; there is no pie or
+donut. Series order is stable across a range change. A chart is skipped when
+the report is empty, so the composed empty state stays the only thing on screen.
+The exact palette lives in
+`src/renderer/src/components/charts/report-chart-palette.ts`.
+
+### 13.6 Report table colour
+
+The report table is neutral by default. It has no zebra striping and uses
+horizontal rules only. Colour marks state and exceptions, never the baseline.
+
+| Element | Rule |
+|---|---|
+| Header | Paper tint (`bg-muted/40`) with a 2px top rule in the report module accent (info blue) |
+| Rows | Paper or sheet background; hover uses the shared table tint |
+| Status | 3px left stripe plus a word and an icon |
+| Overdue | Destructive stripe, text and `AlertTriangle` |
+| Due within 7 days | Warning stripe, text and `Clock3` |
+| Current or settled | Success stripe, text and `CheckCircle2` |
+| Posted | Neutral stripe, text and `FileText` |
+| Negative amount | `text-destructive` |
+| Credit or settled amount | `text-success` |
+| Zero amount | `text-muted-foreground` |
+| Totals | `bg-muted/50`, 2px `--ink` top rule, semibold, no colour |
+| Section group | Tinted `--accent-soft` header row, e.g. Income, Expense, Assets |
+
+Rules:
+
+1. No information is carried by colour alone. Every status has a word and an
+   icon; the stripe is redundant emphasis.
+2. Dark mode uses the same semantic tokens with their dark values. Measured on
+   the card surface, the light tokens are success 6.9:1, warning 4.6:1,
+   destructive 6.5:1 and muted 6.0:1; the dark tokens are all above 5.6:1. They
+   meet the 4.5:1 body-text target at the 11px status size.
+3. Colour is screen-only. CSV and XLSX exports keep the same columns, rows and
+   totals; group header rows are not exported.
+4. The print stylesheet flattens cell borders and keeps the table rules, header
+   tint and totals rule, so a printed report stays monochrome-legible.
+
+### 13.7 What was deliberately not done
 
 - No gradient text, glass panels, neon glow or floating cards.
 - No global zoom multiplier.

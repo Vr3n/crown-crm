@@ -137,7 +137,23 @@ pub struct OpenBill {
     pub party_id: i64,
     pub party_name: String,
     pub outstanding_minor: i64,
+    /// Days since the ageing basis date (due date or bill date), floored at 0.
     pub days_overdue: i64,
+    /// Days until the due date: positive when the bill is not yet due, zero on
+    /// the due date and negative once it is late. Always measured from the due
+    /// date, independent of the ageing basis used for `days_overdue`.
+    pub days_to_due: i64,
+}
+
+/// One month of income and expense ledger activity, from posted vouchers.
+#[derive(Debug, Clone)]
+pub struct MonthlyTypeTotal {
+    /// `YYYY-MM`.
+    pub month: String,
+    /// `INCOME` or `EXPENSE`.
+    pub account_type: String,
+    /// Credit less debit for income, debit less credit for expense.
+    pub total_minor: i64,
 }
 
 fn map_account_balance(row: &rusqlite::Row<'_>) -> rusqlite::Result<AccountBalance> {
@@ -196,6 +212,44 @@ pub fn period_balances(
          ORDER BY g.sort_order, a.name COLLATE NOCASE",
     )?;
     let rows = stmt.query_map(params![from, to, company_id], map_account_balance)?;
+    let mut out = Vec::new();
+    for row in rows {
+        out.push(row?);
+    }
+    Ok(out)
+}
+
+/// Income and expense movement per calendar month, from posted ledger lines.
+///
+/// This is the same set of lines `period_balances` nets per account, grouped by
+/// month instead of by account. Opening balances are not ledger lines, so the
+/// caller reconciles the difference; see `monthly_profit_series` in `mod.rs`.
+pub fn monthly_account_totals(
+    conn: &Connection,
+    company_id: i64,
+    from: &str,
+    to: &str,
+) -> AppResult<Vec<MonthlyTypeTotal>> {
+    let mut stmt = conn.prepare(
+        "SELECT substr(v.voucher_date, 1, 7) AS month, a.type,
+                SUM(CASE WHEN a.type = 'INCOME' THEN l.credit_minor - l.debit_minor
+                         WHEN a.type = 'EXPENSE' THEN l.debit_minor - l.credit_minor
+                         ELSE 0 END) AS total_minor
+         FROM ledger_lines l
+         JOIN accounts a ON a.id = l.account_id
+         JOIN vouchers v ON v.id = l.voucher_id AND v.status = 'POSTED'
+         WHERE l.company_id = ?1 AND v.voucher_date BETWEEN ?2 AND ?3
+           AND a.type IN ('INCOME', 'EXPENSE')
+         GROUP BY month, a.type
+         ORDER BY month",
+    )?;
+    let rows = stmt.query_map(params![company_id, from, to], |row| {
+        Ok(MonthlyTypeTotal {
+            month: row.get(0)?,
+            account_type: row.get(1)?,
+            total_minor: row.get(2)?,
+        })
+    })?;
     let mut out = Vec::new();
     for row in rows {
         out.push(row?);
@@ -372,7 +426,8 @@ pub fn outstanding_bills(
         "SELECT v.id, v.number, v.voucher_date, v.due_date, v.party_id, p.name AS party_name,
                 v.total_minor,
                 COALESCE((SELECT SUM(a.amount_minor) FROM bill_allocations a WHERE a.to_voucher_id = v.id), 0) AS paid_minor,
-                CAST(julianday(?1) - julianday(COALESCE(CASE WHEN ?2 = 'DUE_DATE' THEN v.due_date END, v.voucher_date)) AS INTEGER) AS days
+                CAST(julianday(?1) - julianday(COALESCE(CASE WHEN ?2 = 'DUE_DATE' THEN v.due_date END, v.voucher_date)) AS INTEGER) AS days,
+                CAST(julianday(COALESCE(v.due_date, v.voucher_date)) - julianday(?1) AS INTEGER) AS days_to_due
          FROM vouchers v JOIN parties p ON p.id = v.party_id
          WHERE v.company_id = ?3 AND v.status = 'POSTED'
            AND {type_filter}
@@ -385,11 +440,13 @@ pub fn outstanding_bills(
         let total_minor: i64 = row.get(6)?;
         let paid_minor: i64 = row.get(7)?;
         let days: Option<i64> = row.get(8)?;
+        let days_to_due: Option<i64> = row.get(9)?;
         Ok(OpenBill {
             party_id: row.get(4)?,
             party_name: row.get(5)?,
             outstanding_minor: total_minor - paid_minor,
             days_overdue: days.unwrap_or(0).max(0),
+            days_to_due: days_to_due.unwrap_or(0),
         })
     })?;
     let mut out = Vec::new();

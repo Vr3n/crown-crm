@@ -1,11 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { PageHeader } from '@/components/page-header'
-import { EmptyState } from '@/components/empty-state'
-import { Button } from '@/components/ui/button'
 import { KpiCard, type KpiTone } from '@/components/ui/kpi-card'
 import { formatMinor } from '@/lib/money'
-import { downloadCsv, safeFilename } from '@/lib/export'
 import { useCompanyProfile } from '@/lib/company-queries'
 import { printCssVars } from '../../../../../shared/print-geometry'
 import { cn } from '@/lib/utils'
@@ -14,17 +11,16 @@ import {
   AlertTriangle,
   ArrowDownLeft,
   ArrowUpRight,
-  Download,
-  FileSpreadsheet,
   FileText,
   IndianRupee,
   Landmark,
-  Printer,
   Scale,
   TrendingUp
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { toast } from 'sonner'
+import { ReportTable, type ReportTableRow } from '../components/report-table'
+import { ReportVisuals } from '../components/report-visuals'
+import { amountTone, openBalanceStatus } from '../report-shaping'
 
 /**
  * Page counters live in the paged-media margin box. This rule is injected by
@@ -184,6 +180,7 @@ export function ReportsPage({ kind }: { kind: ReportKind }): React.JSX.Element {
       {query.data ? (
         <>
           <ReportStats kind={kind} data={query.data.rows} />
+          <ReportVisuals kind={kind} data={query.data.rows} from={from} to={to} />
           <ReportBody kind={kind} data={query.data.rows as never} />
         </>
       ) : null}
@@ -428,21 +425,34 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
       notDueMinor: number
       overdueMinor: number
       totalMinor: number
+      dueWithin7Minor: number
     }[]
     const total = rows.reduce((sum, row) => sum + row.totalMinor, 0)
     return (
-      <Table
+      <ReportTable
         exportName={TITLES[kind]}
         empty={rows.length === 0}
         emptyTitle={kind === 'receivables' ? 'No receivables' : 'No payables'}
         emptyText="Post an invoice or a purchase bill and it will appear here."
         head={['Party', 'Not due', 'Overdue', 'Total']}
-        rows={rows.map((row) => [
-          row.partyName,
-          money(row.notDueMinor),
-          money(row.overdueMinor),
-          money(row.totalMinor)
-        ])}
+        rows={rows.map((row) => {
+          const status = openBalanceStatus(row)
+          return {
+            cells: [
+              row.partyName,
+              money(row.notDueMinor),
+              money(row.overdueMinor),
+              money(row.totalMinor)
+            ],
+            status,
+            tones: [
+              undefined,
+              row.notDueMinor === 0 ? 'zero' : undefined,
+              row.overdueMinor === 0 ? 'zero' : undefined,
+              undefined
+            ]
+          }
+        })}
         numeric={[1, 2, 3]}
         footer={['Total', '', '', money(total)]}
       />
@@ -458,17 +468,21 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
     const totals = [0, 0, 0, 0, 0]
     rows.forEach((row) => row.bucketsMinor.forEach((value, index) => (totals[index] += value)))
     return (
-      <Table
+      <ReportTable
         exportName={TITLES[kind]}
         empty={rows.length === 0}
         emptyTitle="Nothing overdue"
         emptyText="Open bills appear here once they are posted."
         head={['Party', '0-30', '31-60', '61-90', '91-180', '180+', 'Total']}
-        rows={rows.map((row) => [
-          row.partyName,
-          ...row.bucketsMinor.map(money),
-          money(row.totalMinor)
-        ])}
+        rows={rows.map((row) => ({
+          cells: [
+            row.partyName,
+            ...row.bucketsMinor.map(money),
+            money(row.totalMinor)
+          ],
+          status: row.bucketsMinor.slice(1).some((value) => value > 0) ? 'overdue' : 'current',
+          tones: [undefined, ...row.bucketsMinor.map((value) => (value === 0 ? 'zero' : undefined)), undefined]
+        }))}
         numeric={[1, 2, 3, 4, 5, 6]}
         footer={['Total', ...totals.map(money), money(rows.reduce((s, r) => s + r.totalMinor, 0))]}
       />
@@ -486,7 +500,7 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
     const debit = rows.reduce((sum, row) => sum + row.debitMinor, 0)
     const credit = rows.reduce((sum, row) => sum + row.creditMinor, 0)
     return (
-      <Table
+      <ReportTable
         exportName={TITLES[kind]}
         empty={rows.length === 0}
         emptyTitle="No accounts"
@@ -494,7 +508,14 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
         head={['Account', 'Group', 'Debit', 'Credit']}
         rows={rows
           .filter((row) => row.debitMinor !== 0 || row.creditMinor !== 0)
-          .map((row) => [row.name, row.groupName, money(row.debitMinor), money(row.creditMinor)])}
+          .map((row) => ({
+            cells: [
+              row.name,
+              row.groupName,
+              money(row.debitMinor),
+              money(row.creditMinor)
+            ]
+          }))}
         numeric={[2, 3]}
         footer={['Total', '', money(debit), money(credit)]}
         note={
@@ -515,25 +536,38 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
       totalExpenseMinor: number
       netProfitMinor: number
     }
+    const incomeRows: ReportTableRow[] = [
+      ...(report.income.length > 0 ? [{ group: 'Income', cells: [] }] : []),
+      ...report.income.map((row) => ({
+        cells: [row.name, money(row.creditMinor)],
+        tones: [undefined, amountTone(row.creditMinor)]
+      }))
+    ]
+    const expenseRows: ReportTableRow[] = [
+      ...(report.expenses.length > 0 ? [{ group: 'Expense', cells: [] }] : []),
+      ...report.expenses.map((row) => ({
+        cells: [row.name, money(row.debitMinor)]
+      }))
+    ]
     return (
       <div className="flex flex-col gap-4">
-        <Table
+        <ReportTable
           exportName={TITLES[kind]}
           empty={false}
           emptyTitle=""
           emptyText=""
           head={['Income', 'Amount']}
-          rows={report.income.map((row) => [row.name, money(row.creditMinor)])}
+          rows={incomeRows}
           numeric={[1]}
           footer={['Total income', money(report.totalIncomeMinor)]}
         />
-        <Table
+        <ReportTable
           exportName={TITLES[kind]}
           empty={false}
           emptyTitle=""
           emptyText=""
           head={['Expense', 'Amount']}
-          rows={report.expenses.map((row) => [row.name, money(row.debitMinor)])}
+          rows={expenseRows}
           numeric={[1]}
           footer={['Total expense', money(report.totalExpenseMinor)]}
         />
@@ -566,34 +600,51 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
     }
     return (
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <Table
+        <ReportTable
           exportName={TITLES[kind]}
           empty={false}
           emptyTitle=""
           emptyText=""
           head={['Assets', 'Amount']}
-          rows={report.assets.map((row) => [row.name, money(row.debitMinor)])}
+          rows={[
+            ...(report.assets.length > 0 ? [{ group: 'Assets', cells: [] }] : []),
+            ...report.assets.map((row) => ({
+              cells: [row.name, money(row.debitMinor)]
+            }))
+          ]}
           numeric={[1]}
           footer={['Total assets', money(report.totalAssetsMinor)]}
         />
         <div className="flex flex-col gap-4">
-          <Table
+          <ReportTable
             exportName={TITLES[kind]}
             empty={false}
             emptyTitle=""
             emptyText=""
             head={['Liabilities', 'Amount']}
-            rows={report.liabilities.map((row) => [row.name, money(row.creditMinor)])}
+            rows={[
+              ...(report.liabilities.length > 0 ? [{ group: 'Liabilities', cells: [] }] : []),
+              ...report.liabilities.map((row) => ({
+                cells: [row.name, money(row.creditMinor)],
+                tones: [undefined, 'positive' as const]
+              }))
+            ]}
             numeric={[1]}
             footer={['Total liabilities', money(report.totalLiabilitiesMinor)]}
           />
-          <Table
+          <ReportTable
             exportName={TITLES[kind]}
             empty={false}
             emptyTitle=""
             emptyText=""
             head={['Equity', 'Amount']}
-            rows={report.equity.map((row) => [row.name, money(row.creditMinor)])}
+            rows={[
+              ...(report.equity.length > 0 ? [{ group: 'Equity', cells: [] }] : []),
+              ...report.equity.map((row) => ({
+                cells: [row.name, money(row.creditMinor)],
+                tones: [undefined, 'positive' as const]
+              }))
+            ]}
             numeric={[1]}
             footer={['Total equity', money(report.totalEquityMinor)]}
           />
@@ -628,21 +679,32 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
   }[]
   const tax = rows.reduce((sum, row) => sum + row.cgstMinor + row.sgstMinor + row.igstMinor, 0)
   return (
-    <Table
+    <ReportTable
       exportName={TITLES[kind]}
       empty={rows.length === 0}
       emptyTitle="No documents"
       emptyText="Post a bill and it will appear in this register."
       head={['Date', 'Number', 'Party', 'Taxable', 'GST', 'Round off', 'Total']}
-      rows={rows.map((row) => [
-        row.date,
-        row.number,
-        row.partyName ?? '-',
-        money(row.taxableMinor),
-        money(row.cgstMinor + row.sgstMinor + row.igstMinor),
-        money(row.roundOffMinor),
-        money(row.totalMinor)
-      ])}
+      rows={rows.map((row) => ({
+        cells: [
+          row.date,
+          row.number,
+          row.partyName ?? '-',
+          money(row.taxableMinor),
+          money(row.cgstMinor + row.sgstMinor + row.igstMinor),
+          money(row.roundOffMinor),
+          money(row.totalMinor)
+        ],
+        tones: [
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          amountTone(row.roundOffMinor),
+          undefined
+        ]
+      }))}
       numeric={[3, 4, 5, 6]}
       dateColumns={[0]}
       footer={[
@@ -655,159 +717,6 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
         money(rows.reduce((sum, row) => sum + row.totalMinor, 0))
       ]}
     />
-  )
-}
-
-function Table({
-  head,
-  rows,
-  numeric = [],
-  dateColumns = [],
-  footer,
-  empty,
-  emptyTitle,
-  emptyText,
-  note,
-  noteTone,
-  exportName = 'report'
-}: {
-  head: string[]
-  rows: string[][]
-  numeric?: number[]
-  dateColumns?: number[]
-  footer?: string[]
-  empty: boolean
-  emptyTitle: string
-  emptyText: string
-  note?: string
-  noteTone?: 'ok' | 'bad'
-  exportName?: string
-}): React.JSX.Element {
-  if (empty) {
-    return <EmptyState icon={FileText} title={emptyTitle} description={emptyText} />
-  }
-
-  async function saveCsv(): Promise<void> {
-    try {
-      const result = await downloadCsv(
-        safeFilename(exportName),
-        head,
-        footer ? [...rows, footer] : rows
-      )
-      if (result.saved) toast.success('CSV saved')
-    } catch {
-      toast.error('Could not save the CSV')
-    }
-  }
-
-  async function saveXlsx(): Promise<void> {
-    try {
-      const result = await window.api.exportXlsx({
-        filename: safeFilename(exportName),
-        sheetName: exportName,
-        head,
-        rows,
-        numeric,
-        dateColumns,
-        footer
-      })
-      if (result.saved) toast.success('Spreadsheet saved')
-    } catch {
-      toast.error('Could not create the spreadsheet')
-    }
-  }
-
-  async function savePdf(): Promise<void> {
-    try {
-      const result = await window.api.exportPdf(exportName)
-      if (result.saved) toast.success('PDF saved')
-      else if (result.printed) toast.success('Print dialog opened — choose Save as PDF')
-    } catch {
-      toast.error('Could not create the PDF')
-    }
-  }
-
-  return (
-    <div className="report-table-card border border-border bg-card">
-      <div className="report-table-toolbar flex items-center justify-between gap-2 border-b border-border px-3 py-1.5">
-        <span className="text-[0.75rem] text-muted-foreground">
-          {rows.length} row{rows.length === 1 ? '' : 's'}
-        </span>
-        <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="xs" onClick={() => void saveCsv()}>
-            <Download className="size-3.5" strokeWidth={2} />
-            CSV
-          </Button>
-          <Button variant="ghost" size="xs" onClick={() => void saveXlsx()}>
-            <FileSpreadsheet className="size-3.5" strokeWidth={2} />
-            XLSX
-          </Button>
-          <Button variant="ghost" size="xs" onClick={() => void savePdf()}>
-            <Printer className="size-3.5" strokeWidth={2} />
-            PDF
-          </Button>
-        </div>
-      </div>
-      <table className="report-table w-full border-collapse text-[0.875rem]">
-        <thead>
-          <tr>
-            {head.map((cell, index) => (
-              <th
-                key={cell}
-                className={cn(
-                  'border-b border-border px-3 py-2 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground',
-                  numeric.includes(index) ? 'text-right' : 'text-left'
-                )}
-              >
-                {cell}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, rowIndex) => (
-            <tr key={rowIndex} className="border-b border-border last:border-0">
-              {row.map((cell, cellIndex) => (
-                <td
-                  key={cellIndex}
-                  className={cn(
-                    'px-3 py-2',
-                    numeric.includes(cellIndex) ? 'text-right font-mono tabular-nums' : 'text-left'
-                  )}
-                >
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-          {footer ? (
-            <tr className="border-t border-ink bg-muted/40 font-semibold">
-              {footer.map((cell, index) => (
-                <td
-                  key={index}
-                  className={cn(
-                    'px-3 py-2',
-                    numeric.includes(index) ? 'text-right font-mono tabular-nums' : ''
-                  )}
-                >
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
-      {note ? (
-        <div
-          className={cn(
-            'report-note border-t border-border px-3 py-2 text-[0.75rem]',
-            noteTone === 'ok' ? 'text-success' : 'text-destructive'
-          )}
-        >
-          {note}
-        </div>
-      ) : null}
-    </div>
   )
 }
 
