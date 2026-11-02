@@ -12,10 +12,18 @@
  *   node scripts/smoke-tauri.mjs "C:\Program Files\Crown Books\crown-books.exe"
  */
 import { spawn } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+
+/**
+ * Counted from the directory, not hardcoded: adding a migration must update the
+ * schema it ships, not this script.
+ */
+const expectedMigrations = readdirSync(resolve('src-tauri', 'migrations')).filter((name) =>
+  name.endsWith('.sql')
+).length
 
 const exe = resolve(
   process.argv[2] ?? join('src-tauri', 'target', 'release', process.platform === 'win32' ? 'crown-books.exe' : 'crown-books')
@@ -87,7 +95,8 @@ try {
       const required = ['companies', 'users', 'company_users', 'roles', 'permissions', 'accounts', 'items', 'vouchers']
       const missing = required.filter((name) => !tables.includes(name))
       if (missing.length > 0) fail(`missing tables: ${missing.join(', ')}`)
-      if (migrations !== 4) fail(`expected 4 migrations, found ${migrations}`)
+      if (migrations !== expectedMigrations)
+        fail(`expected ${expectedMigrations} migrations, found ${migrations}`)
       if (permissions !== 31) fail(`expected 31 permissions, found ${permissions}`)
 
       // The window is alive if the process is still running after startup.
