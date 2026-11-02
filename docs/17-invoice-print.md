@@ -143,17 +143,21 @@ tax invoice as received, so the two party blocks swap.
 | Supplier block    | Our company (logo, terms, bank)    | The supplier (party)                        |
 | Buyer block       | The customer                       | Our company                                 |
 | Title             | `TAX INVOICE`                      | `TAX INVOICE`                               |
-| Number label      | `Invoice No.` (our number)         | `Supplier Bill No.` (reference, or voucher) |
-| Voucher number    | `Invoice No.`                      | `Voucher No.`                               |
+| Number label      | `Invoice No.` (our number)         | `Supplier Bill No.` (`—` when internal)     |
+| Voucher number    | `Invoice No.`                      | `Voucher No.` (supplier number or `PUR`)    |
 | Meta grid         | Full Tally transport grid          | Short reference grid from the sample        |
 | Due date          | Under the grid                     | Omitted: the supplier's bill has none       |
 | Place of delivery | Party shipping or billing address  | Omitted: the buyer block shows our address  |
 | Terms and bank    | Company terms, linked bank account | Omitted: supplier terms/bank are not stored |
 | Tax columns       | CGST + SGST or IGST                | CGST + SGST or IGST                         |
 
-The supplier bill number is `vouchers.reference_no` (the "Order or bill
-reference" field on the purchase form). When it is empty the print falls back
-to our own voucher number so the document is never anonymous.
+The supplier bill number is `vouchers.number` when `number_source = 'SUPPLIER'`.
+Both **Supplier Bill No.** and **Voucher No.** print it, because for these
+vouchers they are the same document. A no-supplier-bill purchase has
+`number_source = 'INTERNAL'`: **Supplier Bill No.** prints an em dash and
+**Voucher No.** prints the internal `PUR` number. The free-text `referenceNo`
+now prints as **Reference No. & Date**; it is the order reference, never the
+document's identity.
 
 ### Tax columns
 
@@ -255,7 +259,7 @@ Examples:
 
 ```
 Acme-Distributors_Sales_INV-0001_20261029-153012.pdf
-TechConnect_Purchase_PUR-0001_20261029-154405.pdf
+TechConnect_Purchase_TC-2026-27-583_20261029-154405.pdf
 ```
 
 Rules (`invoice_pdf::default_filename`):
@@ -287,9 +291,11 @@ Rules (`invoice_pdf::default_filename`):
   row, which has a name and a code but no bank name, IFSC or account number.
   The sheet prints the account name and code when one is linked. A richer bank
   master is a separate schema change.
-- **Supplier bill number fallback.** When a purchase voucher has no reference,
-  `Supplier Bill No.` falls back to our voucher number. The reference field on
-  the purchase form is the right place to record the supplier's number.
+- **Supplier bill number fallback.** A purchase with no supplier bill sets
+  `number_source = 'INTERNAL'`; the print shows an em dash as **Supplier Bill
+  No.** and the `PUR` number as **Voucher No.** The entry form asks for the
+  supplier's number first and has a "No supplier bill" escape. See
+  [`20-supplier-bill-numbering.md`](./20-supplier-bill-numbering.md).
 - **No per-invoice template editor.** Titles, terms and the bank block come
   from the company record; there is no Tally-style template designer.
 - **Long invoices.** The native builder starts a continuation page, redraws

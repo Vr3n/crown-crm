@@ -107,18 +107,41 @@ Rules:
 9. Manual numbers are allowed only if the series permits it. A manual number must be at least the starting number and greater than the last used value; it raises the high water mark.
 10. A collision is a hard failure, not a retry, because a retry would mask a corrupted sequence.
 
+### Purchase bills are supplier-numbered
+
+A purchase bill carries the number printed by its supplier (ADR 0001). It is
+stored in `vouchers.number` exactly as typed, trimmed at the ends only, 1–32
+printable characters.
+
+- `number_source = 'SUPPLIER'` and `number_normalized` (uppercase with spaces,
+  `/`, `-` and `.` removed) are stored for duplicate detection.
+- Duplicate detection is per company, supplier and financial year on the
+  normalized number. Cancelled vouchers do not reserve a number; a supplier may
+  reuse a number in a later financial year.
+- A purchase with no supplier bill sets `number_source = 'INTERNAL'` and takes
+  the internal `PUR` sequence. The print shows an em dash for the supplier bill.
+- Supplier-numbered purchases use an internal series `SUP<party_id>` (for
+  example `SUP42`). The series is never printed. It exists so the existing
+  table-level `UNIQUE (company_id, voucher_type, series, fy, number)` enforces
+  `(company, supplier, fy, number)` without a partial index, while different
+  suppliers may use the same number.
+- Cancelling a supplier-numbered purchase appends `/C<id>` to that internal
+  series in the same update. The number stays untouched, and the live series
+  slot is freed so the bill can be entered again.
+
 GST Rule 46(b): the number must not exceed 16 characters, may use letters,
 digits, `-` and `/`, and must be unique for the financial year. The editor
 enforces the allowed characters and the 16 character limit, and the database
 enforces uniqueness. `INV/2026-27/0001` is exactly 16 characters, so a wider
-prefix or padding is rejected.
+prefix or padding is rejected. The 16-character rule applies to our own number,
+not to the supplier's bill number.
 
 Example defaults seeded per company:
 
 | Type | Series | Example |
 |---|---|---|
 | SALES | INV | INV/0001 |
-| PURCHASE | PUR | PUR/0001 |
+| PURCHASE | PUR | PUR/0001 (no-supplier-bill purchases only) |
 | RECEIPT | RCT | RCT/0001 |
 | PAYMENT | PAY | PAY/0001 |
 | CREDIT_NOTE | CN | CN/0001 |
