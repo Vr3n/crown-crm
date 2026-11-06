@@ -3,7 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { PartyPicker } from '../components/party-picker'
+import { PartyDialog } from '@/features/parties/components/party-dialog'
 import { formatMinor, parseToMinor } from '@/lib/money'
+import type { PartyRow } from '../../../../../shared/contracts/masters'
 import type { PostVoucherInput } from '../../../../../shared/contracts/vouchers'
 
 type Mode = 'RECEIPT' | 'PAYMENT'
@@ -28,6 +31,8 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
   const label = receipt ? 'receipt' : 'payment'
 
   const [partyId, setPartyId] = useState<number | null>(null)
+  const [partyOpen, setPartyOpen] = useState(false)
+  const [partyDialogOpen, setPartyDialogOpen] = useState(false)
   const [date, setDate] = useState(todayIso())
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState('Cash')
@@ -98,11 +103,6 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
     })
   }
 
-  function chooseParty(value: string): void {
-    setPartyId(value ? Number(value) : null)
-    setAllocations({})
-  }
-
   const unallocated = amountMinor - allocatedMinor
   const postError =
     post.error instanceof Error ? post.error.message : `Could not post the ${label}.`
@@ -128,26 +128,18 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
 
       <div className="grid border border-border bg-card sm:grid-cols-2">
         <Field label="Party" className="border-b border-border sm:col-span-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <select
-              value={partyId ?? ''}
-              onChange={(event) => chooseParty(event.target.value)}
-              aria-label="Party"
-              className="h-7 min-w-[240px] flex-1 cursor-pointer border-0 bg-transparent text-[0.9375rem] font-medium outline-none"
-            >
-              <option value="">Select {receipt ? 'customer' : 'supplier'}…</option>
-              {parties.map((row) => (
-                <option key={row.id} value={row.id}>
-                  {row.name} — {formatMinor(row.balanceMinor, 'INR')}
-                </option>
-              ))}
-            </select>
-            <span className="text-[0.75rem] text-muted-foreground">
-              {party
-                ? `Balance ${formatMinor(party.balanceMinor, 'INR')}`
-                : 'Search by name in the list'}
-            </span>
-          </div>
+          <PartyPicker
+            parties={parties}
+            value={partyId}
+            onChange={(id) => {
+              setPartyId(id)
+              setAllocations({})
+            }}
+            roleLabel={receipt ? 'customer' : 'supplier'}
+            open={partyOpen}
+            onOpenChange={setPartyOpen}
+            onCreate={() => setPartyDialogOpen(true)}
+          />
         </Field>
         <Field label="Date" className="border-b border-border sm:border-r">
           <input
@@ -327,6 +319,24 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
           </Button>
         </div>
       </div>
+
+      {partyDialogOpen ? (
+        <PartyDialog
+          open
+          onOpenChange={setPartyDialogOpen}
+          party={null}
+          defaultRole={role}
+          onSaved={(created) => {
+            setPartyDialogOpen(false)
+            if (!created) return
+            queryClient.setQueryData<PartyRow[]>(['parties', role], (current) =>
+              current ? [...current, created] : [created]
+            )
+            setPartyId(created.id)
+            setAllocations({})
+          }}
+        />
+      ) : null}
     </div>
   )
 }

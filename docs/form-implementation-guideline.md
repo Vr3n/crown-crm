@@ -124,6 +124,7 @@ Party picker:
 - debounced search at 200 ms
 - shows name, phone, GSTIN, balance, credit days
 - creates a party inline without leaving the voucher, in a nested dialog that returns the new id
+- opens the party dialog with the picker's role already set, so a supplier created from a purchase is selectable immediately
 - filters to customers on a sale, suppliers on a purchase
 - warns, not blocks, when the party is over the credit limit
 
@@ -134,6 +135,9 @@ Item picker:
 - service items are labelled
 - inactive items are hidden by default with a toggle to show them
 - allows a free text line when nothing matches
+- creates an item inline in the same nested-dialog pattern, then fills the line from the new item
+
+A picker's create action sits below the search results, outside the filtered list, so a search term never hides it. The dialog's save callback returns the created row and the parent writes it into the active query cache before selecting it. The picker and the line update without waiting for a refetch.
 
 ## 6. Numbers and dates
 
