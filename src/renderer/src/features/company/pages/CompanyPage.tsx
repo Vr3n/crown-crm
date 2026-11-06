@@ -12,6 +12,12 @@ import { FieldHelp, type FieldHelpContent } from '@/components/ui/field-help'
 import { StatusPill } from '@/components/ui/status-pill'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  companyReadiness,
+  financialYearLabel,
+  formatCompanyDate,
+  type CompanyReadiness
+} from '@/lib/company-readiness'
 import { FIELD_HELP } from '@/lib/form-help'
 import { mobileDigitsLeft, toMobileDigits } from '@/lib/validation'
 import {
@@ -99,20 +105,6 @@ const IDENTITY_FIELDS: {
   }
 ]
 
-function formatDay(value: string): string {
-  if (!value) return '—'
-  return new Date(`${value}T00:00:00`).toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  })
-}
-
-function fyLabel(startMonth: number, today = new Date()): string {
-  const year = today.getMonth() + 1 >= startMonth ? today.getFullYear() : today.getFullYear() - 1
-  return `${year}–${String((year + 1) % 100).padStart(2, '0')}`
-}
-
 const toForm = (profile: CompanyProfile): CompanyForm => ({
   name: profile.name,
   legalName: profile.legalName ?? '',
@@ -147,16 +139,18 @@ function validate(form: CompanyForm): Record<string, string> {
 }
 
 function Section({
+  id,
   title,
   hint,
   children
 }: {
+  id?: string
   title: string
   hint?: string
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <section className="border border-border bg-card">
+    <section id={id} className="border border-border bg-card">
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border bg-muted/40 px-4 py-2.5">
         <h2 className="text-[0.875rem] font-semibold">{title}</h2>
         {hint ? <span className="text-[0.75rem] text-muted-foreground">{hint}</span> : null}
@@ -203,16 +197,85 @@ function CompanySummary({ profile }: { profile: CompanyProfile }): React.JSX.Ele
               <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                 Financial year
               </dt>
-              <dd className="mt-0.5">{fyLabel(profile.fyStartMonth)}</dd>
+              <dd className="mt-0.5">{financialYearLabel(profile.fyStartMonth)}</dd>
             </div>
             <div>
               <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                 Books begin
               </dt>
-              <dd className="mt-0.5 font-mono">{formatDay(profile.booksBeginDate)}</dd>
+              <dd className="mt-0.5 font-mono">
+                {profile.booksBeginDate ? formatCompanyDate(profile.booksBeginDate) : '—'}
+              </dd>
             </div>
           </dl>
         </div>
+      </div>
+    </section>
+  )
+}
+
+function SetupReadiness({ readiness }: { readiness: CompanyReadiness }): React.JSX.Element {
+  const action = readiness.nextAction
+  const actionClass = action?.optional
+    ? 'flex h-8 items-center gap-1.5 border border-border bg-card px-3 text-[0.875rem] font-medium hover:border-rule-strong'
+    : 'flex h-8 items-center gap-1.5 bg-primary px-3 text-[0.875rem] font-medium text-primary-foreground hover:bg-primary/90'
+  const note = action
+    ? action.optional
+      ? 'GSTIN is optional. Add it if the business is registered.'
+      : 'A number series is needed before the first voucher.'
+    : 'Every document has what it needs.'
+
+  return (
+    <section aria-labelledby="setup-readiness-heading" className="border border-border bg-card">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border bg-muted/40 px-4 py-2.5">
+        <h2 id="setup-readiness-heading" className="text-[0.875rem] font-semibold">
+          Setup readiness
+        </h2>
+        <span className="text-[0.75rem] text-muted-foreground">What the books rely on</span>
+      </div>
+      <dl className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
+        {readiness.checks.map((check) => (
+          <div key={check.id} className="bg-card px-4 py-3">
+            <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              {check.label}
+            </dt>
+            <dd className="mt-1.5">
+              <StatusPill tone={check.tone}>{check.value}</StatusPill>
+              {check.detail ? (
+                <p className="mt-1 text-[0.75rem] leading-snug text-muted-foreground">
+                  {check.detail}
+                </p>
+              ) : null}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2.5">
+        <p className="text-[0.8125rem] text-muted-foreground">{note}</p>
+        {action ? (
+          action.href.startsWith('#') ? (
+            <a
+              href={action.href}
+              className={actionClass}
+              onClick={(event) => {
+                // The app scrolls a nested main panel, so a bare fragment does not
+                // reliably move the page. Scroll the section and focus the field.
+                event.preventDefault()
+                const section = document.getElementById(action.href.slice(1))
+                section?.scrollIntoView({ block: 'start' })
+                document.getElementById('company-gstin')?.focus({ preventScroll: true })
+              }}
+            >
+              {action.label}
+            </a>
+          ) : (
+            <Link to={action.href} className={actionClass}>
+              {action.label}
+            </Link>
+          )
+        ) : (
+          <StatusPill tone="success">Ready</StatusPill>
+        )}
       </div>
     </section>
   )
@@ -359,7 +422,7 @@ function CompanyEditor({ profile }: { profile: CompanyProfile }): React.JSX.Elem
   return (
     <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
       <FormLegend />
-      <Section title="Identity" hint="Printed on every document">
+      <Section id="company-identity" title="Identity" hint="Printed on every document">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {IDENTITY_FIELDS.map((field) => (
             <TextField
@@ -598,6 +661,11 @@ export function CompanyPage(): React.JSX.Element {
         description="Identity, tax details, financial year and the one-time opening balances."
       />
 
+      <p className="max-w-[75ch] text-[0.875rem] leading-relaxed text-muted-foreground">
+        This profile sets the identity and tax details printed on every document, the financial
+        year used by reports and numbering, and the opening date.
+      </p>
+
       {profile.isPending ? (
         <div className="border border-border bg-card px-4 py-8 text-center text-[0.875rem] text-muted-foreground">
           Loading company details...
@@ -619,6 +687,7 @@ export function CompanyPage(): React.JSX.Element {
         </div>
       ) : profile.data ? (
         <>
+          <SetupReadiness readiness={companyReadiness(profile.data)} />
           <CompanySummary profile={profile.data} />
           <Section
             title="Voucher numbering"

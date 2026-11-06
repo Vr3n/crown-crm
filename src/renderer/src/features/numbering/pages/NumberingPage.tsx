@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { FieldHelp, type FieldHelpContent } from '@/components/ui/field-help'
 import { Input } from '@/components/ui/input'
+import { formatDate, formatTime } from '@/lib/format'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import { formatVoucherNumber, nextSequenceValue } from '../../../../../shared/numbering'
 import type { NumberingRow } from '../../../../../shared/contracts/numbering'
@@ -133,6 +134,11 @@ export function NumberingPage({
     queryKey: ['numbering'],
     queryFn: () => window.api.numbering.list()
   })
+  const profile = useQuery({
+    queryKey: ['company', 'profile'],
+    queryFn: () => window.api.identity.company(),
+    staleTime: 60_000
+  })
   const [edits, setEdits] = useState<Record<string, Partial<Draft>>>({})
 
   const drafts = useMemo(() => {
@@ -189,6 +195,13 @@ export function NumberingPage({
     setEdits((current) => ({ ...current, [type]: { ...current[type], [key]: value } }))
   }
 
+  function nextFor(type: VoucherType): string {
+    const row = query.data?.find((candidate) => candidate.voucherType === type)
+    if (!row) return '—'
+    const draft = drafts?.[type]
+    return draft ? preview(row, draft).number : row.nextNumber
+  }
+
   if (query.isError) {
     return (
       <div className="border border-border bg-card px-4 py-8 text-center">
@@ -240,6 +253,36 @@ export function NumberingPage({
           <span className="font-mono">INV/202607001</span>. GST allows 16 characters.
         </p>
       </div>
+
+      {query.data && drafts ? (
+        <section
+          aria-label="Numbering summary"
+          className="flex flex-wrap items-center gap-x-6 gap-y-1.5 border border-border bg-card px-3 py-2 text-[0.75rem]"
+        >
+          <p className="text-muted-foreground">
+            Next sales invoice{' '}
+            <span className="ml-1 font-mono text-[0.8125rem] text-foreground">
+              {nextFor('SALES')}
+            </span>
+          </p>
+          <p className="text-muted-foreground">
+            Next purchase bill{' '}
+            <span className="ml-1 font-mono text-[0.8125rem] text-foreground">
+              {nextFor('PURCHASE')}
+            </span>
+          </p>
+          {profile.data ? (
+            <p className="text-muted-foreground sm:ml-auto">
+              Last saved{' '}
+              <span className="ml-1 font-mono text-[0.8125rem] text-foreground">
+                {profile.data.numberingSetupAt
+                  ? `${formatDate(profile.data.numberingSetupAt)} at ${formatTime(profile.data.numberingSetupAt)}`
+                  : 'Not saved yet'}
+              </span>
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       {query.isPending || !drafts ? (
         <div className="border border-border bg-card px-4 py-8 text-center text-[0.875rem] text-muted-foreground">
