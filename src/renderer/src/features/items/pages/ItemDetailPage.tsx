@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -15,8 +16,12 @@ import { EmptyState } from '@/components/empty-state'
 import { KpiCard } from '@/components/ui/kpi-card'
 import { StatusPill } from '@/components/ui/status-pill'
 import { Button } from '@/components/ui/button'
+import { ChartCard } from '@/components/ui/chart-card'
+import { MonthlyFlowChart, type FlowPoint } from '@/components/charts/list-charts'
+import { ReportAreaChart } from '@/components/charts/report-charts'
 import { formatMinor } from '@/lib/money'
-import { grossFromExclusive, splitInclusivePrice } from '../../../../../shared/price'
+import { REORDER_LABELS, REORDER_TONES, itemMargin, reorderState } from '@/lib/item-analysis'
+import { monthKeysBetween, monthLabel } from '@/features/reports/report-shaping'
 
 const TH =
   'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
@@ -56,22 +61,6 @@ export function ItemDetailPage(): React.JSX.Element {
   const stockRow = (stock.data ?? []).find((row) => row.id === itemId)
   const onHand = i?.stockQtyE4 ?? 0
   const value = stockRow?.valueMinor ?? 0
-  const salePrice = i
-    ? i.salePriceIncludesTax
-      ? splitInclusivePrice(i.salePriceMinor, i.gstRateBps, i.cessRateBps)
-      : grossFromExclusive(i.salePriceMinor, i.gstRateBps, i.cessRateBps)
-    : null
-  const landedCost = i
-    ? i.purchasePriceIncludesTax
-      ? splitInclusivePrice(i.purchasePriceMinor, i.gstRateBps, i.cessRateBps)
-      : grossFromExclusive(i.purchasePriceMinor, i.gstRateBps, i.cessRateBps)
-    : null
-  const margin =
-    salePrice && landedCost && landedCost.grossMinor > 0
-      ? Math.round(
-          ((salePrice.taxableMinor - landedCost.grossMinor) / landedCost.grossMinor) * 100
-        )
-      : null
 
   const movementRows = movements.data ?? []
   const rows = movementRows.map((row, index) => ({
@@ -80,6 +69,48 @@ export function ItemDetailPage(): React.JSX.Element {
       .slice(0, index + 1)
       .reduce((sum, entry) => sum + entry.qtyInE4 - entry.qtyOutE4, 0)
   }))
+  const monthlyMovement = useMemo<FlowPoint[]>(() => {
+    const totals = new Map<string, { inQtyE4: number; outQtyE4: number }>()
+    for (const key of monthKeysBetween(from, today)) {
+      totals.set(key, { inQtyE4: 0, outQtyE4: 0 })
+    }
+    for (const row of movementRows) {
+      const key = row.date.slice(0, 7)
+      const entry = totals.get(key) ?? { inQtyE4: 0, outQtyE4: 0 }
+      entry.inQtyE4 += row.qtyInE4
+      entry.outQtyE4 += row.qtyOutE4
+      totals.set(key, entry)
+    }
+    return [...totals.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, entry]) => ({
+        label: monthLabel(key),
+        inQtyE4: entry.inQtyE4,
+        outQtyE4: entry.outQtyE4
+      }))
+  }, [movementRows, from, today])
+  const valueTrend = useMemo(() => {
+    const movementsByMonth = new Map<string, number>()
+    for (const row of movementRows) {
+      const key = row.date.slice(0, 7)
+      movementsByMonth.set(
+        key,
+        (movementsByMonth.get(key) ?? 0) + (row.qtyInE4 - row.qtyOutE4) * row.unitCostMinor
+      )
+    }
+    const netValueE4Minor = [...movementsByMonth.values()].reduce((sum, delta) => sum + delta, 0)
+    const openingValueMinor = value - Math.round(netValueE4Minor / 10_000)
+    const keys = monthKeysBetween(from, today)
+    return keys.map((key, index) => {
+      const runningE4Minor = keys
+        .slice(0, index + 1)
+        .reduce((sum, month) => sum + (movementsByMonth.get(month) ?? 0), 0)
+      return {
+        label: monthLabel(key),
+        primaryMinor: openingValueMinor + Math.round(runningE4Minor / 10_000)
+      }
+    })
+  }, [movementRows, from, today, value])
 
   if (item.isPending) {
     return <div className="p-6 text-[0.875rem] text-muted-foreground">Loading item...</div>
@@ -108,8 +139,10 @@ export function ItemDetailPage(): React.JSX.Element {
     )
   }
 
-  const out = !i.isService && onHand <= 0
-  const low = !i.isService && !out && i.reorderLevelE4 > 0 && onHand <= i.reorderLevelE4
+  const margin = itemMargin(i)
+  const reorder = reorderState(i)
+  const out = reorder === REORDER_LABELS.Out
+  const low = reorder === REORDER_LABELS.Low
   const ratio = i.reorderLevelE4 > 0 ? Math.min(1, Math.max(0, onHand / i.reorderLevelE4)) : 0
 
   return (
@@ -190,10 +223,14 @@ export function ItemDetailPage(): React.JSX.Element {
         />
         <KpiCard
           label="Margin"
-          value={margin === null ? '—' : `${margin > 0 ? '+' : ''}${margin}%`}
-          context={`Sale ${formatMinor(salePrice?.grossMinor ?? 0, 'INR')} · Landed ${formatMinor(landedCost?.grossMinor ?? 0, 'INR')}`}
+          value={
+            margin.marginPercent === null
+              ? '—'
+              : `${margin.marginPercent > 0 ? '+' : ''}${margin.marginPercent}%`
+          }
+          context={`Sale ${formatMinor(margin.saleGrossMinor, 'INR')} · Landed ${formatMinor(margin.landedCostMinor, 'INR')}`}
           icon={TrendingUp}
-          tone={margin !== null && margin < 0 ? 'stamp' : 'primary'}
+          tone={margin.marginPercent !== null && margin.marginPercent < 0 ? 'stamp' : 'primary'}
         />
       </section>
 
@@ -208,9 +245,7 @@ export function ItemDetailPage(): React.JSX.Element {
                   : 'Set a reorder level to see a low-stock warning here.'}
               </p>
             </div>
-            <StatusPill tone={out ? 'destructive' : low ? 'warning' : 'success'}>
-              {out ? 'Out of stock' : low ? 'Low stock' : 'In stock'}
-            </StatusPill>
+            <StatusPill tone={REORDER_TONES[reorder]}>{REORDER_LABELS[reorder]}</StatusPill>
           </div>
           {i.reorderLevelE4 > 0 ? (
             <span className="mt-3 block h-2 overflow-hidden bg-muted" aria-hidden>
@@ -220,6 +255,27 @@ export function ItemDetailPage(): React.JSX.Element {
               />
             </span>
           ) : null}
+        </div>
+      ) : null}
+
+      {!i.isService && movementRows.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <ChartCard title="Monthly movement" subtitle="Quantity in and out this financial year">
+            <MonthlyFlowChart
+              points={monthlyMovement}
+              ariaLabel="Monthly stock movement in and out"
+            />
+          </ChartCard>
+          <ChartCard
+            title="Stock value trend"
+            subtitle="Closing value from this financial year's movements"
+          >
+            <ReportAreaChart
+              points={valueTrend}
+              primaryLabel="Stock value"
+              ariaLabel="Stock value trend"
+            />
+          </ChartCard>
         </div>
       ) : null}
 

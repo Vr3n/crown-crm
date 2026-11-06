@@ -446,6 +446,16 @@ fn unauthenticated_reads_are_refused() {
     ] {
         assert_eq!(app.call_err(channel, json!({})), "UNAUTHENTICATED", "{channel}");
     }
+
+    // A ranged read needs a valid range before its permission gate runs, so it
+    // gets a real payload rather than the empty one used above.
+    assert_eq!(
+        app.call_err(
+            "reports:stock-flow",
+            json!({ "from": "2026-04-01", "to": "2027-03-31" })
+        ),
+        "UNAUTHENTICATED"
+    );
 }
 
 #[test]
@@ -597,6 +607,147 @@ fn item_price_tax_flow() {
     assert_eq!(purchase_detail["cgstMinor"].as_i64(), Some(15_750), "{purchase_detail}");
     assert_eq!(purchase_detail["sgstMinor"].as_i64(), Some(15_750), "{purchase_detail}");
     assert_eq!(purchase_detail["totalMinor"].as_i64(), Some(206_500), "{purchase_detail}");
+}
+
+#[test]
+fn stock_flow_report_returns_every_item_in_range() {
+    let mut app = Harness::new("stock-flow");
+
+    app.call(
+        "identity:setup",
+        json!({
+            "name": "Stock Flow Traders",
+            "ownerFullName": "Owner",
+            "ownerEmail": "owner@stock-flow.test",
+            "ownerPassword": "correct-horse",
+            "stateCode": "27",
+            "booksBeginDate": "2026-04-01"
+        }),
+    );
+
+    let units = app.call("units:list", json!({}));
+    let nos_id = units
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|unit| unit["symbol"] == json!("nos"))
+        .and_then(|unit| unit["id"].as_i64())
+        .expect("Nos unit");
+
+    let party = app.call(
+        "parties:create",
+        json!({
+            "name": "Flow Buyer",
+            "stateCode": "27",
+            "isCustomer": true,
+            "isSupplier": true,
+            "creditDays": 0
+        }),
+    );
+    let party_id = party["id"].as_i64().expect("party id");
+
+    let item_a = app.call(
+        "items:create",
+        json!({
+            "name": "Flow Item A",
+            "hsnSac": "1006",
+            "uomId": nos_id,
+            "gstRateBps": 1800,
+            "isService": false,
+            "salePriceMinor": 10_000,
+            "purchasePriceMinor": 8_000,
+            "salePriceIncludesTax": true,
+            "purchasePriceIncludesTax": false
+        }),
+    );
+    let item_a_id = item_a["id"].as_i64().expect("item A id");
+    let item_b = app.call(
+        "items:create",
+        json!({
+            "name": "Flow Item B",
+            "hsnSac": "1006",
+            "uomId": nos_id,
+            "gstRateBps": 1800,
+            "isService": false,
+            "salePriceMinor": 20_000,
+            "purchasePriceMinor": 16_000,
+            "salePriceIncludesTax": true,
+            "purchasePriceIncludesTax": false
+        }),
+    );
+    let item_b_id = item_b["id"].as_i64().expect("item B id");
+
+    let line = |item_id: i64, description: &str, qty: i64, rate: i64| {
+        json!({
+            "itemId": item_id,
+            "description": description,
+            "qtyE4": qty,
+            "rateMinor": rate,
+            "rateIncludesTax": false,
+            "discountBps": 0,
+            "gstRateBps": 1800
+        })
+    };
+
+    app.call(
+        "vouchers:post",
+        json!({
+            "requestId": "stock-flow-purchase-0001",
+            "type": "PURCHASE",
+            "date": "2026-04-10",
+            "partyId": party_id,
+            "placeOfSupplyStateCode": "27",
+            "supplierBillMissing": true,
+            "lines": [
+                line(item_a_id, "Flow Item A", 100_000, 8_000),
+                line(item_b_id, "Flow Item B", 50_000, 16_000)
+            ]
+        }),
+    );
+
+    app.call(
+        "vouchers:post",
+        json!({
+            "requestId": "stock-flow-sale-0001",
+            "type": "SALES",
+            "date": "2026-05-10",
+            "partyId": party_id,
+            "placeOfSupplyStateCode": "27",
+            "lines": [line(item_a_id, "Flow Item A", 20_000, 10_000)]
+        }),
+    );
+
+    let full = app.call(
+        "reports:stock-flow",
+        json!({ "from": "2026-04-01", "to": "2026-06-30" }),
+    );
+    assert_eq!(rows(&full).len(), 3, "two purchases and one sale: {full}");
+    assert!(full
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|row| row["itemId"].as_i64() == Some(item_b_id)));
+    let sale_row = full
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["qtyOutE4"].as_i64() == Some(20_000))
+        .expect("sale row");
+    assert_eq!(sale_row["itemId"].as_i64(), Some(item_a_id));
+    assert_eq!(sale_row["date"], json!("2026-05-10"));
+
+    let narrowed = app.call(
+        "reports:stock-flow",
+        json!({ "from": "2026-05-01", "to": "2026-06-30" }),
+    );
+    assert_eq!(rows(&narrowed).len(), 1, "only the May sale: {narrowed}");
+    assert_eq!(narrowed[0]["itemId"].as_i64(), Some(item_a_id));
+
+    let empty = app.call(
+        "reports:stock-flow",
+        json!({ "from": "2026-01-01", "to": "2026-03-31" }),
+    );
+    assert!(rows(&empty).is_empty(), "outside the range: {empty}");
 }
 
 #[test]

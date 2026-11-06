@@ -65,6 +65,7 @@ import type {
   ReceivableRow,
   RegisterRow,
   StatementRow,
+  StockFlowRow,
   StockMovementRow,
   StockRow,
   TrialBalanceRow
@@ -222,7 +223,9 @@ const api = {
       call(IPC_CHANNELS.REPORTS_REGISTER, { type, from, to }),
     stock: (): Promise<StockRow[]> => call(IPC_CHANNELS.REPORTS_STOCK),
     stockMovements: (itemId: number, from: string, to: string): Promise<StockMovementRow[]> =>
-      call(IPC_CHANNELS.REPORTS_STOCK_MOVEMENTS, { itemId, from, to })
+      call(IPC_CHANNELS.REPORTS_STOCK_MOVEMENTS, { itemId, from, to }),
+    stockFlow: (from: string, to: string): Promise<StockFlowRow[]> =>
+      call(IPC_CHANNELS.REPORTS_STOCK_FLOW, { from, to })
   },
   license: {
     status: (): Promise<LicenseStatus> => call(IPC_CHANNELS.LICENSE_STATUS)
