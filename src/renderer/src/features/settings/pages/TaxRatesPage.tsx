@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { FormLegend } from '@/components/ui/field'
 import { focusFirstError, FormTextField, type FormFieldApi } from '@/components/ui/form-field'
+import { KpiCard } from '@/components/ui/kpi-card'
 import { StatusPill } from '@/components/ui/status-pill'
 import { can, useSession } from '@/context/session-context'
 import { formatDate } from '@/lib/format'
@@ -91,18 +92,20 @@ export function TaxRatesPage(): React.JSX.Element {
   const [retiring, setRetiring] = useState<TaxRateRow | null>(null)
 
   const list = useQuery({
-    queryKey: ['tax-rates', { includeHistory }],
-    queryFn: () => window.api.taxRates.list({ includeHistory })
+    queryKey: ['tax-rates', 'all'],
+    queryFn: () => window.api.taxRates.list({ includeHistory: true })
   })
 
   const rows = list.data ?? []
-  const currentCount = rows.filter((row) => statusOf(row).label === 'Current').length
+  const visibleRows = includeHistory ? rows : rows.filter((row) => row.isCurrent)
+  const currentCount = rows.filter((row) => row.isCurrent).length
+  const otherCount = rows.length - currentCount
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 p-6">
       <PageHeader
         title="Tax Rates"
-        description={`${currentCount} current rate${currentCount === 1 ? '' : 's'} · GST and cess, effective-dated`}
+        description="GST and cess slabs, effective-dated. Posted documents keep their stored rate."
         actions={
           mayManage ? (
             <Button size="sm" onClick={() => setCreating(true)}>
@@ -113,6 +116,30 @@ export function TaxRatesPage(): React.JSX.Element {
         }
       />
 
+      <section className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
+        <KpiCard
+          label="Current rates"
+          value={String(currentCount)}
+          context="Available on new items"
+          icon={Percent}
+          tone="success"
+        />
+        <KpiCard
+          label="Upcoming or ended"
+          value={String(otherCount)}
+          context="Kept for history"
+          icon={CalendarRange}
+          tone="warning"
+        />
+        <KpiCard
+          label="Total rows"
+          value={String(rows.length)}
+          context="Across every effective date"
+          icon={History}
+          tone="primary"
+        />
+      </section>
+
       <div className="border border-border bg-card px-4 py-3">
         <div className="flex items-start gap-2.5">
           <CalendarRange className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -121,6 +148,9 @@ export function TaxRatesPage(): React.JSX.Element {
             <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">
               A revision closes the old row the day before the new rate starts. Posted invoices keep
               the rate stored on their lines, and item prices keep the rate they were saved with.
+            </p>
+            <p className="mt-1 text-[0.8125rem] text-muted-foreground">
+              New items start at 0% GST and 0% cess. Choose the rate on the item when it needs one.
             </p>
           </div>
         </div>
@@ -140,7 +170,7 @@ export function TaxRatesPage(): React.JSX.Element {
           Show ended and upcoming rates
         </label>
         <p className="text-[0.75rem] text-muted-foreground">
-          {rows.length} row{rows.length === 1 ? '' : 's'}
+          {visibleRows.length} of {rows.length} row{rows.length === 1 ? '' : 's'}
         </p>
       </div>
 
@@ -154,11 +184,15 @@ export function TaxRatesPage(): React.JSX.Element {
             Try again
           </Button>
         </div>
-      ) : rows.length === 0 && !list.isPending ? (
+      ) : visibleRows.length === 0 && !list.isPending ? (
         <EmptyState
           icon={Percent}
-          title="No tax rates yet"
-          description="Add the GST slabs your business uses before creating taxable items."
+          title={rows.length === 0 ? 'No tax rates yet' : 'No current rates'}
+          description={
+            rows.length === 0
+              ? 'Add the GST slabs your business uses before creating taxable items.'
+              : 'Show ended and upcoming rates to see the history, or add a new rate.'
+          }
           action={
             mayManage ? (
               <Button size="sm" onClick={() => setCreating(true)}>
@@ -204,7 +238,7 @@ export function TaxRatesPage(): React.JSX.Element {
                   </td>
                 </tr>
               ) : (
-                rows.map((row) => {
+                visibleRows.map((row) => {
                   const status = statusOf(row)
                   const open = row.effectiveTo === null
                   return (
