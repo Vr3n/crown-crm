@@ -14,7 +14,8 @@ import {
   openBalanceStatus,
   profitMonthlySeries,
   rankedItems,
-  taxSplitRows
+  taxSplitRows,
+  trialBalanceGroups
 } from '../../src/renderer/src/features/reports/report-shaping'
 import type { RegisterRow } from '../../src/shared/contracts/reports'
 
@@ -263,6 +264,34 @@ describe('profit monthly series', () => {
       '2026-04-30'
     )
     expect(series.map((point) => point.key)).toEqual(['2026-04'])
+  })
+})
+
+describe('trial balance groups', () => {
+  it('sums debit and credit per group and sorts by group name', () => {
+    expect(
+      trialBalanceGroups([
+        { groupName: 'Expenses', debitMinor: 1200, creditMinor: 0 },
+        { groupName: 'Assets', debitMinor: 500, creditMinor: 100 },
+        { groupName: 'Expenses', debitMinor: 300, creditMinor: 50 }
+      ])
+    ).toEqual([
+      { name: 'Assets', debitMinor: 500, creditMinor: 100 },
+      { name: 'Expenses', debitMinor: 1500, creditMinor: 50 }
+    ])
+  })
+
+  it('drops accounts with no movement and keeps the totals reconciled', () => {
+    const groups = trialBalanceGroups([
+      { groupName: 'Assets', debitMinor: 0, creditMinor: 0 },
+      { groupName: 'Income', debitMinor: 0, creditMinor: 900 }
+    ])
+    expect(groups).toEqual([{ name: 'Income', debitMinor: 0, creditMinor: 900 }])
+    expect(groups.reduce((sum, group) => sum + group.creditMinor, 0)).toBe(900)
+  })
+
+  it('returns an empty list for an empty report', () => {
+    expect(trialBalanceGroups([])).toEqual([])
   })
 })
 
