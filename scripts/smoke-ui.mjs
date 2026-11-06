@@ -14,6 +14,9 @@
  *   6. an item and a sales invoice are posted, then the voucher detail, the
  *      party detail, the receivables report, the trial balance and the print
  *      view are all read back from the running UI
+ *   7. a supplier and an item are created from the bill's own pickers, then the
+ *      bill posts with both and opens its detail
+ *   8. a customer is created from a receipt's party picker
  *
  * Usage:
  *   node scripts/smoke-ui.mjs
@@ -211,6 +214,37 @@ async function setField(fieldId, value) {
       return 'set'
     })()`)
   )
+}
+
+/**
+ * Clicks the first element matching a CSS selector.
+ * @param {string} selector
+ * @returns {Promise<string>}
+ */
+async function clickSelector(selector) {
+  return String(
+    await evaluate(`(() => {
+      const element = document.querySelector(${JSON.stringify(selector)})
+      if (!element) return 'missing'
+      element.click()
+      return 'clicked'
+    })()`)
+  )
+}
+
+/**
+ * Polls an expression until it is truthy.
+ * @param {string} expression
+ * @param {number} [timeout]
+ * @returns {Promise<boolean>}
+ */
+async function waitFor(expression, timeout = 20_000) {
+  const deadline = Date.now() + timeout
+  while (Date.now() < deadline) {
+    if ((await evaluate(expression)) === true) return true
+    await sleep(250)
+  }
+  return false
 }
 
 /** @returns {void} */
@@ -492,6 +526,141 @@ try {
     'a no-bill purchase prints the internal PUR number',
     text.toLowerCase().includes('supplier bill no.') && text.includes('PUR/'),
     text.slice(0, 300)
+  )
+
+  // -------------------------------------------------------------------
+  // A supplier and an item created from the bill's own pickers
+  // -------------------------------------------------------------------
+  console.log('create from the bill pickers')
+  const INLINE_SUPPLIER = 'Inline Supplier'
+  const INLINE_ITEM = 'Inline Widget'
+  const INLINE_BILL = 'INLINE/0001'
+
+  await goto('/purchases/new', ['Post bill'])
+  check(
+    'the bill header offers the supplier picker',
+    (await clickSelector('[role="combobox"][aria-label="Select supplier"]')) === 'clicked'
+  )
+  check(
+    'the supplier picker offers a create action',
+    await waitFor(
+      "[...document.querySelectorAll('button')].some((button) => button.textContent.trim() === 'New supplier')"
+    )
+  )
+  check('the create action opens the party dialog', (await clickButton('New supplier')) === 'clicked')
+  text = await waitForText(['New party', 'Add party'])
+  check('the party dialog opens over the bill', text.includes('Add party'))
+  check('the supplier name field is ready', await waitFor(`document.getElementById('name') !== null`))
+
+  check('the new supplier name is typed', (await setField('name', INLINE_SUPPLIER)) === 'set')
+  check('the party dialog saves', (await clickButton('Add party')) === 'clicked')
+  check(
+    'the new supplier is selected without leaving the bill',
+    await waitFor(
+      `document.querySelector('[role="combobox"][aria-label="Select supplier"]')?.textContent.includes(${JSON.stringify(INLINE_SUPPLIER)}) === true`
+    )
+  )
+  check(
+    'the new supplier is saved with the supplier role',
+    (await evaluate(
+      `window.api.parties.list({ query: ${JSON.stringify(INLINE_SUPPLIER)} }).then((rows) => rows[0]?.isSupplier === true && rows[0]?.isCustomer === false)`
+    )) === true
+  )
+
+  check(
+    'the line offers the item picker',
+    (await clickSelector('[role="combobox"][aria-label="Choose item or use free text"]')) ===
+      'clicked'
+  )
+  check(
+    'the item picker offers a create action',
+    await waitFor(
+      "[...document.querySelectorAll('button')].some((button) => button.textContent.trim() === 'New item')"
+    )
+  )
+  check('the create action opens the item dialog', (await clickButton('New item')) === 'clicked')
+  text = await waitForText(['New item', 'Add item'])
+  check('the item dialog opens over the bill', text.includes('Add item'))
+  check('the item name field is ready', await waitFor(`document.getElementById('name') !== null`))
+
+  check('the new item name is typed', (await setField('name', INLINE_ITEM)) === 'set')
+  check('the purchase price is typed', (await setField('purchasePrice', '125.50')) === 'set')
+  check('the item dialog saves', (await clickButton('Add item')) === 'clicked')
+  check(
+    'the new item is selected on the line',
+    await waitFor(
+      `document.querySelector('[role="combobox"][aria-label="Item ${INLINE_ITEM}"]') !== null`
+    )
+  )
+  check(
+    'the new item fills the description',
+    (await evaluate(`
+      document.querySelector(${JSON.stringify('input[aria-label="Description for line 1"]')})?.value
+    `)) === INLINE_ITEM
+  )
+  check(
+    'the new item fills the purchase rate',
+    (await evaluate(`
+      document.querySelector(${JSON.stringify('input[aria-label="Rate for line 1"]')})?.value
+    `)) === '125.50'
+  )
+  check(
+    'the new item fills the quantity',
+    (await evaluate(`
+      document.querySelector(${JSON.stringify('input[aria-label="Qty for line 1"]')})?.value
+    `)) === '1'
+  )
+
+  check('the supplier bill number is typed', (await setField('supplier-bill-no', INLINE_BILL)) === 'set')
+  check('the bill posts with the created masters', (await clickButton('Post bill')) === 'clicked')
+  // The bill header already shows the bill number and the supplier, so the
+  // route change is the only reliable signal that the post finished.
+  check(
+    'the posted bill opens its detail',
+    await waitFor("location.hash.startsWith('#/vouchers/')", 25_000)
+  )
+  text = await waitForText([INLINE_BILL, INLINE_SUPPLIER])
+  check(
+    'the detail shows the created supplier and bill number',
+    text.includes(INLINE_BILL) && text.includes(INLINE_SUPPLIER),
+    text.replace(/\s+/g, ' ').slice(0, 220)
+  )
+
+  // -------------------------------------------------------------------
+  // A customer created from a receipt's party picker
+  // -------------------------------------------------------------------
+  console.log('create from a receipt picker')
+  const INLINE_CUSTOMER = 'Inline Customer'
+
+  await goto('/receipts/new', ['Post receipt'])
+  check(
+    'the receipt offers the customer picker',
+    (await clickSelector('[role="combobox"][aria-label="Select customer"]')) === 'clicked'
+  )
+  check(
+    'the receipt picker offers a create action',
+    await waitFor(
+      "[...document.querySelectorAll('button')].some((button) => button.textContent.trim() === 'New customer')"
+    )
+  )
+  check('the receipt create action opens the party dialog', (await clickButton('New customer')) === 'clicked')
+  text = await waitForText(['New party', 'Add party'])
+  check('the party dialog opens over the receipt', text.includes('Add party'))
+  check('the customer name field is ready', await waitFor(`document.getElementById('name') !== null`))
+
+  check('the new customer name is typed', (await setField('name', INLINE_CUSTOMER)) === 'set')
+  check('the receipt dialog saves', (await clickButton('Add party')) === 'clicked')
+  check(
+    'the new customer is selected on the receipt',
+    await waitFor(
+      `document.querySelector('[role="combobox"][aria-label="Select customer"]')?.textContent.includes(${JSON.stringify(INLINE_CUSTOMER)}) === true`
+    )
+  )
+  check(
+    'the new customer is saved with the customer role',
+    (await evaluate(
+      `window.api.parties.list({ query: ${JSON.stringify(INLINE_CUSTOMER)} }).then((rows) => rows[0]?.isCustomer === true && rows[0]?.isSupplier === false)`
+    )) === true
   )
 } catch (error) {
   problems.push(error.message)
