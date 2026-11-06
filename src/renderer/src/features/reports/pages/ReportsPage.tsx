@@ -18,9 +18,14 @@ import {
   TrendingUp
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { StatusPill } from '@/components/ui/status-pill'
 import { ReportTable, type ReportTableRow } from '../components/report-table'
 import { ReportVisuals } from '../components/report-visuals'
-import { amountTone, openBalanceStatus } from '../report-shaping'
+import {
+  amountTone,
+  openBalanceStatus,
+  trialBalanceGroups
+} from '../report-shaping'
 
 /**
  * Page counters live in the paged-media margin box. This rule is injected by
@@ -499,32 +504,87 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
     }[]
     const debit = rows.reduce((sum, row) => sum + row.debitMinor, 0)
     const credit = rows.reduce((sum, row) => sum + row.creditMinor, 0)
+    const groups = trialBalanceGroups(rows)
     return (
-      <ReportTable
-        exportName={TITLES[kind]}
-        empty={rows.length === 0}
-        emptyTitle="No accounts"
-        emptyText="The chart of accounts is empty."
-        head={['Account', 'Group', 'Debit', 'Credit']}
-        rows={rows
-          .filter((row) => row.debitMinor !== 0 || row.creditMinor !== 0)
-          .map((row) => ({
-            cells: [
-              row.name,
-              row.groupName,
-              money(row.debitMinor),
-              money(row.creditMinor)
-            ]
-          }))}
-        numeric={[2, 3]}
-        footer={['Total', '', money(debit), money(credit)]}
-        note={
-          debit === credit
-            ? 'Debits equal credits.'
-            : 'The books do not balance. Check the integrity report.'
-        }
-        noteTone={debit === credit ? 'ok' : 'bad'}
-      />
+      <div className="flex flex-col gap-4">
+        <section className="report-print-hide border border-border bg-card">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border bg-muted/40 px-3 py-2">
+            <h2 className="text-[0.9375rem] font-semibold">Debit and credit by account group</h2>
+            <span className="text-[0.75rem] text-muted-foreground">
+              {groups.length} {groups.length === 1 ? 'group' : 'groups'}
+            </span>
+          </div>
+          <table className="w-full border-collapse text-[0.875rem]">
+            <thead>
+              <tr>
+                <th
+                  scope="col"
+                  className="border-b border-border bg-muted/60 px-3 py-1.5 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                >
+                  Account group
+                </th>
+                <th
+                  scope="col"
+                  className="border-b border-border bg-muted/60 px-3 py-1.5 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                >
+                  Debit
+                </th>
+                <th
+                  scope="col"
+                  className="border-b border-border bg-muted/60 px-3 py-1.5 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                >
+                  Credit
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {groups.map((group) => (
+                <tr key={group.name} className="border-b border-border last:border-0">
+                  <td className="px-3 py-1.5">{group.name}</td>
+                  <td className="px-3 py-1.5 text-right font-mono tabular-nums">
+                    {money(group.debitMinor)}
+                  </td>
+                  <td className="px-3 py-1.5 text-right font-mono tabular-nums">
+                    {money(group.creditMinor)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-t-ink bg-muted/50 font-semibold">
+                <td className="px-3 py-2">Total</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{money(debit)}</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums">{money(credit)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
+        <ReportTable
+          exportName={TITLES[kind]}
+          empty={rows.length === 0}
+          emptyTitle="No accounts"
+          emptyText="The chart of accounts is empty."
+          head={['Account', 'Group', 'Debit', 'Credit']}
+          rows={rows
+            .filter((row) => row.debitMinor !== 0 || row.creditMinor !== 0)
+            .map((row) => ({
+              cells: [
+                row.name,
+                row.groupName,
+                money(row.debitMinor),
+                money(row.creditMinor)
+              ]
+            }))}
+          numeric={[2, 3]}
+          footer={['Total', '', money(debit), money(credit)]}
+          note={
+            debit === credit
+              ? 'Debits equal credits.'
+              : 'The books do not balance. Check the integrity report.'
+          }
+          noteTone={debit === credit ? 'ok' : 'bad'}
+        />
+      </div>
     )
   }
 
@@ -598,8 +658,23 @@ function ReportBody({ kind, data }: { kind: ReportKind; data: never }): React.JS
       totalEquityMinor: number
       differenceMinor: number
     }
+    const liabilitiesAndEquity = report.totalLiabilitiesMinor + report.totalEquityMinor
     return (
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="report-print-hide flex flex-wrap items-center justify-between gap-3 border border-border bg-card px-4 py-3 lg:col-span-2">
+          <div>
+            <h2 className="text-[0.9375rem] font-semibold">Balance check</h2>
+            <p className="mt-0.5 text-[0.75rem] text-muted-foreground">
+              Assets {money(report.totalAssetsMinor)} against liabilities and equity{' '}
+              {money(liabilitiesAndEquity)}.
+            </p>
+          </div>
+          <StatusPill tone={report.differenceMinor === 0 ? 'success' : 'destructive'}>
+            {report.differenceMinor === 0
+              ? 'Balanced'
+              : `Out by ${money(report.differenceMinor)}`}
+          </StatusPill>
+        </div>
         <ReportTable
           exportName={TITLES[kind]}
           empty={false}
