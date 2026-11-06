@@ -131,6 +131,29 @@ impl StockMovementRow {
     }
 }
 
+/// One posted movement on the company-wide item ledger. The item id is part of
+/// the row so the renderer can analyse every item from one read.
+#[derive(Debug, Clone)]
+pub struct StockFlowRow {
+    pub item_id: i64,
+    pub date: String,
+    pub qty_in_e4: i64,
+    pub qty_out_e4: i64,
+    pub unit_cost_minor: i64,
+}
+
+impl StockFlowRow {
+    pub fn to_json(&self) -> Value {
+        json!({
+            "itemId": self.item_id,
+            "date": self.date,
+            "qtyInE4": self.qty_in_e4,
+            "qtyOutE4": self.qty_out_e4,
+            "unitCostMinor": self.unit_cost_minor
+        })
+    }
+}
+
 /// One open bill from `voucherRepo.outstanding`.
 #[derive(Debug, Clone)]
 pub struct OpenBill {
@@ -369,6 +392,38 @@ pub fn stock_movements(
             qty_out_e4: row.get(7)?,
             unit_cost_minor: row.get(8)?,
             narration: row.get(9)?,
+        })
+    })?;
+    let mut out = Vec::new();
+    for row in rows {
+        out.push(row?);
+    }
+    Ok(out)
+}
+
+/// Every posted stock movement for a company in a date range. This mirrors
+/// `stock_movements` without the per-item filter, so one read serves the item
+/// analysis on the Items and Stock screens.
+pub fn stock_flow(
+    conn: &Connection,
+    company_id: i64,
+    from: &str,
+    to: &str,
+) -> AppResult<Vec<StockFlowRow>> {
+    let mut stmt = conn.prepare(
+        "SELECT m.item_id, v.voucher_date AS date, m.qty_in_e4, m.qty_out_e4, m.unit_cost_minor
+         FROM stock_movements m
+         JOIN vouchers v ON v.id = m.voucher_id AND v.status = 'POSTED'
+         WHERE m.company_id = ?1 AND v.voucher_date BETWEEN ?2 AND ?3
+         ORDER BY v.voucher_date, v.id, m.id",
+    )?;
+    let rows = stmt.query_map(params![company_id, from, to], |row| {
+        Ok(StockFlowRow {
+            item_id: row.get(0)?,
+            date: row.get(1)?,
+            qty_in_e4: row.get(2)?,
+            qty_out_e4: row.get(3)?,
+            unit_cost_minor: row.get(4)?,
         })
     })?;
     let mut out = Vec::new();

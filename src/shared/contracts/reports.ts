@@ -52,6 +52,18 @@ export interface StockMovementRow {
   narration: string | null
 }
 
+/**
+ * One posted stock movement on the company-wide item ledger. This is the raw
+ * movement row the item analysis reads, not a per-item aggregate.
+ */
+export interface StockFlowRow {
+  itemId: number
+  date: string
+  qtyInE4: number
+  qtyOutE4: number
+  unitCostMinor: number
+}
+
 export interface ReceivableRow {
   partyId: number
   partyName: string

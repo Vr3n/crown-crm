@@ -426,6 +426,13 @@ fn stock_movements_report(ctx: &Ctx<'_>, item_id: i64, from: &str, to: &str) -> 
     Ok(json!(rows.iter().map(|row| row.to_json()).collect::<Vec<_>>()))
 }
 
+fn stock_flow_report(ctx: &Ctx<'_>, from: &str, to: &str) -> AppResult<Value> {
+    ctx.require_permission(perm::REPORT_VIEW)?;
+    let company_id = ctx.company_id()?;
+    let rows = repo::stock_flow(ctx.db(), company_id, from, to)?;
+    Ok(json!(rows.iter().map(|row| row.to_json()).collect::<Vec<_>>()))
+}
+
 fn channel_profit_loss(ctx: &Ctx<'_>, input: &Value) -> AppResult<Value> {
     let (from, to) = date_range(input)?;
     profit_loss_report(ctx, &from, &to, true)
@@ -473,6 +480,11 @@ fn channel_stock_movements(ctx: &Ctx<'_>, input: &Value) -> AppResult<Value> {
     stock_movements_report(ctx, item_id, &from, &to)
 }
 
+fn channel_stock_flow(ctx: &Ctx<'_>, input: &Value) -> AppResult<Value> {
+    let (from, to) = date_range(input)?;
+    stock_flow_report(ctx, &from, &to)
+}
+
 pub fn dispatch(ctx: &mut Ctx<'_>, channel: &str, args: &[Value]) -> Option<AppResult<Value>> {
     let input = arg(args, 0);
     match channel {
@@ -486,6 +498,7 @@ pub fn dispatch(ctx: &mut Ctx<'_>, channel: &str, args: &[Value]) -> Option<AppR
         "reports:register" => Some(channel_register(ctx, input)),
         "reports:stock" => Some(stock_report(ctx)),
         "reports:stock-movements" => Some(channel_stock_movements(ctx, input)),
+        "reports:stock-flow" => Some(channel_stock_flow(ctx, input)),
         _ => None,
     }
 }

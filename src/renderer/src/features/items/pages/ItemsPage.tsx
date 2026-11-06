@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useStore } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -43,6 +43,16 @@ import {
   type PriceSplit
 } from '../../../../../shared/price'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
+import {
+  ANALYSIS_WINDOWS,
+  REORDER_LABELS,
+  REORDER_TONES,
+  analyseItems,
+  deadStock,
+  windowStart,
+  type AnalysisWindow,
+  type ItemAnalysis
+} from '@/lib/item-analysis'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import type { CreateItemInput, ItemRow } from '../../../../../shared/contracts/masters'
 
@@ -155,51 +165,33 @@ function qtyText(e4: number): string {
   return (e4 / 10000).toFixed(4).replace(/\.?0+$/, '') || '0'
 }
 
-function StockLevel({ item }: { item: ItemRow }): React.JSX.Element {
-  if (item.isService) {
-    return <StatusPill tone="info">Service</StatusPill>
-  }
-  if (item.stockQtyE4 <= 0) {
-    return <StatusPill tone="destructive">Out of stock</StatusPill>
-  }
-  if (item.reorderLevelE4 > 0 && item.stockQtyE4 <= item.reorderLevelE4) {
-    return (
-      <span className="inline-flex flex-col items-end gap-0.5">
-        <span className="font-mono text-[0.875rem] tabular-nums">{quantity(item.stockQtyE4)}</span>
-        <StatusPill tone="warning">Low</StatusPill>
-      </span>
-    )
-  }
-  return <span className="font-mono text-[0.875rem] tabular-nums">{quantity(item.stockQtyE4)}</span>
-}
-
 /** The gross and taxable view of one side of an item's price. */
 function itemPriceSplit(item: ItemRow, side: 'sale' | 'purchase'): PriceSplit {
   const priceMinor = side === 'sale' ? item.salePriceMinor : item.purchasePriceMinor
-  const includesTax =
-    side === 'sale' ? item.salePriceIncludesTax : item.purchasePriceIncludesTax
+  const includesTax = side === 'sale' ? item.salePriceIncludesTax : item.purchasePriceIncludesTax
   return includesTax
     ? splitInclusivePrice(priceMinor, item.gstRateBps, item.cessRateBps)
     : grossFromExclusive(priceMinor, item.gstRateBps, item.cessRateBps)
 }
 
-function Margin({
-  saleTaxableMinor,
-  landedCostMinor
-}: {
-  saleTaxableMinor: number
-  landedCostMinor: number
-}): React.JSX.Element {
-  if (landedCostMinor <= 0) return <span className="text-muted-foreground">—</span>
-  const percent = Math.round(
-    ((saleTaxableMinor - landedCostMinor) / landedCostMinor) * 100
-  )
-  return (
-    <span className={percent < 0 ? 'text-destructive' : 'text-success'}>
-      {percent > 0 ? '+' : ''}
-      {percent}%
-    </span>
-  )
+function coverText(days: number): string {
+  return `${Number.isInteger(days) ? days : days.toFixed(1)}d`
+}
+
+type ItemSort = 'NAME' | 'MARGIN' | 'CONTRIBUTION' | 'LAST_SOLD'
+
+function sortAnalyses(a: ItemAnalysis, b: ItemAnalysis, sort: ItemSort): number {
+  if (sort === 'MARGIN') {
+    if (a.marginPercent === null && b.marginPercent === null) return 0
+    if (a.marginPercent === null) return 1
+    if (b.marginPercent === null) return -1
+    return b.marginPercent - a.marginPercent
+  }
+  if (sort === 'CONTRIBUTION') return b.contributionMinor - a.contributionMinor
+  if (sort === 'LAST_SOLD') {
+    return (b.lastOutwardDate ?? '').localeCompare(a.lastOutwardDate ?? '')
+  }
+  return a.item.name.localeCompare(b.item.name)
 }
 
 /** The backend stores basis points and caps both rates at 5000 bps. */
@@ -322,7 +314,10 @@ export function ItemsPage(): React.JSX.Element {
   const [search, setSearch] = useState('')
   const query = useDebouncedValue(search, 250)
   const [includeInactive, setIncludeInactive] = useState(false)
-  const [filter, setFilter] = useState<'ALL' | 'LOW' | 'OUT' | 'SERVICE'>('ALL')
+  const [filter, setFilter] = useState<'ALL' | 'LOW' | 'OUT' | 'DEAD' | 'SERVICE'>('ALL')
+  const [windowDays, setWindowDays] = useState<AnalysisWindow>(90)
+  const [sort, setSort] = useState<ItemSort>('NAME')
+  const [today] = useState(() => new Date().toISOString().slice(0, 10))
   // The dashboard checklist links here with ?action=new so the create dialog is
   // already open. Capture it once, then drop the parameter from the URL.
   const [openedFromSetup] = useState(() => params.get('action') === 'new')
@@ -351,18 +346,43 @@ export function ItemsPage(): React.JSX.Element {
     queryKey: ['items', 'summary'],
     queryFn: () => window.api.summaries.items()
   })
+  const from = windowStart(today, windowDays)
+  const flow = useQuery({
+    queryKey: ['report', 'stock-flow', from, today],
+    queryFn: () => window.api.reports.stockFlow(from, today)
+  })
   const baseRows = list.data ?? []
 
-  const rows = baseRows.filter((item) => {
-    if (filter === 'SERVICE') return item.isService
-    if (item.isService) return false
-    if (filter === 'LOW')
-      return (
-        item.reorderLevelE4 > 0 && item.stockQtyE4 <= item.reorderLevelE4 && item.stockQtyE4 > 0
-      )
-    if (filter === 'OUT') return item.stockQtyE4 <= 0
-    return true
-  })
+  const analyses = useMemo(
+    () => analyseItems(baseRows, flow.data ?? [], { today, windowDays }),
+    [baseRows, flow.data, today, windowDays]
+  )
+  const dead = useMemo(() => deadStock(analyses, { windowDays }), [analyses, windowDays])
+  const deadIds = useMemo(() => new Set(dead.map((row) => row.item.id)), [dead])
+
+  const counts = {
+    ALL: analyses.length,
+    LOW: analyses.filter((row) => row.reorder === REORDER_LABELS.Low).length,
+    OUT: analyses.filter((row) => row.reorder === REORDER_LABELS.Out).length,
+    DEAD: dead.length,
+    SERVICE: analyses.filter((row) => row.item.isService).length
+  }
+
+  const rows = analyses
+    .filter((row) => {
+      if (filter === 'SERVICE') return row.item.isService
+      if (filter === 'ALL') return true
+      if (row.item.isService) return false
+      if (filter === 'LOW') return row.reorder === REORDER_LABELS.Low
+      if (filter === 'OUT') return row.reorder === REORDER_LABELS.Out
+      if (filter === 'DEAD') return deadIds.has(row.item.id)
+      return true
+    })
+    .sort((a, b) => sortAnalyses(a, b, sort))
+
+  const contributionRows = analyses
+    .filter((row) => row.contributionMinor > 0)
+    .map((row) => ({ label: row.item.name, valueMinor: row.contributionMinor }))
 
   const s = summary.data
 
@@ -447,38 +467,51 @@ export function ItemsPage(): React.JSX.Element {
             </p>
           )}
         </ChartCard>
-        <ChartCard title="Quick filters" subtitle="Jump to the items that need a decision">
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                ['ALL', 'All items', s?.itemCount ?? 0],
-                ['LOW', 'Low stock', s?.lowStockCount ?? 0],
-                ['OUT', 'Out of stock', s?.outOfStockCount ?? 0],
-                ['SERVICE', 'Services', s?.serviceCount ?? 0]
-              ] as const
-            ).map(([value, label, count]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setFilter(value)}
-                className={`flex items-center justify-between border px-3 py-2.5 text-left text-[0.875rem] transition-colors ${
-                  filter === value
-                    ? 'border-primary bg-accent-soft/50 font-medium text-primary'
-                    : 'border-border bg-card hover:border-rule-strong'
-                }`}
-              >
-                <span>{label}</span>
-                <span className="font-mono text-[0.75rem] tabular-nums text-muted-foreground">
-                  {count}
-                </span>
-              </button>
-            ))}
-          </div>
+        <ChartCard
+          title={`Contribution by item (${windowDays}d)`}
+          subtitle="Top 6 by gross margin on what left the shelf in the window"
+        >
+          {contributionRows.length > 0 ? (
+            <RankedBarsChart
+              rows={contributionRows}
+              ariaLabel={`Contribution by item (${windowDays}d)`}
+            />
+          ) : (
+            <p className="py-10 text-center text-[0.8125rem] text-muted-foreground">
+              No outward movement in this window yet.
+            </p>
+          )}
         </ChartCard>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border border-border bg-card px-3 py-2">
-        <div className="relative min-w-56 flex-1">
+      <div className="flex flex-wrap items-center gap-2 border border-border bg-card px-2 py-1.5">
+        <div className="flex flex-wrap items-center gap-1">
+          {(
+            [
+              ['ALL', 'All items'],
+              ['LOW', 'Low stock'],
+              ['OUT', 'Out of stock'],
+              ['DEAD', 'Dead stock'],
+              ['SERVICE', 'Services']
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={filter === value}
+              onClick={() => setFilter(value)}
+              className={`flex h-7 items-center gap-1.5 border px-2 text-[0.75rem] transition-colors ${
+                filter === value
+                  ? 'border-primary bg-accent-soft/60 font-medium text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {label}
+              <span className="font-mono text-[0.6875rem] tabular-nums">{counts[value]}</span>
+            </button>
+          ))}
+        </div>
+        <div className="relative min-w-48 flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             id="item-search"
@@ -489,9 +522,41 @@ export function ItemsPage(): React.JSX.Element {
             className="h-8 border-0 bg-transparent pl-8 text-[0.9375rem] focus-visible:ring-0 dark:bg-transparent"
           />
         </div>
+        <label className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground">
+          Window
+          <Select
+            value={String(windowDays)}
+            onValueChange={(value) => setWindowDays(Number(value) as AnalysisWindow)}
+          >
+            <SelectTrigger aria-label="Analysis window" className="h-7 w-24 text-[0.75rem]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ANALYSIS_WINDOWS.map((days) => (
+                <SelectItem key={days} value={String(days)}>
+                  {days} days
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
+        <label className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground">
+          Sort
+          <Select value={sort} onValueChange={(value) => setSort(value as ItemSort)}>
+            <SelectTrigger aria-label="Sort items" className="h-7 w-32 text-[0.75rem]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NAME">Name</SelectItem>
+              <SelectItem value="MARGIN">Margin</SelectItem>
+              <SelectItem value="CONTRIBUTION">Contribution</SelectItem>
+              <SelectItem value="LAST_SOLD">Last sold</SelectItem>
+            </SelectContent>
+          </Select>
+        </label>
         <label
           htmlFor="item-inactive"
-          className="flex cursor-pointer items-center gap-1.5 text-[0.875rem] text-muted-foreground"
+          className="flex cursor-pointer items-center gap-1.5 text-[0.75rem] text-muted-foreground"
         >
           <Checkbox
             id="item-inactive"
@@ -515,28 +580,29 @@ export function ItemsPage(): React.JSX.Element {
       ) : rows.length === 0 && !list.isPending ? (
         <EmptyState
           icon={Package}
-          title={search ? 'No items match' : 'No items yet'}
+          title={baseRows.length === 0 ? 'No items yet' : 'No items in this view'}
           description={
-            search
-              ? 'Try a different name, SKU or HSN code.'
-              : 'Add the goods and services you sell, with HSN, unit, GST rate and prices.'
+            baseRows.length === 0
+              ? 'Add the goods and services you sell, with HSN, unit, GST rate and prices.'
+              : 'Change the filter or search to see other items.'
           }
           action={
-            search ? (
+            baseRows.length === 0 ? (
+              <Button size="sm" onClick={() => show(null)}>
+                <Plus className="size-3.5" strokeWidth={2} />
+                New item
+              </Button>
+            ) : (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => {
                   setSearch('')
+                  setFilter('ALL')
                   setIncludeInactive(false)
                 }}
               >
-                Clear search
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => show(null)}>
-                <Plus className="size-3.5" strokeWidth={2} />
-                New item
+                Clear filters
               </Button>
             )
           }
@@ -552,6 +618,7 @@ export function ItemsPage(): React.JSX.Element {
                   'Unit',
                   'GST',
                   'Stock',
+                  'Cover',
                   'Sale price',
                   'Landed cost',
                   'Margin',
@@ -560,7 +627,7 @@ export function ItemsPage(): React.JSX.Element {
                   <th
                     key={heading}
                     scope="col"
-                    className={`${TH} ${['GST', 'Stock', 'Sale price', 'Landed cost', 'Margin'].includes(heading) ? 'text-right' : ''}`}
+                    className={`${TH} ${['GST', 'Stock', 'Cover', 'Sale price', 'Landed cost', 'Margin'].includes(heading) ? 'text-right' : ''}`}
                   >
                     {heading}
                   </th>
@@ -574,14 +641,15 @@ export function ItemsPage(): React.JSX.Element {
               {list.isPending ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className="px-3 py-8 text-center text-[0.875rem] text-muted-foreground"
                   >
                     Loading items...
                   </td>
                 </tr>
               ) : (
-                rows.map((item) => {
+                rows.map((analysis) => {
+                  const item = analysis.item
                   const sale = itemPriceSplit(item, 'sale')
                   const purchase = itemPriceSplit(item, 'purchase')
                   return (
@@ -598,6 +666,11 @@ export function ItemsPage(): React.JSX.Element {
                             <Badge variant="outline" className={TAG}>
                               Service
                             </Badge>
+                          ) : null}
+                          {!item.isActive ? (
+                            <span className="text-[0.625rem] uppercase tracking-[0.08em] text-muted-foreground">
+                              Inactive
+                            </span>
                           ) : null}
                         </div>
                         {item.sku ? (
@@ -620,8 +693,28 @@ export function ItemsPage(): React.JSX.Element {
                           </div>
                         ) : null}
                       </td>
-                      <td className={`${TD} text-right`}>
-                        <StockLevel item={item} />
+                      <td
+                        className={`${TD} text-right font-mono text-[0.875rem] tabular-nums ${
+                          item.isService ? 'text-muted-foreground' : ''
+                        }`}
+                      >
+                        {item.isService ? '—' : quantity(item.stockQtyE4)}
+                      </td>
+                      <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
+                        {item.isService ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : analysis.coverDays === null ? (
+                          <span className="text-[0.75rem] text-muted-foreground">No movement</span>
+                        ) : (
+                          coverText(analysis.coverDays)
+                        )}
+                        {!item.isService ? (
+                          <div className="text-[0.625rem] font-normal text-muted-foreground">
+                            {analysis.lastOutwardDate
+                              ? `Last sold ${analysis.lastOutwardDate}`
+                              : 'Not sold'}
+                          </div>
+                        ) : null}
                       </td>
                       <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
                         {formatMinor(sale.grossMinor, 'INR')}
@@ -636,14 +729,22 @@ export function ItemsPage(): React.JSX.Element {
                         </div>
                       </td>
                       <td className={`${TD} text-right font-mono text-[0.875rem] tabular-nums`}>
-                        <Margin
-                          saleTaxableMinor={sale.taxableMinor}
-                          landedCostMinor={purchase.grossMinor}
-                        />
+                        {analysis.marginPercent === null ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : (
+                          <span
+                            className={
+                              analysis.marginPercent < 0 ? 'text-destructive' : 'text-success'
+                            }
+                          >
+                            {analysis.marginPercent > 0 ? '+' : ''}
+                            {analysis.marginPercent}%
+                          </span>
+                        )}
                       </td>
                       <td className={TD}>
-                        <StatusPill tone={item.isActive ? 'neutral' : 'destructive'}>
-                          {item.isActive ? 'Active' : 'Inactive'}
+                        <StatusPill tone={REORDER_TONES[analysis.reorder]}>
+                          {REORDER_LABELS[analysis.reorder]}
                         </StatusPill>
                       </td>
                       <td className={`${TD} text-right`}>
@@ -786,11 +887,7 @@ export function ItemDialog({
     : grossFromExclusive(toMinor(values.salePrice), gstRateBps, cessRateBps)
   // A purchase is always entered and posted tax-exclusive; the breakup still
   // shows the landed cost the supplier's tax produces.
-  const purchaseSplit = grossFromExclusive(
-    toMinor(values.purchasePrice),
-    gstRateBps,
-    cessRateBps
-  )
+  const purchaseSplit = grossFromExclusive(toMinor(values.purchasePrice), gstRateBps, cessRateBps)
 
   function textField(name: ItemTextKey): React.JSX.Element {
     const meta = TEXT_FIELDS[name]

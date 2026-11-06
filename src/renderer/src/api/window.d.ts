@@ -62,6 +62,7 @@ import type {
   ReceivableRow,
   RegisterRow,
   StatementRow,
+  StockFlowRow,
   StockMovementRow,
   StockRow,
   TrialBalanceRow
@@ -166,6 +167,7 @@ declare global {
         register: (type: 'SALES' | 'PURCHASE', from: string, to: string) => Promise<RegisterRow[]>
         stock: () => Promise<StockRow[]>
         stockMovements: (itemId: number, from: string, to: string) => Promise<StockMovementRow[]>
+        stockFlow: (from: string, to: string) => Promise<StockFlowRow[]>
       }
       license: {
         status: () => Promise<LicenseStatus>
