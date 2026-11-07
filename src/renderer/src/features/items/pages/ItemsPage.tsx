@@ -675,7 +675,7 @@ export function ItemDialog({
   item: ItemRow | null
   units: { id: number; name: string; symbol: string }[]
   taxRates: TaxRateRow[]
-  onSaved: () => void
+  onSaved: (saved?: ItemRow) => void
 }): React.JSX.Element {
   const queryClient = useQueryClient()
   const editing = item !== null
@@ -724,10 +724,10 @@ export function ItemDialog({
             reorderLevelE4: input.reorderLevelE4
           })
         : window.api.items.create({ ...input.payload, reorderLevelE4: input.reorderLevelE4 ?? 0 }),
-    onSuccess: () => {
+    onSuccess: (saved) => {
       toast.success(editing ? 'Item updated' : 'Item added')
       void queryClient.invalidateQueries({ queryKey: ['items'] })
-      onSaved()
+      onSaved(saved)
     },
     onError: (err) => toast.error(errorMessage(err, 'Could not save the item'))
   })

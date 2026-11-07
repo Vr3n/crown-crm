@@ -23,7 +23,8 @@ import {
   partyFormSchema,
   partyFormToInput,
   partyToForm,
-  type PartyForm
+  type PartyForm,
+  type PartyRoleDefault
 } from '../party-form'
 
 const FIELDS: {
@@ -112,12 +113,15 @@ export function PartyDialog({
   open,
   onOpenChange,
   party,
+  defaultRole = 'CUSTOMER',
   onSaved
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   party: PartyRow | null
-  onSaved: () => void
+  /** The picker's role, used only when creating a party. */
+  defaultRole?: PartyRoleDefault
+  onSaved: (saved?: PartyRow) => void
 }): React.JSX.Element {
   const queryClient = useQueryClient()
   const editing = party !== null
@@ -127,17 +131,17 @@ export function PartyDialog({
       input.id
         ? window.api.parties.update({ ...input, id: input.id })
         : window.api.parties.create(input),
-    onSuccess: () => {
+    onSuccess: (saved) => {
       toast.success(editing ? 'Party updated' : 'Party added')
       void queryClient.invalidateQueries({ queryKey: ['parties'] })
       void queryClient.invalidateQueries({ queryKey: ['accounts'] })
-      onSaved()
+      onSaved(saved)
     },
     onError: (err) => toast.error(errorMessage(err, 'Could not save the party'))
   })
 
   const form = useForm({
-    defaultValues: party ? partyToForm(party) : blankPartyForm(),
+    defaultValues: party ? partyToForm(party) : blankPartyForm(defaultRole),
     canSubmitWhenInvalid: true,
     validators: { onSubmit: partyFormSchema },
     onSubmitInvalid: ({ formApi }) => focusFirstError(formApi),

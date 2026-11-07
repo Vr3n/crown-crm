@@ -9,6 +9,7 @@ import {
   CommandList
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { PickerCreateAction } from '@/components/ui/picker-create-action'
 import { cn } from '@/lib/utils'
 import { formatMinor } from '@/lib/money'
 import type { PartyRow } from '../../../../../shared/contracts/masters'
@@ -25,6 +26,7 @@ export function PartyPicker({
   roleLabel,
   open,
   onOpenChange,
+  onCreate,
   triggerRef
 }: {
   parties: PartyRow[]
@@ -33,6 +35,8 @@ export function PartyPicker({
   roleLabel: 'customer' | 'supplier'
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Opens the party dialog without leaving the voucher. */
+  onCreate?: () => void
   triggerRef?: Ref<HTMLButtonElement>
 }): React.JSX.Element {
   const selected = parties.find((party) => party.id === value) ?? null
@@ -102,7 +106,7 @@ export function PartyPicker({
           <CommandList>
             <CommandEmpty>
               <div className="px-3 py-4 text-center text-[0.875rem] text-muted-foreground">
-                No {roleLabel} matches. Add one from Parties first.
+                No {roleLabel} matches. Create one below.
               </div>
             </CommandEmpty>
             <CommandGroup>
@@ -133,6 +137,15 @@ export function PartyPicker({
               ))}
             </CommandGroup>
           </CommandList>
+          {onCreate ? (
+            <PickerCreateAction
+              label={`New ${roleLabel}`}
+              onClick={() => {
+                onOpenChange(false)
+                onCreate()
+              }}
+            />
+          ) : null}
         </Command>
       </PopoverContent>
     </Popover>

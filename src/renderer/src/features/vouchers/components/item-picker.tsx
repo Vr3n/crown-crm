@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import {
   Command,
@@ -8,6 +9,7 @@ import {
   CommandList
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { PickerCreateAction } from '@/components/ui/picker-create-action'
 import { cn } from '@/lib/utils'
 import { formatMinor } from '@/lib/money'
 import type { ItemRow } from '../../../../../shared/contracts/masters'
@@ -20,17 +22,21 @@ export function ItemPicker({
   items,
   value,
   sale,
-  onSelect
+  onSelect,
+  onCreate
 }: {
   items: ItemRow[]
   value: number | null
   sale: boolean
   onSelect: (item: ItemRow | null) => void
+  /** Opens the item dialog for this line without leaving the voucher. */
+  onCreate?: () => void
 }): React.JSX.Element {
+  const [open, setOpen] = useState(false)
   const selected = items.find((item) => item.id === value) ?? null
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -58,13 +64,16 @@ export function ItemPicker({
           <CommandList>
             <CommandEmpty>
               <div className="px-3 py-4 text-center text-[0.875rem] text-muted-foreground">
-                No item matches. Type the description instead.
+                No item matches. Create one below, or type the description instead.
               </div>
             </CommandEmpty>
             <CommandGroup>
               <CommandItem
                 value="free text none"
-                onSelect={() => onSelect(null)}
+                onSelect={() => {
+                  setOpen(false)
+                  onSelect(null)
+                }}
                 className="flex items-center gap-2"
               >
                 <Check className={cn('size-3.5', value === null ? 'opacity-100' : 'opacity-0')} />
@@ -74,7 +83,10 @@ export function ItemPicker({
                 <CommandItem
                   key={item.id}
                   value={`${item.name} ${item.sku ?? ''} ${item.hsnSac ?? ''}`}
-                  onSelect={() => onSelect(item)}
+                  onSelect={() => {
+                    setOpen(false)
+                    onSelect(item)
+                  }}
                   className="flex items-start gap-2 py-2"
                 >
                   <Check
@@ -98,6 +110,15 @@ export function ItemPicker({
               ))}
             </CommandGroup>
           </CommandList>
+          {onCreate ? (
+            <PickerCreateAction
+              label="New item"
+              onClick={() => {
+                setOpen(false)
+                onCreate()
+              }}
+            />
+          ) : null}
         </Command>
       </PopoverContent>
     </Popover>

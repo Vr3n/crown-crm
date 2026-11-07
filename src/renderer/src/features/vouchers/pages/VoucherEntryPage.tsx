@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { formatMinor, minorToMajor, parseToMinor } from '@/lib/money'
-import type { ItemRow } from '../../../../../shared/contracts/masters'
+import type { ItemRow, PartyRow } from '../../../../../shared/contracts/masters'
 import type { PostVoucherInput } from '../../../../../shared/contracts/vouchers'
 import {
   applyBps,
@@ -17,6 +17,8 @@ import {
 } from '../../../../../shared/price'
 import { ItemPicker } from '../components/item-picker'
 import { PartyPicker } from '../components/party-picker'
+import { PartyDialog } from '@/features/parties/components/party-dialog'
+import { ItemDialog } from '@/features/items/pages/ItemsPage'
 
 type LineType = 'SALES' | 'PURCHASE' | 'CREDIT_NOTE' | 'DEBIT_NOTE'
 
@@ -231,6 +233,8 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
   const isPurchase = type === 'PURCHASE'
   const [partyId, setPartyId] = useState<number | null>(null)
   const [partyOpen, setPartyOpen] = useState(false)
+  const [partyDialogOpen, setPartyDialogOpen] = useState(false)
+  const [itemDialogKey, setItemDialogKey] = useState<string | null>(null)
   const [date, setDate] = useState(todayIso())
   const [dueDate, setDueDate] = useState('')
   const [supplierBillNo, setSupplierBillNo] = useState('')
@@ -251,6 +255,16 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
   const { data: items = [] } = useQuery({
     queryKey: ['items'],
     queryFn: () => window.api.items.list()
+  })
+  const units = useQuery({
+    queryKey: ['units', 'active'],
+    queryFn: () => window.api.units.list({ includeInactive: false }),
+    enabled: itemDialogKey !== null
+  })
+  const taxRates = useQuery({
+    queryKey: ['tax-rates', 'active'],
+    queryFn: () => window.api.taxRates.list({ includeHistory: false }),
+    enabled: itemDialogKey !== null
   })
 
   const cessByItem = new Map(items.map((item) => [item.id, item.cessRateBps]))
@@ -356,11 +370,11 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
     return () => window.removeEventListener('keydown', onKey)
   }, [addLine, navigate, meta.back])
 
-  function chooseParty(value: string): void {
+  function chooseParty(value: string, known?: PartyRow): void {
     const next = value ? Number(value) : null
     setPartyId(next)
     setPlaceOfSupply('')
-    const selected = parties.find((row) => row.id === next) ?? null
+    const selected = known ?? parties.find((row) => row.id === next) ?? null
     if (selected && (type === 'SALES' || type === 'PURCHASE')) {
       setDueDate(addDays(date, selected.creditDays > 0 ? selected.creditDays : 30))
     }
@@ -479,6 +493,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
               roleLabel={role === 'CUSTOMER' ? 'customer' : 'supplier'}
               open={partyOpen}
               onOpenChange={setPartyOpen}
+              onCreate={() => setPartyDialogOpen(true)}
               triggerRef={partyRef}
             />
             {!party ? (
@@ -669,6 +684,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                     value={line.itemId}
                     sale={type === 'SALES' || type === 'CREDIT_NOTE'}
                     onSelect={(item) => chooseItem(line.key, item)}
+                    onCreate={() => setItemDialogKey(line.key)}
                   />
                 </td>
                 {FIELD_KEYS.map((field) => (
@@ -804,6 +820,44 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           </Button>
         </div>
       </div>
+
+      {partyDialogOpen ? (
+        <PartyDialog
+          open
+          onOpenChange={setPartyDialogOpen}
+          party={null}
+          defaultRole={role}
+          onSaved={(created) => {
+            setPartyDialogOpen(false)
+            if (!created) return
+            queryClient.setQueryData<PartyRow[]>(['parties', role], (current) =>
+              current ? [...current, created] : [created]
+            )
+            chooseParty(String(created.id), created)
+          }}
+        />
+      ) : null}
+
+      {itemDialogKey ? (
+        <ItemDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setItemDialogKey(null)
+          }}
+          item={null}
+          units={units.data ?? []}
+          taxRates={taxRates.data ?? []}
+          onSaved={(created) => {
+            const key = itemDialogKey
+            setItemDialogKey(null)
+            if (!created || !key) return
+            queryClient.setQueryData<ItemRow[]>(['items'], (current) =>
+              current ? [...current, created] : [created]
+            )
+            chooseItem(key, created)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

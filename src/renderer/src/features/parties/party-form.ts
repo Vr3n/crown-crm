@@ -29,15 +29,21 @@ export function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-export const blankPartyForm = (): PartyForm => ({
+export type PartyRoleDefault = 'CUSTOMER' | 'SUPPLIER' | 'BOTH'
+
+/**
+ * A new party starts with the role the picker was opened for, so a supplier
+ * created from a purchase bill is selectable when the dialog closes.
+ */
+export const blankPartyForm = (role: PartyRoleDefault = 'CUSTOMER'): PartyForm => ({
   name: '',
   phone: '',
   email: '',
   gstin: '',
   stateCode: '',
   billingAddress: '',
-  isCustomer: true,
-  isSupplier: false,
+  isCustomer: role !== 'SUPPLIER',
+  isSupplier: role !== 'CUSTOMER',
   creditDays: '0',
   creditLimit: '0',
   openingBalance: '0',
