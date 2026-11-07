@@ -91,6 +91,7 @@ export const IPC_CHANNELS = {
   REPORTS_REGISTER: 'reports:register',
   REPORTS_STOCK: 'reports:stock',
   REPORTS_STOCK_MOVEMENTS: 'reports:stock-movements',
+  REPORTS_STOCK_FLOW: 'reports:stock-flow',
   // Licensing
   LICENSE_STATUS: 'license:status',
 

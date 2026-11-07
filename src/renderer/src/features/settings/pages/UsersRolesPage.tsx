@@ -8,10 +8,12 @@ import {
   Pencil,
   Plus,
   RotateCcw,
+  Shield,
   ShieldCheck,
   Trash2,
   UserPlus,
   Users,
+  UserX,
   XCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -40,6 +42,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { KpiCard } from '@/components/ui/kpi-card'
 import { StatusPill } from '@/components/ui/status-pill'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { can, useSession, type SessionContextValue } from '@/context/session-context'
@@ -166,6 +169,19 @@ function canManageRole(
   return role.permissionCodes.every((code) => session.permissions.includes(code))
 }
 
+/**
+ * One line under a role name. The stored description is the intended answer;
+ * the fallbacks still say what the role can do when the description is blank.
+ */
+function roleConsequence(role: RoleOutput | undefined, isSuper: boolean): string {
+  if (isSuper || role?.isSuper) return 'Every permission in the app'
+  if (!role) return 'Role details unavailable'
+  const description = role.description?.trim()
+  if (description) return description
+  if (role.permissionCodes.length === 0) return 'No permissions granted'
+  return `${role.permissionCodes.length} permission${role.permissionCodes.length === 1 ? '' : 's'} granted`
+}
+
 export function UsersRolesPage(): React.JSX.Element {
   const queryClient = useQueryClient()
   const session = useSession()
@@ -224,6 +240,7 @@ export function UsersRolesPage(): React.JSX.Element {
   const roleRows = roles.data ?? []
   const permissionRows = permissions.data ?? []
   const activePeople = staffRows.filter((member) => member.status === 'ACTIVE').length
+  const disabledPeople = staffRows.filter((member) => member.status === 'DISABLED').length
   const customRoles = roleRows.filter((role) => !role.isSystemRole).length
 
   function canManageMember(member: StaffMemberOutput): boolean {
@@ -238,7 +255,7 @@ export function UsersRolesPage(): React.JSX.Element {
     <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-4 p-6">
       <PageHeader
         title="Users and Roles"
-        description={`${staffRows.length} ${staffRows.length === 1 ? 'person' : 'people'} · ${activePeople} active · ${roleRows.length} ${roleRows.length === 1 ? 'role' : 'roles'}`}
+        description="People who sign in, and the role that decides what they can change."
         actions={
           mayManageUsers ? (
             <Button size="sm" onClick={() => setNewStaffOpen(true)}>
@@ -248,6 +265,37 @@ export function UsersRolesPage(): React.JSX.Element {
           ) : undefined
         }
       />
+
+      <section className="grid grid-cols-2 gap-px border border-border bg-border xl:grid-cols-4">
+        <KpiCard
+          label="Active people"
+          value={String(activePeople)}
+          context="Can sign in"
+          icon={Users}
+          tone="success"
+        />
+        <KpiCard
+          label="Disabled people"
+          value={String(disabledPeople)}
+          context="Cannot sign in"
+          icon={UserX}
+          tone="warning"
+        />
+        <KpiCard
+          label="Roles"
+          value={String(roleRows.length)}
+          context={`${customRoles} custom`}
+          icon={ShieldCheck}
+          tone="primary"
+        />
+        <KpiCard
+          label="Custom roles"
+          value={String(customRoles)}
+          context="Plus Owner and Admin presets"
+          icon={Shield}
+          tone="stamp"
+        />
+      </section>
 
       <div className="border border-border bg-card px-4 py-3">
         <div className="flex items-start gap-2.5">
@@ -341,6 +389,7 @@ export function UsersRolesPage(): React.JSX.Element {
                   ) : (
                     staffRows.map((member) => {
                       const manageable = canManageMember(member)
+                      const memberRole = roleRows.find((role) => role.id === member.roleId)
                       return (
                         <tr
                           key={member.id}
@@ -372,6 +421,12 @@ export function UsersRolesPage(): React.JSX.Element {
                                 </Badge>
                               ) : null}
                             </div>
+                            <p
+                              className="max-w-[360px] truncate text-[0.75rem] text-muted-foreground"
+                              title={roleConsequence(memberRole, member.isSuper)}
+                            >
+                              {roleConsequence(memberRole, member.isSuper)}
+                            </p>
                           </td>
                           <td className={TD}>
                             <StatusPill tone={member.status === 'ACTIVE' ? 'success' : 'neutral'}>
@@ -702,13 +757,19 @@ function RoleSelect({
   disabled?: boolean
   hint?: string
 }): React.JSX.Element {
+  const selected = roles.find((role) => String(role.id) === String(field.state.value))
+  const consequence = selected
+    ? `${roleConsequence(selected, selected.isSuper).replace(/[.!?]$/, '')}.`
+    : undefined
+  const helper = [consequence, hint].filter(Boolean).join(' ')
+
   return (
     <Field
       id={id}
       label={label}
       required
       errors={field.state.meta.errors as Array<string | { message?: string }>}
-      hint={hint}
+      hint={helper || undefined}
     >
       <Select
         value={field.state.value}
