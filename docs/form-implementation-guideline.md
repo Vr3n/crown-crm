@@ -142,6 +142,7 @@ A picker's create action sits below the search results, outside the filtered lis
 ## 6. Numbers and dates
 
 - Money inputs accept `1,23,456.78`, `123456.78` and `123456`. They store paise.
+- Percentage inputs accept a decimal percent, kept to two places, and store basis points. Leave 0 for nil.
 - Quantity accepts up to four decimals.
 - Date inputs accept `DD-MM-YYYY` typed, and a picker for the rest.
 - The financial year is shown next to the date when the date falls outside the current year.

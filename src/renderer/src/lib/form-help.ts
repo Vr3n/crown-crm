@@ -75,7 +75,18 @@ export const FIELD_HELP = {
     },
     gstRate: {
       summary: 'The GST rate applied to this item.',
-      points: ['Used to fill the line GST rate.', 'Change it per line when a sale differs.']
+      points: [
+        'Used to fill the line GST rate.',
+        'Type the percent from the invoice; it is not limited to the saved tax rates.',
+        'Change it per line when a sale differs.'
+      ]
+    },
+    cessRate: {
+      summary: 'The cess charged on top of GST for some goods.',
+      points: [
+        'Optional. Type the percent from the tax notification.',
+        'Leave 0 when the item has no cess.'
+      ]
     },
     salePrice: {
       summary: 'The default price charged to customers.',

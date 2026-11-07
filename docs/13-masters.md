@@ -61,14 +61,16 @@ seed only inserts rates when the company has none.
 
 ### Item integration
 
-The item form reads current tax-rate rows and keeps both numbers in the rate:
+The item form takes both numbers as typed percentages:
 
 - A GST rate and an optional cess rate are stored on the item as `gst_rate_bps`
-  and `cess_rate_bps`. Cess-bearing rows are selectable; the label states the
-  cess (`GST 18% + 12% cess`).
-- A legacy rate already stored on an item (for example 12%) is added to the
-  picker as **legacy** while editing, so opening and saving an old item does not
-  silently change its rate. New selections come from the tax-rate master.
+  and `cess_rate_bps`. The form accepts any rate from 0 to 50 percent in steps
+  of 0.01, not only the rows saved in the tax-rate master. The tax-rate master
+  stays a reference list for the settings screen.
+- A blank rate counts as zero, so exempt items need no special row. The live
+  price breakup uses the typed numbers immediately, before the item is saved.
+- Existing rates, including legacy ones that are not in the master, load back
+  into the same two inputs, so editing never silently changes an item's rate.
 - The item stores each price as typed plus an `..._includes_tax` flag. Sales
   default to inclusive (`2500` means the customer pays 2500); purchases default
   to exclusive (`1750` plus supplier tax). The form never converts the stored
