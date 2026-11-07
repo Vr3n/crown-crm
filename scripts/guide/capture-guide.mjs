@@ -788,8 +788,7 @@ try {
   await page.locator('#hsnSac').fill('8471')
   await page.locator('#item-unit').click()
   await page.getByRole('option', { name: /Nos/ }).click()
-  await page.locator('#item-gst').click()
-  await page.getByRole('option', { name: '18%' }).click()
+  await page.locator('#gstRate').fill('18')
   await page.locator('#salePrice').fill('1899')
   await page.locator('#purchasePrice').fill('1250')
   await page.locator('#openingQty').fill('12')
@@ -808,7 +807,7 @@ try {
       },
       {
         label: 2,
-        text: 'Unit and GST rate',
+        text: 'Unit, GST and cess rates',
         locator: page.locator('#item-unit'),
         anchor: 'tl',
         dx: -22,

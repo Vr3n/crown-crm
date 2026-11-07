@@ -24,12 +24,21 @@ export interface FormFieldApi<T = string> {
   setErrorMap?: (map: { onBlur?: undefined; onChange?: undefined }) => void
 }
 
-type Filter = 'digits' | 'upper' | 'decimal' | 'mobile'
+export type Filter = 'digits' | 'upper' | 'decimal' | 'mobile'
+
+/** Digits and one dot. Decimals are left for the schema to validate. */
+function sanitizeDecimal(value: string): string {
+  const cleaned = value.replace(/[^0-9.]/g, '')
+  const dot = cleaned.indexOf('.')
+  if (dot === -1) return cleaned
+  return cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replace(/\./g, '')
+}
 
 function applyFilter(value: string, filter?: Filter): string {
   if (filter === 'digits') return value.replace(/\D/g, '')
   if (filter === 'upper') return value.toUpperCase()
   if (filter === 'mobile') return toMobileDigits(value)
+  if (filter === 'decimal') return sanitizeDecimal(value)
   return value
 }
 

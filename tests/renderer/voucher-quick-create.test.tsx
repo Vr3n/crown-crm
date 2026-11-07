@@ -122,7 +122,6 @@ describe('creating a master from a voucher picker', () => {
         create: createItem
       },
       units: { list: vi.fn().mockResolvedValue([]) },
-      taxRates: { list: vi.fn().mockResolvedValue([]) },
       vouchers: { post: vi.fn() }
     } as unknown as typeof window.api
     renderEntry()
@@ -137,7 +136,9 @@ describe('creating a master from a voucher picker', () => {
     await waitFor(() => expect(createItem).toHaveBeenCalledTimes(1))
     expect(createItem.mock.calls[0][0]).toMatchObject({
       name: CREATED_ITEM.name,
-      isService: false
+      isService: false,
+      gstRateBps: 0,
+      cessRateBps: 0
     })
 
     expect(screen.getByRole('combobox', { name: `Item ${CREATED_ITEM.name}` })).toBeInTheDocument()
