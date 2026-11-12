@@ -12,7 +12,8 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { chromium } from 'playwright'
+
+import { launchGuideBrowser } from './guide-browser.mjs'
 
 const root = resolve(import.meta.dirname, '../..')
 const quick = process.argv.includes('--quick')
@@ -25,9 +26,7 @@ const bookmarksJson = join(assets, '.bookmarks.json')
 
 if (!existsSync(html)) throw new Error(`Guide HTML not found: ${html}`)
 
-const browser = await chromium.launch({
-  args: ['--allow-file-access-from-files', '--font-render-hinting=none']
-})
+const browser = await launchGuideBrowser()
 const page = await browser.newPage({ viewport: { width: 1200, height: 1600 } })
 await page.goto(pathToFileURL(html).href, { waitUntil: 'load' })
 await page.evaluate(async () => {

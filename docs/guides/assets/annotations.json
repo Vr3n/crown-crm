@@ -4,37 +4,37 @@
       "label": 1,
       "text": "Business name, owner and phone",
       "xPct": 60.34,
-      "yPct": 24.26
+      "yPct": 24.31
     },
     {
       "label": 2,
       "text": "Owner email is the sign-in name",
       "xPct": 60.34,
-      "yPct": 42.63
+      "yPct": 42.68
     },
     {
       "label": 3,
       "text": "Password, at least 8 characters",
       "xPct": 60.34,
-      "yPct": 51.82
+      "yPct": 51.86
     },
     {
       "label": 4,
       "text": "State and GSTIN decide the tax treatment",
       "xPct": 60.34,
-      "yPct": 63.82
+      "yPct": 63.87
     },
     {
       "label": 5,
-      "text": "First day of your books",
+      "text": "Books begin: the first day recorded",
       "xPct": 60.34,
-      "yPct": 73
+      "yPct": 73.05
     },
     {
       "label": 6,
       "text": "Creates the company and signs you in",
       "xPct": 60.34,
-      "yPct": 84.39
+      "yPct": 84.44
     }
   ],
   "00-first-run-numbering": [
@@ -42,33 +42,33 @@
       "label": 1,
       "text": "Each document has its own series",
       "xPct": 23.27,
-      "yPct": 54.87
+      "yPct": 58.8
     },
     {
       "label": 2,
       "text": "The next number is previewed live",
-      "xPct": 81.03,
-      "yPct": 55.78
+      "xPct": 19.16,
+      "yPct": 48.08
     }
   ],
-  "00-first-run-tour": [
+  "00-first-run-checklist": [
     {
       "label": 1,
-      "text": "Five steps from empty books to reports",
-      "xPct": 9.8,
-      "yPct": 20.28
+      "text": "Progress read from your own records",
+      "xPct": 79.13,
+      "yPct": 9.06
     },
     {
       "label": 2,
-      "text": "Open any step in the real app",
-      "xPct": 89.02,
-      "yPct": 42.11
+      "text": "Each step opens the real screen",
+      "xPct": 1.5,
+      "yPct": 28.6
     },
     {
       "label": 3,
-      "text": "Skip and return from the dashboard",
-      "xPct": 13.33,
-      "yPct": 88.18
+      "text": "The card disappears once every step is done",
+      "xPct": 2.39,
+      "yPct": 5.86
     }
   ],
   "01-dashboard": [
@@ -81,7 +81,7 @@
     {
       "label": 2,
       "text": "Quick actions",
-      "xPct": 87.91,
+      "xPct": 85.14,
       "yPct": 17.12
     },
     {
@@ -128,45 +128,45 @@
       "label": 1,
       "text": "Legal or trading name",
       "xPct": 5.65,
-      "yPct": 22.6
+      "yPct": 22.58
     },
     {
       "label": 2,
       "text": "GSTIN and state code control the tax type",
       "xPct": 5.65,
-      "yPct": 47.7
+      "yPct": 47.66
     },
     {
       "label": 3,
       "text": "Credit days set the default due date",
       "xPct": 5.65,
-      "yPct": 72.81
+      "yPct": 72.75
     },
     {
       "label": 4,
       "text": "Opening balance is posted later, once",
       "xPct": 5.65,
-      "yPct": 85.37
+      "yPct": 85.29
     }
   ],
   "04-items": [
     {
       "label": 1,
       "text": "Create a goods or service item",
-      "xPct": 91.44,
+      "xPct": 90.76,
       "yPct": 10.5
     },
     {
       "label": 2,
       "text": "HSN or SAC and GST rate",
-      "xPct": 38.28,
-      "yPct": 72.3
+      "xPct": 41.63,
+      "yPct": 71.82
     },
     {
       "label": 3,
       "text": "Quantity on hand, from posted movements",
-      "xPct": 42.86,
-      "yPct": 72.3
+      "xPct": 45.06,
+      "yPct": 71.82
     }
   ],
   "05-item-form": [
@@ -174,31 +174,31 @@
       "label": 1,
       "text": "Name, SKU and HSN or SAC",
       "xPct": 5.49,
-      "yPct": 22.6
+      "yPct": 15.09
     },
     {
       "label": 2,
-      "text": "Unit and GST rate",
-      "xPct": 47.42,
-      "yPct": 31.63
+      "text": "Unit, GST and cess rates",
+      "xPct": 48.08,
+      "yPct": 21.13
     },
     {
       "label": 3,
       "text": "Tick for services, which never hold stock",
-      "xPct": 47.42,
-      "yPct": 44.78
+      "xPct": 5.49,
+      "yPct": 39.3
     },
     {
       "label": 4,
       "text": "Default sale and purchase prices",
       "xPct": 5.49,
-      "yPct": 59.76
+      "yPct": 62.35
     },
     {
       "label": 5,
       "text": "Opening stock and cost",
       "xPct": 5.49,
-      "yPct": 72.31
+      "yPct": 76.12
     }
   ],
   "06-company": [
@@ -206,13 +206,13 @@
       "label": 1,
       "text": "Identity printed on invoices",
       "xPct": 26.05,
-      "yPct": 58.21
+      "yPct": 85.95
     },
     {
       "label": 2,
       "text": "Financial year and books begin date",
-      "xPct": 57.51,
-      "yPct": 27.84
+      "xPct": 70.77,
+      "yPct": 32.78
     }
   ],
   "07-opening-balances": [
@@ -258,59 +258,39 @@
     },
     {
       "label": 2,
+      "text": "Supplier bill number, exactly as printed",
+      "xPct": 18.12,
+      "yPct": 46.33
+    },
+    {
+      "label": 3,
       "text": "Bill date and due date",
       "xPct": 80.21,
       "yPct": 33.17
     },
     {
-      "label": 3,
+      "label": 4,
       "text": "Add each item on its own line",
       "xPct": 91.43,
-      "yPct": 51
-    },
-    {
-      "label": 4,
-      "text": "Quantity, rate, discount and GST",
-      "xPct": 56.58,
-      "yPct": 60.97
+      "yPct": 61.71
     },
     {
       "label": 5,
-      "text": "Tax and total are calculated",
-      "xPct": 75.15,
-      "yPct": 78.79
+      "text": "Quantity, rate, discount and GST",
+      "xPct": 52.66,
+      "yPct": 71.98
     },
     {
       "label": 6,
+      "text": "Tax and total are calculated",
+      "xPct": 75.15,
+      "yPct": 89.81
+    },
+    {
+      "label": 7,
       "text": "Posts the bill and moves stock",
       "xPct": 92.56,
-      "yPct": 94.92
-    }
-  ],
-  "10-purchase-detail": [
-    {
-      "label": 1,
-      "text": "Posted document with a permanent number",
-      "xPct": 22.32,
-      "yPct": 19.17
-    },
-    {
-      "label": 2,
-      "text": "Print the bill or save it as PDF",
-      "xPct": 79.23,
-      "yPct": 8.87
-    },
-    {
-      "label": 3,
-      "text": "Cancel reverses the effect; the number is kept",
-      "xPct": 84.84,
-      "yPct": 8.87
-    },
-    {
-      "label": 4,
-      "text": "Tax and total",
-      "xPct": 73.47,
-      "yPct": 42.33
+      "yPct": 95.01
     }
   ],
   "11-payment-entry": [
@@ -324,31 +304,31 @@
       "label": 2,
       "text": "Payment method and bank reference",
       "xPct": 24.43,
-      "yPct": 34.97
+      "yPct": 38.56
     },
     {
       "label": 3,
       "text": "Open bills for that supplier",
       "xPct": 18.26,
-      "yPct": 50.67
+      "yPct": 54.25
     },
     {
       "label": 4,
       "text": "Allocate against the bill being settled",
-      "xPct": 74.24,
-      "yPct": 57.51
+      "xPct": 73.66,
+      "yPct": 61.1
     },
     {
       "label": 5,
       "text": "Anything not allocated stays on account",
       "xPct": 85.31,
-      "yPct": 63.6
+      "yPct": 67.19
     },
     {
       "label": 6,
       "text": "Post the payment",
       "xPct": 90.27,
-      "yPct": 70.47
+      "yPct": 74.06
     }
   ],
   "12-payables": [
@@ -367,20 +347,20 @@
     {
       "label": 3,
       "text": "Not yet due",
-      "xPct": 45.99,
-      "yPct": 38.61
+      "xPct": 53.15,
+      "yPct": 77.96
     },
     {
       "label": 4,
       "text": "Past the due date",
-      "xPct": 58.74,
-      "yPct": 38.61
+      "xPct": 64.15,
+      "yPct": 77.96
     },
     {
       "label": 5,
       "text": "Supplier total",
-      "xPct": 78.57,
-      "yPct": 38.61
+      "xPct": 81.28,
+      "yPct": 77.96
     }
   ],
   "13-sales-entry": [
@@ -405,20 +385,20 @@
     {
       "label": 4,
       "text": "Item lines with quantity and rate",
-      "xPct": 56.58,
-      "yPct": 60.97
+      "xPct": 52.66,
+      "yPct": 61.27
     },
     {
       "label": 5,
       "text": "CGST + SGST, or IGST, calculated from the place of supply",
       "xPct": 73.05,
-      "yPct": 81.88
+      "yPct": 82.18
     },
     {
       "label": 6,
       "text": "Post the invoice and assign INV/0003",
       "xPct": 90.81,
-      "yPct": 94.92
+      "yPct": 95.01
     }
   ],
   "14-sales-detail": [
@@ -437,7 +417,7 @@
     {
       "label": 3,
       "text": "Print, or choose Save as PDF in the print dialog",
-      "xPct": 79.23,
+      "xPct": 70.78,
       "yPct": 8.87
     },
     {
@@ -490,31 +470,31 @@
       "label": 2,
       "text": "Method and reference for the receipt",
       "xPct": 24.43,
-      "yPct": 34.97
+      "yPct": 38.56
     },
     {
       "label": 3,
       "text": "Open invoices",
       "xPct": 18.26,
-      "yPct": 50.67
+      "yPct": 54.25
     },
     {
       "label": 4,
       "text": "Allocate to the invoice being settled",
       "xPct": 73.96,
-      "yPct": 57.51
+      "yPct": 61.1
     },
     {
       "label": 5,
       "text": "Unallocated money stays as an advance",
       "xPct": 87.64,
-      "yPct": 63.6
+      "yPct": 67.19
     },
     {
       "label": 6,
       "text": "Post the receipt",
       "xPct": 91.08,
-      "yPct": 70.47
+      "yPct": 74.06
     }
   ],
   "17-receivables": [
@@ -527,100 +507,100 @@
     {
       "label": 2,
       "text": "Not yet due",
-      "xPct": 43.77,
-      "yPct": 38.61
+      "xPct": 52.23,
+      "yPct": 77.96
     },
     {
       "label": 3,
       "text": "Overdue amount",
-      "xPct": 58.56,
-      "yPct": 38.61
+      "xPct": 64.73,
+      "yPct": 77.96
     },
     {
       "label": 4,
       "text": "Total owed by each customer",
-      "xPct": 78.48,
-      "yPct": 38.61
+      "xPct": 81.56,
+      "yPct": 77.96
     }
   ],
   "18-ageing": [
     {
       "label": 1,
       "text": "Ageing by party",
-      "xPct": 17,
-      "yPct": 38.61
+      "xPct": 17.09,
+      "yPct": 80.36
     },
     {
       "label": 2,
       "text": "Buckets: 0-30, 31-60, 61-90, 91-180, 180+",
-      "xPct": 49.74,
-      "yPct": 38.61
+      "xPct": 50.21,
+      "yPct": 80.36
     },
     {
       "label": 3,
       "text": "Chase the oldest first",
-      "xPct": 75.88,
-      "yPct": 38.61
+      "xPct": 77.94,
+      "yPct": 80.36
     }
   ],
   "19-stock": [
     {
       "label": 1,
       "text": "Quantity after every posted purchase and sale",
-      "xPct": 45.71,
-      "yPct": 64.44
+      "xPct": 44.71,
+      "yPct": 72.27
     },
     {
       "label": 2,
       "text": "Value at weighted average cost",
-      "xPct": 77.5,
-      "yPct": 64.44
+      "xPct": 84.53,
+      "yPct": 72.27
     },
     {
       "label": 3,
       "text": "Total stock value",
       "xPct": 17,
-      "yPct": 82.85
+      "yPct": 90.68
     }
   ],
   "20-sales-register": [
     {
       "label": 1,
       "text": "From and To dates",
-      "xPct": 77.79,
+      "xPct": 77.11,
       "yPct": 13.03
     },
     {
       "label": 2,
       "text": "Taxable value and GST for each invoice",
-      "xPct": 65.11,
-      "yPct": 38.61
+      "xPct": 64.72,
+      "yPct": 86.35
     },
     {
       "label": 3,
       "text": "Period totals",
       "xPct": 17,
-      "yPct": 51.85
+      "yPct": 97.5
     }
   ],
   "21-purchase-register": [
     {
       "label": 1,
       "text": "Every purchase bill in the period",
-      "xPct": 27.04,
-      "yPct": 38.61
+      "xPct": 27.09,
+      "yPct": 86.35
     },
     {
       "label": 2,
       "text": "Input GST for the period",
-      "xPct": 65.96,
-      "yPct": 38.61
+      "xPct": 65.11,
+      "yPct": 86.35
     },
     {
       "label": 3,
       "text": "Totals to tie to the books",
       "xPct": 17,
-      "yPct": 51.85
+      "yPct": 97.5
     }
   ],
   "22-trial-balance": [
@@ -634,20 +614,20 @@
       "label": 2,
       "text": "Every account with a balance",
       "xPct": 17,
-      "yPct": 38.61
+      "yPct": 90.58
     },
     {
       "label": 3,
       "text": "Debit and credit columns",
-      "xPct": 62.33,
-      "yPct": 38.61
+      "xPct": 45.63,
+      "yPct": 38.54
     }
   ],
   "23-profit-loss": [
     {
       "label": 1,
       "text": "From and To set the period",
-      "xPct": 77.79,
+      "xPct": 77.11,
       "yPct": 13.03
     },
     {
@@ -659,14 +639,14 @@
     {
       "label": 3,
       "text": "Expense accounts",
-      "xPct": 17,
-      "yPct": 58.33
+      "xPct": 23.22,
+      "yPct": 42.18
     },
     {
       "label": 4,
       "text": "Net profit for the period",
-      "xPct": 18.12,
-      "yPct": 80.06
+      "xPct": 28.63,
+      "yPct": 42.18
     }
   ],
   "24-balance-sheet": [
@@ -679,20 +659,20 @@
     {
       "label": 2,
       "text": "What it owes",
-      "xPct": 45.28,
+      "xPct": 45.06,
       "yPct": 21.59
     },
     {
       "label": 3,
       "text": "Owner stake plus current profit",
-      "xPct": 72.44,
+      "xPct": 71.99,
       "yPct": 21.59
     },
     {
       "label": 4,
       "text": "The check: assets equal liabilities plus equity",
       "xPct": 16.95,
-      "yPct": 92.48
+      "yPct": 97.5
     }
   ],
   "25-day-book": [
@@ -700,25 +680,25 @@
       "label": 1,
       "text": "Filter by date, status or text",
       "xPct": 17.84,
-      "yPct": 62.04
+      "yPct": 62.13
     },
     {
       "label": 2,
       "text": "Click a number to open the voucher",
       "xPct": 25.55,
-      "yPct": 83.66
+      "yPct": 83.76
     },
     {
       "label": 3,
       "text": "Party and total",
       "xPct": 68.94,
-      "yPct": 68.94
+      "yPct": 69.04
     },
     {
       "label": 4,
       "text": "Posted or cancelled",
       "xPct": 90.03,
-      "yPct": 68.94
+      "yPct": 69.04
     }
   ],
   "26-journal-dialog": [
@@ -824,7 +804,7 @@
       "label": 2,
       "text": "Every backup with its timestamp and size",
       "xPct": 24.43,
-      "yPct": 49.13
+      "yPct": 69.71
     }
   ]
 }

@@ -8,9 +8,13 @@
   "standId": 3,
   "amcId": 4,
   "purchase1": 1,
+  "purchase1No": "TC/583",
   "purchase2": 2,
+  "purchase2No": "PC/118",
   "sale1": 3,
+  "sale1No": "INV/0001",
   "sale2": 4,
+  "sale2No": "INV/0002",
   "expenseName": "Office Expenses",
   "cashName": "Cash",
   "bankName": "Bank"

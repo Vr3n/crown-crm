@@ -2,9 +2,11 @@
 /**
  * Captures the small list/screen-flow thumbnails used by the quick start.
  *
+ * Run after a release build:
+ *   npx tauri build --no-bundle
  *   node scripts/guide/capture-quick-lists.mjs
  */
-import { _electron as electron } from 'playwright'
+import { launchCapture } from './tauri-capture.mjs'
 import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -14,14 +16,10 @@ const shots = join(root, 'docs/guides/assets/screens')
 const userData = mkdtempSync(join(tmpdir(), 'crown-quick-'))
 mkdirSync(shots, { recursive: true })
 
-let app
+let session
 try {
-  app = await electron.launch({
-    args: ['out/main/index.js'],
-    env: { ...process.env, CROWN_BOOKS_E2E: '1', CROWN_BOOKS_USER_DATA: userData }
-  })
-  const page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  session = await launchCapture({ port: 9335, userData, width: 1424, height: 861, scale: 1 })
+  const page = session.page
   await page.waitForTimeout(700)
 
   await page.getByText('Set up the books').first().waitFor()
@@ -34,8 +32,6 @@ try {
   await page.getByRole('button', { name: 'Create company and sign in' }).click()
   await page.getByRole('heading', { name: 'Number your vouchers' }).waitFor()
   await page.getByRole('button', { name: 'Save numbering' }).click()
-  await page.getByRole('heading', { name: 'Walk through the main flow' }).waitFor()
-  await page.getByRole('button', { name: 'Skip the tour' }).click()
   await page.getByText('Good ', { exact: false }).first().waitFor()
 
   await page.evaluate(async () => {
@@ -107,6 +103,7 @@ try {
       placeOfSupplyStateCode: '27',
       narration: 'October stock',
       referenceNo: 'TC/26-27/604',
+      supplierBillMissing: true,
       lines: [line],
       journalLines: [],
       allocations: []
@@ -130,17 +127,27 @@ try {
   await page.getByText('Good ', { exact: false }).first().waitFor()
   await page.waitForTimeout(800)
 
+  /** Voucher lists open on the current month; the demo data is older. */
+  async function widenPeriod() {
+    const yearPreset = page.getByRole('button', { name: 'This year' })
+    if ((await yearPreset.count()) > 0) {
+      await yearPreset.first().click()
+      await page.waitForTimeout(300)
+    }
+  }
+
   async function shot(hash, name, waitFor) {
     await page.evaluate((next) => {
       window.location.hash = next
     }, hash)
     await page.waitForTimeout(500)
+    await widenPeriod()
     await page.getByText(waitFor, { exact: false }).first().waitFor()
     await page.mouse.move(4, 4)
     await page.waitForTimeout(250)
     await page.screenshot({
       path: join(shots, `${name}.png`),
-      clip: { x: 216, y: 40, width: 1560, height: 330 }
+      clip: { x: 216, y: 40, width: 1208, height: 330 }
     })
     console.log(`captured ${name}`)
   }
@@ -150,6 +157,7 @@ try {
       window.location.hash = next
     }, hash)
     await page.waitForTimeout(500)
+    await widenPeriod()
     await page.getByText(waitFor, { exact: false }).first().waitFor()
     await page.mouse.move(4, 4)
     await page.waitForTimeout(250)
@@ -181,11 +189,11 @@ try {
   await page.waitForTimeout(250)
   await page.screenshot({
     path: join(shots, 'quick-flow-backup.png'),
-    clip: { x: 216, y: 40, width: 1560, height: 330 }
+    clip: { x: 216, y: 40, width: 1208, height: 330 }
   })
   await page.screenshot({ path: join(shots, 'quick-full-backup.png') })
   console.log('captured quick-flow-backup')
 } finally {
-  if (app) await app.close()
+  if (session) await session.close()
   rmSync(userData, { recursive: true, force: true })
 }

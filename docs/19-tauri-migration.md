@@ -155,9 +155,10 @@ runs three steps in `prepareCmd`:
 
 `@semantic-release/git` also commits the two manifests, and the Electron-only
 `afterPack`/`applyFuses` hooks, the `build/` icon bundle and the gym-era EULA
-that lived in it are gone. `scripts/guide/capture-*.mjs` still drive Electron
-through Playwright; they are documentation tooling only and need porting before
-the guide PDFs can be regenerated.
+that lived in it are gone. `scripts/guide/capture-*.mjs` now start the Tauri
+executable with WebView2 remote debugging and attach Playwright over the
+DevTools protocol; the PDF renderers use the installed Edge or Chrome because
+only `playwright-core` is installed.
 
 ## 4. Layout
 

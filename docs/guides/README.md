@@ -24,11 +24,12 @@ The PDF is written for the people who use the application, not for developers.
 
 ## Rebuilding it
 
-The screenshots come from the real Electron build.
+The screenshots come from the real Tauri build. Build it first, then capture.
 
 ```powershell
-npx electron-vite build
+npx tauri build --no-bundle
 node scripts/guide/capture-guide.mjs
+node scripts/guide/capture-quick-lists.mjs
 python scripts/guide/crop-guide-assets.py
 node scripts/guide/sync-annotations.mjs
 node scripts/guide/build-guide.mjs
@@ -36,12 +37,20 @@ node scripts/guide/render-guide-pdf.mjs
 node scripts/guide/render-guide-pdf.mjs docs/guides/crown-books-10-minute-quick-start.html docs/guides/crown-books-10-minute-quick-start.pdf --quick
 ```
 
-`capture-guide.mjs` creates a throwaway company, posts a month of purchases, sales, receipts,
-payments and adjustments, captures the screens and writes the callout coordinates. It removes
-the throwaway database when it finishes. `crop-guide-assets.py` makes the compact report crops
-used by the guide. `sync-annotations.mjs` copies the measured marker positions into the chapter
-partials (matching markers in order) and writes `assets/annotations.js` for the quick start; run it
-after cropping.
+`capture-guide.mjs` starts `src-tauri/target/release/crown-books.exe` with WebView2
+remote debugging enabled, attaches Playwright over the DevTools protocol, creates a
+throwaway company, posts a month of purchases, sales, receipts, payments and
+adjustments, captures the screens and writes the callout coordinates. It removes the
+throwaway database when it finishes. The captures are pinned to a 1428 x 834.4 CSS
+viewport at scale 1.25, which gives the 1785 x 1043 images the guide measures markers
+against, regardless of the monitor's DPI or the app window's size.
+
+`capture-quick-lists.mjs` captures the quick-start list thumbnails at 1424 x 861.
+
+`crop-guide-assets.py` makes the compact report crops used by the guide.
+`sync-annotations.mjs` copies the measured marker positions into the chapter partials
+(matching markers in order) and writes `assets/annotations.js` for the quick start; run
+it after cropping.
 
 `build-guide.mjs` assembles the partials into the built HTML and checks that every screenshot
 referenced by the guide exists. `render-guide-pdf.mjs` prints the PDF twice: the first pass finds

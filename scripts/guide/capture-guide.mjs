@@ -2,14 +2,16 @@
 /**
  * Captures the screenshots used by the Crown Books user guide.
  *
- * Run after `electron-vite build`:
+ * Run after a release build:
+ *   npx tauri build --no-bundle
  *   node scripts/guide/capture-guide.mjs
  *
- * It creates a throwaway company with realistic data, screenshots each screen,
- * and records the position of the callouts so the PDF can place numbered
- * markers over the image without hand measuring.
+ * It starts the Tauri executable with WebView2 remote debugging, attaches over
+ * the DevTools protocol, creates a throwaway company with realistic data,
+ * screenshots each screen, and records the position of the callouts so the PDF
+ * can place numbered markers over the image without hand measuring.
  */
-import { _electron as electron } from 'playwright'
+import { launchCapture } from './tauri-capture.mjs'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -21,7 +23,7 @@ const userData = mkdtempSync(join(tmpdir(), 'crown-guide-'))
 mkdirSync(shotsDir, { recursive: true })
 
 const annotations = {}
-let app
+let session
 let page
 
 const wait = (ms = 350) => page.waitForTimeout(ms)
@@ -157,15 +159,36 @@ async function snapDialog(name, dialog, marks = [], options = {}) {
   // leave them scrolled to the last field, which hides the header.
   await dialog.evaluate((element) => element.scrollTo({ top: 0 }))
   await wait(250)
-  const box = await dialog.boundingBox()
+  let box = await dialog.boundingBox()
   if (!box) throw new Error(`Dialog not visible for ${name}`)
+  let grown = false
+  if (options.fit) {
+    // The form outgrew the window. Give the capture a taller viewport so the
+    // whole dialog is laid out at once; the screenshot is still clipped to the
+    // dialog, so only the extra rows change the crop.
+    const content = await dialog.evaluate((element) => element.scrollHeight)
+    if (content > box.height + 4) {
+      const height = Math.min(1500, Math.ceil(content / 0.85) + 60)
+      await session.cdp.send('Emulation.setDeviceMetricsOverride', {
+        width: 1428,
+        height,
+        deviceScaleFactor: 1.25,
+        mobile: false
+      })
+      await wait(600)
+      await dialog.evaluate((element) => element.scrollTo({ top: 0 }))
+      box = await dialog.boundingBox()
+      if (!box) throw new Error(`Dialog not visible for ${name} after resize`)
+      grown = true
+    }
+  }
   // A wider margin leaves room for callouts beside the form labels.
   const pad = options.pad ?? 16
   const clip = {
     x: Math.max(0, box.x - pad),
     y: Math.max(0, box.y - pad),
     width: Math.min(1785, box.width + pad * 2),
-    height: Math.min(1118, box.height + pad * 2)
+    height: Math.min(1500, box.height + pad * 2)
   }
   const placed = []
   for (const mark of marks) {
@@ -197,6 +220,15 @@ async function snapDialog(name, dialog, marks = [], options = {}) {
   }
   annotations[name] = placed
   await page.screenshot({ path: join(shotsDir, `${name}.png`), clip })
+  if (grown) {
+    await session.cdp.send('Emulation.setDeviceMetricsOverride', {
+      width: 1428,
+      height: 834,
+      deviceScaleFactor: 1.25,
+      mobile: false
+    })
+    await wait(400)
+  }
   console.log(`  captured ${name} (${placed.length} markers, dialog crop)`)
 }
 
@@ -206,13 +238,21 @@ async function hideToasts() {
   })
 }
 
+/** Waits for text and records what the page showed when it does not arrive. */
+async function expectText(pattern, name) {
+  try {
+    await page.getByText(pattern).first().waitFor()
+  } catch (error) {
+    const text = await page.evaluate(() => document.body.innerText.slice(0, 1200))
+    console.error(`  ! ${name} did not appear. Page text:\n${text}`)
+    await page.screenshot({ path: join(shotsDir, `debug-${name}.png`) })
+    throw error
+  }
+}
+
 try {
-  app = await electron.launch({
-    args: ['out/main/index.js', '--force-device-scale-factor=1.25'],
-    env: { ...process.env, CROWN_BOOKS_E2E: '1', CROWN_BOOKS_USER_DATA: userData }
-  })
-  page = await app.firstWindow()
-  await page.waitForLoadState('domcontentloaded')
+  session = await launchCapture({ port: 9333, userData })
+  page = session.page
   await wait(900)
 
   // ---------------------------------------------------------------- first run
@@ -248,7 +288,7 @@ try {
     },
     {
       label: 5,
-      text: 'First day of your books',
+      text: 'Books begin: the first day recorded',
       locator: page.locator('#setup-books-begin'),
       anchor: 'tl',
       dx: -20
@@ -264,7 +304,7 @@ try {
 
   await page.getByLabel('Business name').fill('Crown Traders')
   await page.getByLabel('Owner name').fill('Priya Sharma')
-  await page.getByLabel('Phone (optional)').fill('98765 43210')
+  await page.getByLabel('Mobile (optional)').fill('98765 43210')
   await page.getByLabel('Owner email').fill('owner@crowntraders.in')
   await page.getByLabel('Password').fill('crownbooks')
   await page.getByLabel('GSTIN (optional)').fill('27AABCT1234F1Z5')
@@ -290,30 +330,35 @@ try {
   ])
 
   await page.getByRole('button', { name: 'Save numbering' }).click()
-  await page.getByRole('heading', { name: 'Walk through the main flow' }).waitFor()
-  await wait(500)
+  await page.getByText('steps done', { exact: false }).first().waitFor()
+  await wait(600)
 
-  await snap('00-first-run-tour', [
+  const checklist = page.getByRole('region', { name: 'Set up the books' })
+  await checklist.waitFor()
+  await snapElement('00-first-run-checklist', checklist, [
     {
       label: 1,
-      text: 'Five steps from empty books to reports',
-      locator: page.getByText('Five steps from an empty set of books', { exact: false }),
-      anchor: 'tl'
+      text: 'Progress read from your own records',
+      locator: page.getByRole('progressbar', { name: 'Setup progress' }),
+      anchor: 'tl',
+      dx: -20
     },
     {
       label: 2,
-      text: 'Open any step in the real app',
-      locator: page.getByRole('link', { name: 'Open' }).first(),
-      anchor: 'tr'
+      text: 'Each step opens the real screen',
+      locator: checklist.getByRole('link', { name: /Add a party/ }).first(),
+      anchor: 'tl',
+      dx: -18
     },
     {
       label: 3,
-      text: 'Skip and return from the dashboard',
-      locator: page.getByRole('button', { name: 'Skip the tour' })
+      text: 'The card disappears once every step is done',
+      locator: page.getByRole('heading', { name: 'Set up the books' }),
+      anchor: 'tl',
+      dx: -18
     }
   ])
 
-  await page.getByRole('button', { name: 'Skip the tour' }).click()
   await page.getByText('Good ', { exact: false }).first().waitFor()
   await wait(700)
 
@@ -461,6 +506,7 @@ try {
       placeOfSupplyStateCode: '27',
       narration: 'Storage and accessories for the festive season',
       referenceNo: 'TC/26-27/583',
+      supplierBillNo: 'TC/583',
       lines: [line(ssd, 100, 300000), line(hub, 25, 180000)],
       journalLines: [],
       allocations: []
@@ -474,6 +520,7 @@ try {
       placeOfSupplyStateCode: '27',
       narration: 'Desk accessories',
       referenceNo: 'PC/118',
+      supplierBillNo: 'PC/118',
       lines: [line(stand, 20, 85000)],
       journalLines: [],
       allocations: []
@@ -626,9 +673,13 @@ try {
       standId: stand.id,
       amcId: amc.id,
       purchase1: purchase1.id,
+      purchase1No: purchase1.number,
       purchase2: purchase2.id,
+      purchase2No: purchase2.number,
       sale1: sale1.id,
+      sale1No: sale1.number,
       sale2: sale2.id,
+      sale2No: sale2.number,
       expenseName: expense?.name ?? '',
       cashName: cash?.name ?? 'Cash',
       bankName: bank?.name ?? 'Bank'
@@ -661,7 +712,7 @@ try {
     {
       label: 2,
       text: 'Quick actions',
-      locator: page.getByRole('link', { name: 'New invoice' }),
+      locator: page.getByRole('link', { name: 'New Sales Invoice' }),
       anchor: 'tl'
     },
     {
@@ -836,7 +887,7 @@ try {
         dx: -22
       }
     ],
-    { pad: 44 }
+    { pad: 44, fit: true }
   )
   await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click()
   await wait()
@@ -920,7 +971,8 @@ try {
   await chooseItem(2, 'USB-C Hub')
   await page.getByLabel('Qty for line 2').fill('5')
   await page.getByLabel('Rate for line 2').fill('1800')
-  await page.getByLabel('Reference').fill('TC/26-27/604')
+  await page.getByLabel('Supplier bill no.').fill('TC/26-27/604')
+  await page.getByLabel('Reference').fill('PO-1088')
   await page.getByLabel('Narration').fill('Replenishment for October')
   await snap('09-purchase-entry', [
     {
@@ -931,30 +983,36 @@ try {
     },
     {
       label: 2,
+      text: 'Supplier bill number, exactly as printed',
+      locator: page.getByLabel('Supplier bill no.'),
+      anchor: 'tl'
+    },
+    {
+      label: 3,
       text: 'Bill date and due date',
       locator: page.getByLabel('Due date'),
       anchor: 'tl'
     },
     {
-      label: 3,
+      label: 4,
       text: 'Add each item on its own line',
       locator: page.getByRole('button', { name: 'Add line' }),
       anchor: 'tl'
     },
     {
-      label: 4,
+      label: 5,
       text: 'Quantity, rate, discount and GST',
       locator: page.getByLabel('Qty for line 1'),
       anchor: 'tl'
     },
     {
-      label: 5,
+      label: 6,
       text: 'Tax and total are calculated',
       locator: page.getByText('Taxable value', { exact: true }),
       anchor: 'tl'
     },
     {
-      label: 6,
+      label: 7,
       text: 'Posts the bill and moves stock',
       locator: page.getByRole('button', { name: 'Post bill' }),
       anchor: 'tl'
@@ -964,45 +1022,24 @@ try {
   await wait()
 
   await goto(`#/vouchers/${data.purchase1}`)
-  await page.getByText('PUR/0001').first().waitFor()
-  await snap('10-purchase-detail', [
-    {
-      label: 1,
-      text: 'Posted document with a permanent number',
-      locator: page.getByText('PUR/0001').first(),
-      anchor: 'tl'
-    },
-    {
-      label: 2,
-      text: 'Print the bill or save it as PDF',
-      locator: page.getByRole('button', { name: 'Print' }),
-      anchor: 'tl'
-    },
-    {
-      label: 3,
-      text: 'Cancel reverses the effect; the number is kept',
-      locator: page.getByRole('button', { name: 'Cancel voucher' }),
-      anchor: 'tl'
-    },
-    {
-      label: 4,
-      text: 'Tax and total',
-      locator: page.getByText('Taxable value', { exact: true }),
-      anchor: 'tl'
-    }
-  ])
+  await expectText(data.purchase1No, 'purchase-detail')
 
   // ---------------------------------------------------------------- payment
   await goto('#/payments/new')
-  await page.getByLabel('Party').selectOption(String(data.supplierId))
+  await chooseParty('supplier', 'TechConnect Distributors')
   await page.getByLabel('Amount').fill('25000')
   await page.getByLabel('Method').selectOption({ label: 'NEFT' })
   await page.getByLabel('Reference').fill('NEFT/55220')
   await page.getByLabel('Notes').fill('Part payment for October stock')
-  await page.getByLabel('Allocate to PUR/0001').fill('20000')
+  await page.getByLabel('Allocate to TC/583').fill('20000')
   await wait(400)
   await snap('11-payment-entry', [
-    { label: 1, text: 'Supplier and amount paid', locator: page.getByLabel('Party'), anchor: 'tl' },
+    {
+      label: 1,
+      text: 'Supplier and amount paid',
+      locator: page.getByRole('combobox', { name: 'Select supplier' }),
+      anchor: 'tl'
+    },
     {
       label: 2,
       text: 'Payment method and bank reference',
@@ -1018,7 +1055,7 @@ try {
     {
       label: 4,
       text: 'Allocate against the bill being settled',
-      locator: page.getByLabel('Allocate to PUR/0001'),
+      locator: page.getByLabel('Allocate to TC/583'),
       anchor: 'tl'
     },
     {
@@ -1236,7 +1273,7 @@ try {
 
   // --------------------------------------------------------------- receipt
   await goto('#/receipts/new')
-  await page.getByLabel('Party').selectOption(String(data.customerId))
+  await chooseParty('customer', 'Sharma Electronics')
   await page.getByLabel('Amount').fill('10000')
   await page.getByLabel('Method').selectOption({ label: 'UPI' })
   await page.getByLabel('Reference').fill('UPI/884121')
@@ -1247,7 +1284,7 @@ try {
     {
       label: 1,
       text: 'Customer and amount received',
-      locator: page.getByLabel('Party'),
+      locator: page.getByRole('combobox', { name: 'Select customer' }),
       anchor: 'tl'
     },
     {
@@ -1380,7 +1417,7 @@ try {
   ])
 
   await goto('#/reports/purchase-register')
-  await page.getByText('PUR/0001').first().waitFor()
+  await page.getByText('TC/583').first().waitFor()
   await snap('21-purchase-register', [
     {
       label: 1,
@@ -1415,13 +1452,13 @@ try {
     {
       label: 2,
       text: 'Every account with a balance',
-      locator: page.getByRole('columnheader', { name: 'Account' }),
+      locator: page.getByRole('columnheader', { name: 'Account', exact: true }).first(),
       anchor: 'tl'
     },
     {
       label: 3,
       text: 'Debit and credit columns',
-      locator: page.getByRole('columnheader', { name: 'Debit' }),
+      locator: page.getByRole('columnheader', { name: 'Debit', exact: true }).first(),
       anchor: 'tl'
     }
   ])
@@ -1485,6 +1522,10 @@ try {
   ])
 
   await goto('#/day-book')
+  // The voucher list opens on the current month; the demo data is older, so
+  // pin the range to the month that holds it.
+  await page.getByLabel('From', { exact: true }).fill('2026-10-01')
+  await page.getByLabel('To', { exact: true }).fill('2026-10-31')
   await page.getByText('RCT/0001').first().waitFor()
   await snap(
     '25-day-book',
@@ -1694,6 +1735,6 @@ try {
   console.log(`\nSaved ${Object.keys(annotations).length} screens to ${shotsDir}`)
   console.log(`Annotations: ${annotationsPath}`)
 } finally {
-  if (app) await app.close()
+  if (session) await session.close()
   rmSync(userData, { recursive: true, force: true })
 }

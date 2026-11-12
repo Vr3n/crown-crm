@@ -4,7 +4,8 @@
  *   node scripts/guide/render-quick-start.mjs
  *   node scripts/guide/render-quick-start.mjs path/to/output.pdf
  */
-import { chromium } from 'playwright'
+
+import { launchGuideBrowser } from './guide-browser.mjs'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -15,9 +16,7 @@ const pdf = resolve(root, process.argv[2] ?? 'docs/guides/crown-books-10-minute-
 
 if (!existsSync(html)) throw new Error(`Quick-start HTML not found: ${html}`)
 
-const browser = await chromium.launch({
-  args: ['--allow-file-access-from-files', '--font-render-hinting=none']
-})
+const browser = await launchGuideBrowser()
 const page = await browser.newPage({ viewport: { width: 1200, height: 1600 } })
 await page.goto(pathToFileURL(html).href, { waitUntil: 'load' })
 await page.evaluate(async () => {
