@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^4.4.3"
   },
   "devDependencies": {
