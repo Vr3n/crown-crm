@@ -23,7 +23,7 @@
  *   node scripts/smoke-ui.mjs "C:\Program Files\Crown Books\crown-books.exe"
  */
 import { spawn } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -40,6 +40,7 @@ if (!existsSync(exe)) {
 const COMPANY = 'Smoke Test Traders'
 const PARTY = 'Smoke Customer'
 const ITEM = 'Smoke Widget'
+const SAMPLE = resolve('docs/guides/sample-bills-from-pdfs.xlsx')
 const port = 9333
 const dataDir = mkdtempSync(join(tmpdir(), 'crown-books-ui-'))
 
@@ -233,6 +234,33 @@ async function clickSelector(selector) {
 }
 
 /**
+ * Sets a file input from a local file. The bytes travel inside the evaluated
+ * expression, so WebView2 needs no file-system permission.
+ * @param {string} selector
+ * @param {string} filePath
+ * @param {string} fileName
+ * @returns {Promise<string>}
+ */
+async function uploadFile(selector, filePath, fileName) {
+  const base64 = readFileSync(filePath).toString('base64')
+  return String(
+    await evaluate(`(async () => {
+      const input = document.querySelector(${JSON.stringify(selector)})
+      if (!input) return 'missing'
+      const bytes = Uint8Array.from(atob(${JSON.stringify(base64)}), (char) => char.charCodeAt(0))
+      const file = new File([bytes], ${JSON.stringify(fileName)}, {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      })
+      const transfer = new DataTransfer()
+      transfer.items.add(file)
+      input.files = transfer.files
+      input.dispatchEvent(new Event('change', { bubbles: true }))
+      return 'uploaded'
+    })()`)
+  )
+}
+
+/**
  * Polls an expression until it is truthy.
  * @param {string} expression
  * @param {number} [timeout]
@@ -345,6 +373,66 @@ try {
     const rendered = routeText.length > 300 && !routeText.includes('Unexpected Application Error')
     check(`${route} renders`, rendered, `${routeText.length} chars`)
   }
+
+  // -------------------------------------------------------------------
+  // Excel importer: the PDF sample, the real backend, the real logs
+  // -------------------------------------------------------------------
+  console.log('excel importer')
+  await goto('/import/excel', ['Import from Excel'])
+  check('the importer route renders', (await bodyText()).includes('Import from Excel'))
+  check('the sample file exists', existsSync(SAMPLE), SAMPLE)
+  check(
+    'the sample uploads',
+    (await uploadFile('input[type=file]', SAMPLE, 'sample-bills-from-pdfs.xlsx')) === 'uploaded'
+  )
+  text = await waitForText(['Sheet and range', '9 data rows'], 20_000)
+  check('the purchase sheet range is selected', text.includes('9 data rows'))
+  await waitFor(
+    "(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Map columns'); return Boolean(b) && !b.disabled })()"
+  )
+  check('the range step can continue', (await clickButton('Map columns')) === 'clicked')
+  text = await waitForText(['Match your columns'], 15_000)
+  check('the mapping step opens', text.includes('Match your columns'))
+  check('the item creation option is present', (await clickSelector('#create-items')) === 'clicked')
+  await waitFor(
+    "(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent.trim() === 'Check rows'); return Boolean(b) && !b.disabled })()"
+  )
+  check('the mapping step can continue', (await clickButton('Check rows')) === 'clicked')
+  text = await waitForText(['Purchase bills to create', 'Import 1 purchase bill'], 20_000)
+  check('the review shows the PDF total', text.includes('15,545.00'))
+  check('the review names the supplier', text.includes('TECHCONNECT INFORMATIQUE'))
+  check('the import starts', (await clickButton('Import 1 purchase bill')) === 'clicked')
+  text = await waitForText(['1 purchase bill posted'], 30_000)
+  check('the import finishes', text.includes('1 purchase bill posted'))
+
+  const purchases = await evaluate(
+    "window.api.vouchers.list({ type: 'PURCHASE', limit: 10 }).then((rows) => rows.map((row) => ({ party: row.partyName, total: row.totalMinor, number: row.number })))"
+  )
+  check(
+    'the posted purchase is in the database',
+    Array.isArray(purchases) &&
+      purchases.some(
+        (row) => row.party === 'TECHCONNECT INFORMATIQUE' && row.total === 1_554_500
+      ),
+    JSON.stringify(purchases)
+  )
+
+  await sleep(800)
+  const logDir = join(dataDir, 'logs')
+  const logText = existsSync(logDir)
+    ? readdirSync(logDir)
+        .filter((name) => name.endsWith('.jsonl'))
+        .map((name) => readFileSync(join(logDir, name), 'utf8'))
+        .join('\n')
+    : ''
+  check(
+    'the run wrote structured logs',
+    logText.includes('"source":"renderer"') &&
+      logText.includes('"module":"import"') &&
+      logText.includes('"event":"run.finish"') &&
+      logText.includes('"event":"post.ok"'),
+    logText.length ? `${logText.length} chars` : 'no log files'
+  )
 
   // -------------------------------------------------------------------
   // A party through the real dialog

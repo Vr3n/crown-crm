@@ -14,6 +14,7 @@ pub struct Paths {
     pub user_data: PathBuf,
     pub database: PathBuf,
     pub backups: PathBuf,
+    pub logs: PathBuf,
 }
 
 impl Paths {
@@ -24,13 +25,15 @@ impl Paths {
         };
 
         let backups = user_data.join("backups");
-        Self { database: user_data.join("crown-books.db"), backups, user_data }
+        let logs = user_data.join("logs");
+        Self { database: user_data.join("crown-books.db"), backups, logs, user_data }
     }
 
-    /// Creates the data and backup directories. Safe to call on every start.
+    /// Creates the data, backup and log directories. Safe to call on every start.
     pub fn ensure(&self) -> std::io::Result<()> {
         std::fs::create_dir_all(&self.user_data)?;
         std::fs::create_dir_all(&self.backups)?;
+        std::fs::create_dir_all(&self.logs)?;
         Ok(())
     }
 }

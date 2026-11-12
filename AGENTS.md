@@ -20,3 +20,22 @@ Implementing backend, or business logic, follow the steps below — they are man
 3. Always write tests. Rust unit tests live beside the code; the end-to-end backend test is `src-tauri/tests/rpc_flow.rs`. Renderer tests live in `tests/renderer`.
 4. After implementation, review your code again using the appropriate skills, and refactor to improve the code & performance.
 5. Write the implementation details in `docs` folder. Give appropriate name with a prefix so it is easier to find the documentation.
+
+## Debugging
+
+Persistent logs are JSONL at `%APPDATA%\Crown Books\logs\app-YYYY-MM-DD.jsonl`.
+The renderer and Rust share one trace id per operation.
+
+```bash
+npm run logs:doctor            # paths, file count, last error
+npm run logs:errors            # errors in the last hour
+npm run logs:modules           # counts by module and level
+npm run logs -- trace <id>     # every line for one trace
+npm run logs -- search "text"  # literal search
+npm run logs:tail              # follow the newest file
+```
+
+Add logs at module boundaries, not inside loops. Renderer:
+`logger.info(module, event, fields, traceId)`. Backend:
+`logging::info(module, event, ctx.trace_id(), json!({ ... }))`. Never log a
+password, token, secret or PIN. See `docs/27-logging-and-debugging.md`.

@@ -538,3 +538,8 @@ entry page. It creates parties through `parties.create` and items through
 `items.create`, so the usual permission checks still apply. A user who can
 create a voucher but not a party will see the party creation fail on the bill,
 with the reason shown in the result list.
+
+Every import run, bill, party creation and voucher post is logged with one trace
+id. A stuck bill now fails after 30 seconds instead of waiting forever, and the
+log names the call that did not answer. See `27-logging-and-debugging.md` and
+run `npm run logs:errors` or `npm run logs -- trace <id>`.

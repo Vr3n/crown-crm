@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 import {
   activeSheet,
@@ -29,9 +30,45 @@ import { appRuntime, isTauri, type ImportRuntime } from '../lib/runtime'
 import { sampleWorkbook } from '../lib/sample-workbook'
 import { downloadTemplate, readWorkbookFile } from '../lib/workbook'
 
+const RUNTIME_TIMEOUT_MS = 30_000
+
 function errorMessage(error: unknown): string {
   if (error instanceof Error) return error.message
   return 'Could not read this file.'
+}
+
+/**
+ * A local SQLite post should answer in well under a second. If an IPC call
+ * never settles, fail that bill instead of leaving the whole import on
+ * "Posting" forever. The request id is stable, so a retry cannot post twice.
+ */
+function withTimeout<T>(promise: Promise<T>, label: string, traceId: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      logger.error(
+        'import',
+        'timeout',
+        { label, timeoutMs: RUNTIME_TIMEOUT_MS },
+        traceId,
+        { message: `${label} did not respond within ${RUNTIME_TIMEOUT_MS / 1000} seconds.` }
+      )
+      reject(
+        new Error(
+          `${label} did not respond within ${RUNTIME_TIMEOUT_MS / 1000} seconds. This bill was stopped so the rest could continue.`
+        )
+      )
+    }, RUNTIME_TIMEOUT_MS)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      }
+    )
+  })
 }
 
 export function ExcelImportPage({
@@ -79,6 +116,11 @@ export function ExcelImportPage({
     stateRef.current = state
   }, [state])
 
+  useEffect(() => {
+    logger.info('import', 'page.open', { source: runtime.source })
+    return () => logger.info('import', 'page.close', { source: runtime.source })
+  }, [runtime.source])
+
   // The plan is derived from the mapping and the masters. The machine holds the
   // last built plan so the import step and its guard read one source.
   useEffect(() => {
@@ -97,6 +139,16 @@ export function ExcelImportPage({
       partyResolutions: state.partyResolutions,
       companyStateCode: companyState,
       roundOffMode
+    })
+    logger.info('import', 'plan.built', {
+      target: state.target,
+      bills: plan.stats.bills,
+      lines: plan.stats.lines,
+      errors: plan.stats.errors,
+      warnings: plan.stats.warnings,
+      canImport: plan.canImport,
+      newParties: plan.stats.newParties,
+      newItems: plan.stats.newItems
     })
     dispatch({ type: 'SET_PLAN', plan })
   }, [
@@ -130,9 +182,25 @@ export function ExcelImportPage({
       return
     }
     runningRef.current = true
+    const runTrace = logger.trace('import', 'run.start', {
+      sessionId: current.sessionId,
+      target: current.target,
+      bills: queued.length,
+      source: runtime.source
+    })
+    const runStarted = Date.now()
+    let postedCount = 0
+    let failedCount = 0
 
-    async function ensureParty(bill: ImportBill, target: ImportTarget): Promise<number> {
-      if (bill.partyId) return bill.partyId
+    async function ensureParty(
+      bill: ImportBill,
+      target: ImportTarget,
+      traceId: string
+    ): Promise<number> {
+      if (bill.partyId) {
+        logger.debug('import', 'party.matched', { partyId: bill.partyId }, traceId)
+        return bill.partyId
+      }
       if (bill.partyAction !== 'create') {
         throw new Error(
           `Choose a ${target === 'PURCHASE' ? 'supplier' : 'customer'} for ${bill.billNo ?? 'this bill'}.`
@@ -140,53 +208,84 @@ export function ExcelImportPage({
       }
       const key = partyKey(bill.partyName, bill.partyGstin)
       const existing = createdParties.current.get(key)
-      if (existing) return existing
-      const created = await runtime.createParty({
-        name: bill.partyName,
-        gstin: bill.partyGstin,
-        stateCode: bill.placeOfSupply,
-        isCustomer: target === 'SALES',
-        isSupplier: target === 'PURCHASE',
-        creditDays: 30,
-        creditLimitMinor: 0,
-        openingBalanceMinor: 0
-      })
-      createdParties.current.set(key, created.id)
-      setCreatedCounts((current) => ({ ...current, parties: current.parties + 1 }))
-      return created.id
+      if (existing) {
+        logger.debug('import', 'party.create.reuse', { key, partyId: existing }, traceId)
+        return existing
+      }
+      logger.info('import', 'party.create.start', { key, name: bill.partyName }, traceId)
+      try {
+        const created = await withTimeout(
+          runtime.createParty({
+            name: bill.partyName,
+            gstin: bill.partyGstin,
+            stateCode: bill.placeOfSupply,
+            isCustomer: target === 'SALES',
+            isSupplier: target === 'PURCHASE',
+            creditDays: 30,
+            creditLimitMinor: 0,
+            openingBalanceMinor: 0
+          }),
+          'Create party',
+          traceId
+        )
+        createdParties.current.set(key, created.id)
+        setCreatedCounts((current) => ({ ...current, parties: current.parties + 1 }))
+        logger.info('import', 'party.create.ok', { key, partyId: created.id }, traceId)
+        return created.id
+      } catch (error) {
+        logger.error('import', 'party.create.fail', { key }, traceId, {
+          message: errorMessage(error)
+        })
+        throw error
+      }
     }
 
     async function ensureItems(
       bill: ImportBill,
-      target: ImportTarget
+      target: ImportTarget,
+      traceId: string
     ): Promise<Record<string, number>> {
       const map: Record<string, number> = {}
       for (const line of bill.lines) {
         if (!line.newItemKey) continue
-        const existing = createdItems.current.get(line.newItemKey)
+        const key = line.newItemKey
+        const existing = createdItems.current.get(key)
         if (existing) {
-          map[line.newItemKey] = existing
+          map[key] = existing
           continue
         }
-        const item = activePlan.newItems.find((row) => row.key === line.newItemKey)
+        const item = activePlan.newItems.find((row) => row.key === key)
         if (!item) continue
-        const created = await runtime.createItem({
-          name: item.name,
-          hsnSac: line.hsn,
-          gstRateBps: item.gstRateBps,
-          cessRateBps: 0,
-          isService: false,
-          salePriceMinor: target === 'SALES' ? line.rateMinor : 0,
-          purchasePriceMinor: target === 'PURCHASE' ? line.rateMinor : 0,
-          salePriceIncludesTax: false,
-          purchasePriceIncludesTax: false,
-          openingQtyE4: 0,
-          openingRateMinor: 0,
-          reorderLevelE4: 0
-        })
-        createdItems.current.set(line.newItemKey, created.id)
-        setCreatedCounts((current) => ({ ...current, items: current.items + 1 }))
-        map[line.newItemKey] = created.id
+        logger.info('import', 'item.create.start', { key, name: item.name }, traceId)
+        try {
+          const created = await withTimeout(
+            runtime.createItem({
+              name: item.name,
+              hsnSac: line.hsn,
+              gstRateBps: item.gstRateBps,
+              cessRateBps: 0,
+              isService: false,
+              salePriceMinor: target === 'SALES' ? line.rateMinor : 0,
+              purchasePriceMinor: target === 'PURCHASE' ? line.rateMinor : 0,
+              salePriceIncludesTax: false,
+              purchasePriceIncludesTax: false,
+              openingQtyE4: 0,
+              openingRateMinor: 0,
+              reorderLevelE4: 0
+            }),
+            'Create item',
+            traceId
+          )
+          createdItems.current.set(key, created.id)
+          setCreatedCounts((current) => ({ ...current, items: current.items + 1 }))
+          map[key] = created.id
+          logger.info('import', 'item.create.ok', { key, itemId: created.id }, traceId)
+        } catch (error) {
+          logger.error('import', 'item.create.fail', { key }, traceId, {
+            message: errorMessage(error)
+          })
+          throw error
+        }
       }
       return map
     }
@@ -197,16 +296,31 @@ export function ExcelImportPage({
           dispatch({ type: 'BILL_PROGRESS', key: runBill.key, patch: { status: 'posting' } })
           const bill = activePlan.bills.find((row) => row.key === runBill.key)
           if (!bill) {
+            logger.error('import', 'bill.missing', { billKey: runBill.key }, runTrace, {
+              message: 'The bill disappeared from the plan.'
+            })
             dispatch({
               type: 'BILL_PROGRESS',
               key: runBill.key,
               patch: { status: 'failed', error: 'The bill disappeared from the plan.' }
             })
+            failedCount += 1
             continue
           }
+          logger.info(
+            'import',
+            'bill.start',
+            {
+              billKey: runBill.key,
+              billNo: bill.billNo,
+              party: bill.partyName,
+              lines: bill.lines.length
+            },
+            runTrace
+          )
           try {
-            const partyId = await ensureParty(bill, current.target)
-            const itemIds = await ensureItems(bill, current.target)
+            const partyId = await ensureParty(bill, current.target, runTrace)
+            const itemIds = await ensureItems(bill, current.target, runTrace)
             const input = buildVoucherInput(
               activePlan,
               bill,
@@ -214,14 +328,45 @@ export function ExcelImportPage({
               partyId,
               itemIds
             )
-            const result = await runtime.postVoucher(input)
+            logger.info(
+              'import',
+              'bill.post.start',
+              { requestId: input.requestId, lineCount: input.lines.length },
+              runTrace
+            )
+            const started = Date.now()
+            const result = await withTimeout(
+              runtime.postVoucher(input),
+              'Post voucher',
+              runTrace
+            )
+            postedCount += 1
+            logger.info(
+              'import',
+              'bill.post.ok',
+              {
+                requestId: input.requestId,
+                id: result.id,
+                number: result.number,
+                durationMs: Date.now() - started
+              },
+              runTrace
+            )
             dispatch({
               type: 'BILL_PROGRESS',
               key: runBill.key,
               patch: { status: 'posted', voucherId: result.id, number: result.number }
             })
           } catch (error) {
+            failedCount += 1
             const code = (error as Error & { code?: string }).code
+            logger.error(
+              'import',
+              'bill.fail',
+              { billKey: runBill.key, code },
+              runTrace,
+              { message: errorMessage(error) }
+            )
             dispatch({
               type: 'BILL_PROGRESS',
               key: runBill.key,
@@ -237,6 +382,15 @@ export function ExcelImportPage({
           void queryClient.invalidateQueries({ queryKey: ['parties'] })
           void queryClient.invalidateQueries({ queryKey: ['items'] })
         }
+        logger.info(
+          'import',
+          'run.finish',
+          { posted: postedCount, failed: failedCount, durationMs: Date.now() - runStarted },
+          runTrace
+        )
+        dispatch({ type: 'FINISHED' })
+      } catch (error) {
+        logger.error('import', 'run.crash', {}, runTrace, { message: errorMessage(error) })
         dispatch({ type: 'FINISHED' })
       } finally {
         runningRef.current = false
@@ -286,11 +440,28 @@ export function ExcelImportPage({
   }, [state.step])
 
   async function onFile(file: File): Promise<void> {
+    const traceId = logger.trace('import', 'file.read.start', {
+      fileName: file.name,
+      size: file.size
+    })
     setReadingFile(true)
     try {
       const workbook = await readWorkbookFile(file)
+      logger.end(traceId, 'info', 'import', 'file.read.ok', {
+        fileName: file.name,
+        sheets: workbook.sheets.length,
+        sheetNames: workbook.sheets.map((sheet) => sheet.name)
+      })
       dispatch({ type: 'FILE_LOADED', file: workbook })
     } catch (error) {
+      logger.end(
+        traceId,
+        'error',
+        'import',
+        'file.read.fail',
+        { fileName: file.name },
+        { message: errorMessage(error) }
+      )
       dispatch({ type: 'FILE_FAILED', message: errorMessage(error) })
     } finally {
       setReadingFile(false)

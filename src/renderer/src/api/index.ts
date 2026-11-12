@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
+import { logger } from '../lib/logger'
 import { IPC_CHANNELS } from '../../../shared/contracts/ipc.channels'
 import type {
   AuthStatus,
@@ -78,10 +79,41 @@ import type {
  * positional argument list the Electron preload passed to `ipcRenderer.invoke`.
  */
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
-  const result = (await invoke('rpc', { channel, args })) as IpcResult<T>
-  if (result.ok) return result.data
+  const traceId = logger.trace('api', 'request', { channel })
+  const started = Date.now()
+  let result: IpcResult<T>
+  try {
+    result = (await invoke('rpc', { channel, args, traceId })) as IpcResult<T>
+  } catch (error) {
+    logger.end(
+      traceId,
+      'error',
+      'api',
+      'transport.error',
+      { channel, durationMs: Date.now() - started },
+      { message: error instanceof Error ? error.message : String(error) }
+    )
+    throw error
+  }
+
+  if (result.ok) {
+    logger.end(traceId, 'info', 'api', 'response', {
+      channel,
+      durationMs: Date.now() - started
+    })
+    return result.data
+  }
+
   const error = new Error(result.error.message) as Error & { code?: string }
   error.code = result.error.code
+  logger.end(
+    traceId,
+    'error',
+    'api',
+    'error',
+    { channel, durationMs: Date.now() - started },
+    { code: result.error.code, message: result.error.message }
+  )
   throw error
 }
 const api = {
