@@ -288,6 +288,35 @@ export function expenseComposition(
   return [...kept, { label: `Other expenses (${rest.length})`, valueMinor: remainder }]
 }
 
+export interface TrialBalanceGroup {
+  name: string
+  debitMinor: number
+  creditMinor: number
+}
+
+/**
+ * Debit and credit totals per account group, in group-name order. Accounts with
+ * no movement are ignored, so the group list is the same set of groups the
+ * detail table actually shows.
+ */
+export function trialBalanceGroups(
+  rows: { groupName: string; debitMinor: number; creditMinor: number }[]
+): TrialBalanceGroup[] {
+  const groups = new Map<string, TrialBalanceGroup>()
+  for (const row of rows) {
+    if (row.debitMinor === 0 && row.creditMinor === 0) continue
+    const group = groups.get(row.groupName) ?? {
+      name: row.groupName,
+      debitMinor: 0,
+      creditMinor: 0
+    }
+    group.debitMinor += row.debitMinor
+    group.creditMinor += row.creditMinor
+    groups.set(row.groupName, group)
+  }
+  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name))
+}
+
 export type OpenBalanceStatus = 'overdue' | 'due-soon' | 'current'
 
 /** Overdue wins over due-soon; anything else is current. */

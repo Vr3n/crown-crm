@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, Plus, RotateCcw, Ruler, XCircle } from 'lucide-react'
+import { CheckCircle2, CircleSlash, Package, Plus, RotateCcw, Ruler, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { PageHeader } from '@/components/page-header'
@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { KpiCard } from '@/components/ui/kpi-card'
 import {
   Dialog,
   DialogClose,
@@ -74,8 +75,8 @@ export function UnitsPage(): React.JSX.Element {
   const [editing, setEditing] = useState<UnitRow | null>(null)
 
   const list = useQuery({
-    queryKey: ['units', { includeInactive }],
-    queryFn: () => window.api.units.list({ includeInactive })
+    queryKey: ['units', 'all'],
+    queryFn: () => window.api.units.list({ includeInactive: true })
   })
 
   const deactivate = useMutation({
@@ -97,7 +98,9 @@ export function UnitsPage(): React.JSX.Element {
   })
 
   const rows = list.data ?? []
+  const visibleRows = includeInactive ? rows : rows.filter((unit) => unit.isActive)
   const activeCount = rows.filter((unit) => unit.isActive).length
+  const inactiveCount = rows.length - activeCount
   const inUseCount = rows.filter((unit) => unit.usageCount > 0).length
 
   function show(unit: UnitRow | null): void {
@@ -109,9 +112,7 @@ export function UnitsPage(): React.JSX.Element {
     <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-4 p-6">
       <PageHeader
         title="Units"
-        description={`${activeCount} active unit${activeCount === 1 ? '' : 's'}${
-          inUseCount > 0 ? ` · ${inUseCount} used by items` : ''
-        }`}
+        description="The units quantities are counted in, and the precision they display at."
         actions={
           mayManage ? (
             <Button size="sm" onClick={() => show(null)}>
@@ -122,6 +123,30 @@ export function UnitsPage(): React.JSX.Element {
         }
       />
 
+      <section className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
+        <KpiCard
+          label="Active units"
+          value={String(activeCount)}
+          context="Available on new items"
+          icon={Ruler}
+          tone="success"
+        />
+        <KpiCard
+          label="Used by items"
+          value={String(inUseCount)}
+          context="Cannot be retired"
+          icon={Package}
+          tone="warning"
+        />
+        <KpiCard
+          label="Inactive units"
+          value={String(inactiveCount)}
+          context="Hidden unless shown"
+          icon={CircleSlash}
+          tone="stamp"
+        />
+      </section>
+
       <div className="border border-border bg-card px-4 py-3">
         <div className="flex items-start gap-2.5">
           <Ruler className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -130,6 +155,10 @@ export function UnitsPage(): React.JSX.Element {
             <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">
               Stock always keeps four decimal places. The precision here only controls the display
               of quantities for items that use the unit. A unit used by an item cannot be retired.
+            </p>
+            <p className="mt-1 text-[0.8125rem] text-muted-foreground">
+              New items start with no unit. Every stocked item needs one before its stock can be
+              tracked.
             </p>
           </div>
         </div>
@@ -148,7 +177,7 @@ export function UnitsPage(): React.JSX.Element {
           Show inactive units
         </label>
         <p className="text-[0.75rem] text-muted-foreground">
-          {rows.length} unit{rows.length === 1 ? '' : 's'}
+          {visibleRows.length} of {rows.length} unit{rows.length === 1 ? '' : 's'}
         </p>
       </div>
 
@@ -162,11 +191,15 @@ export function UnitsPage(): React.JSX.Element {
             Try again
           </Button>
         </div>
-      ) : rows.length === 0 && !list.isPending ? (
+      ) : visibleRows.length === 0 && !list.isPending ? (
         <EmptyState
           icon={Ruler}
-          title="No units yet"
-          description="Add a unit such as Nos, Kg or Box before creating items."
+          title={rows.length === 0 ? 'No units yet' : 'No active units'}
+          description={
+            rows.length === 0
+              ? 'Add a unit such as Nos, Kg or Box before creating items.'
+              : 'Show inactive units to see the retired ones, or add a new unit.'
+          }
           action={
             mayManage ? (
               <Button size="sm" onClick={() => show(null)}>
@@ -212,7 +245,7 @@ export function UnitsPage(): React.JSX.Element {
                   </td>
                 </tr>
               ) : (
-                rows.map((unit) => (
+                visibleRows.map((unit) => (
                   <tr key={unit.id} className={unit.isActive ? 'hover:bg-muted/40' : 'opacity-60'}>
                     <td className={TD}>
                       <div className="flex items-center gap-1.5">
@@ -244,26 +277,34 @@ export function UnitsPage(): React.JSX.Element {
                     </td>
                     <td className={`${TD} text-right`}>
                       {mayManage ? (
-                        <div className="flex justify-end gap-0.5">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                           <Button variant="ghost" size="xs" onClick={() => show(unit)}>
                             Edit
                           </Button>
                           {unit.isActive ? (
-                            <Button
-                              variant="ghost"
-                              size="xs"
-                              className="text-muted-foreground hover:text-destructive"
-                              disabled={unit.usageCount > 0 || deactivate.isPending}
-                              title={
-                                unit.usageCount > 0
-                                  ? 'Change the unit on those items first'
-                                  : undefined
-                              }
-                              onClick={() => deactivate.mutate(unit.id)}
-                            >
-                              <XCircle className="size-3.5" strokeWidth={2} />
-                              Retire
-                            </Button>
+                            <div className="flex items-center gap-1.5">
+                              {unit.usageCount > 0 ? (
+                                <span className="whitespace-nowrap text-[0.75rem] text-muted-foreground">
+                                  In use by {unit.usageCount} item
+                                  {unit.usageCount === 1 ? '' : 's'}
+                                </span>
+                              ) : null}
+                              <Button
+                                variant="ghost"
+                                size="xs"
+                                className="text-muted-foreground hover:text-destructive"
+                                disabled={unit.usageCount > 0 || deactivate.isPending}
+                                title={
+                                  unit.usageCount > 0
+                                    ? 'Change the unit on those items first'
+                                    : undefined
+                                }
+                                onClick={() => deactivate.mutate(unit.id)}
+                              >
+                                <XCircle className="size-3.5" strokeWidth={2} />
+                                Retire
+                              </Button>
+                            </div>
                           ) : (
                             <Button
                               variant="ghost"

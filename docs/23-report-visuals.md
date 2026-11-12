@@ -58,8 +58,8 @@ The renderer follows the machine directly:
 | Sales register | Monthly taxable value, area + GST line | CGST/SGST/IGST by month, stacked bars | |
 | Purchase register | Monthly taxable purchases, area + input tax line | CGST/SGST/IGST by month, stacked bars | |
 | Profit and loss | Income and expense areas + net profit line | Expense composition, horizontal bars | |
-| Trial balance | | | Yes |
-| Balance sheet | | | Yes |
+| Trial balance | Group totals table, no chart | | Yes |
+| Balance sheet | Balance check with a status pill, no chart | | Yes |
 
 Charts live inside `ChartCard`, which supplies the visible title and the
 question the chart answers. `report-print-hide` wraps the chart grid, so print
@@ -182,3 +182,26 @@ are renders of those SVGs.
    not a second table implementation, which keeps export parity in one place.
 5. **Print stays monochrome.** The print stylesheet flattens cell borders, so
    the 3px status stripe does not print as colour.
+
+## 10. Structural reports
+
+The balance sheet and the trial balance answer a proof question, not a trend
+question, so they stay chart-free.
+
+- The balance sheet opens with a balance check: assets, liabilities and equity,
+  and a status pill reading `Balanced` or `Out by <amount>`. The pill reads
+  `differenceMinor` exactly, so a non-zero difference is visible before the
+  account lists rather than only in the footer.
+- The trial balance opens with a compact table of debit and credit per account
+  group. The detail table below keeps every account and its proof footer, so the
+  group summary and the account detail come from the same rows.
+- Both additions are screen reads over the rows already fetched and carry
+  `report-print-hide`, so the printed report and every export keep their existing
+  rows, columns and totals.
+
+`trialBalanceGroups` in `report-shaping.ts` owns the group totals. It drops
+accounts with no movement and sorts by group name, so the summary lists the same
+groups the detail table shows. `tests/shared/report-shaping.test.ts` covers the
+sums and the zero-movement case. `tests/renderer/report-structure.test.tsx`
+covers the balanced and out-of-balance pills and the group summary next to the
+proof row.
