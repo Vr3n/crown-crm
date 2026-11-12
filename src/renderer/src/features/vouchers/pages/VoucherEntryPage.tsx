@@ -261,11 +261,6 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
     queryFn: () => window.api.units.list({ includeInactive: false }),
     enabled: itemDialogKey !== null
   })
-  const taxRates = useQuery({
-    queryKey: ['tax-rates', 'active'],
-    queryFn: () => window.api.taxRates.list({ includeHistory: false }),
-    enabled: itemDialogKey !== null
-  })
 
   const cessByItem = new Map(items.map((item) => [item.id, item.cessRateBps]))
   const party = parties.find((row) => row.id === partyId) ?? null
@@ -846,7 +841,6 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
           }}
           item={null}
           units={units.data ?? []}
-          taxRates={taxRates.data ?? []}
           onSaved={(created) => {
             const key = itemDialogKey
             setItemDialogKey(null)

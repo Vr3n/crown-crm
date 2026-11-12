@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/dialog'
 import { Field, FormLegend } from '@/components/ui/field'
 import type { FieldHelpContent } from '@/components/ui/field-help'
-import { focusFirstError, FormTextField, type FormFieldApi } from '@/components/ui/form-field'
+import { focusFirstError, FormTextField, type Filter, type FormFieldApi } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -44,7 +44,7 @@ import {
 } from '../../../../../shared/price'
 import { useDebouncedValue } from '@/lib/use-debounced-value'
 import { errorMessage } from '../../../../../shared/contracts/errors'
-import type { CreateItemInput, ItemRow, TaxRateRow } from '../../../../../shared/contracts/masters'
+import type { CreateItemInput, ItemRow } from '../../../../../shared/contracts/masters'
 
 const TH =
   'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
@@ -66,8 +66,10 @@ interface ItemForm {
   sku: string
   hsnSac: string
   uomId: string
-  /** Composite `gstBps:cessBps` key, because two rows can share a GST rate. */
-  taxRateKey: string
+  /** Percent as typed, e.g. "18" or "18.5". Stored as basis points on save. */
+  gstRate: string
+  /** Percent as typed. Zero when the item carries no cess. */
+  cessRate: string
   salePrice: string
   purchasePrice: string
   salePriceIncludesTax: boolean
@@ -79,7 +81,7 @@ interface ItemForm {
 
 type ItemTextKey = Exclude<
   keyof ItemForm,
-  'isService' | 'uomId' | 'taxRateKey' | 'salePriceIncludesTax'
+  'isService' | 'uomId' | 'salePriceIncludesTax'
 >
 
 const blankForm = (): ItemForm => ({
@@ -87,7 +89,8 @@ const blankForm = (): ItemForm => ({
   sku: '',
   hsnSac: '',
   uomId: '0',
-  taxRateKey: '0:0',
+  gstRate: '0',
+  cessRate: '0',
   salePrice: '0',
   purchasePrice: '0',
   salePriceIncludesTax: true,
@@ -102,7 +105,8 @@ const toForm = (item: ItemRow): ItemForm => ({
   sku: item.sku ?? '',
   hsnSac: item.hsnSac ?? '',
   uomId: String(item.uomId ?? 0),
-  taxRateKey: `${item.gstRateBps}:${item.cessRateBps}`,
+  gstRate: rateText(item.gstRateBps),
+  cessRate: rateText(item.cessRateBps),
   salePrice: minorToMajor(item.salePriceMinor, 'INR'),
   purchasePrice: minorToMajor(item.purchasePriceMinor, 'INR'),
   salePriceIncludesTax: item.salePriceIncludesTax,
@@ -131,6 +135,19 @@ function toE4(value: string): number {
 
 function quantity(e4: number): string {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 4 }).format(e4 / 10000)
+}
+
+/** Stored basis points to the percent string the field holds, e.g. 1850 → "18.5". */
+function rateText(bps: number): string {
+  return String(bps / 100)
+}
+
+/** Percent typed by the user to integer basis points. Blank counts as zero. */
+function toBps(value: string): number {
+  const cleaned = value.replace(/[,\s%]/g, '')
+  if (!cleaned || cleaned === '.') return 0
+  const parsed = Number(cleaned)
+  return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0
 }
 
 /** Stored quantity to a compact decimal string, at most four places. */
@@ -185,12 +202,25 @@ function Margin({
   )
 }
 
+/** The backend stores basis points and caps both rates at 5000 bps. */
+const MAX_RATE_PERCENT = 50
+
+/** A percent typed as text, up to two decimals. Blank counts as zero. */
+const ratePercentSchema = z.string().refine((value) => {
+  const cleaned = value.replace(/[,\s%]/g, '')
+  if (!cleaned) return true
+  if (!/^\d+(\.\d{0,2})?$/.test(cleaned)) return false
+  const parsed = Number(cleaned)
+  return parsed >= 0 && parsed <= MAX_RATE_PERCENT
+}, 'Use a rate from 0 to 50 with up to 2 decimals')
+
 const itemFormSchema = z.object({
   name: z.string().trim().min(2, 'Item name is required'),
   sku: z.string(),
   hsnSac: z.string(),
   uomId: z.string(),
-  taxRateKey: z.string(),
+  gstRate: ratePercentSchema,
+  cessRate: ratePercentSchema,
   salePrice: z.string().refine((value) => toMinor(value) >= 0, 'Cannot be negative'),
   purchasePrice: z.string().refine((value) => toMinor(value) >= 0, 'Cannot be negative'),
   salePriceIncludesTax: z.boolean(),
@@ -217,6 +247,8 @@ const TEXT_FIELDS: Record<
     mono?: boolean
     autoFocus?: boolean
     lockOnEdit?: boolean
+    filter?: Filter
+    selectAll?: boolean
     hint?: (editing: boolean) => string | undefined
   }
 > = {
@@ -228,6 +260,24 @@ const TEXT_FIELDS: Record<
   },
   sku: { label: 'SKU', mono: true, help: FIELD_HELP.item.sku },
   hsnSac: { label: 'HSN / SAC', mono: true, help: FIELD_HELP.item.hsnSac },
+  gstRate: {
+    label: 'GST rate (%)',
+    inputMode: 'decimal',
+    mono: true,
+    filter: 'decimal',
+    selectAll: true,
+    help: FIELD_HELP.item.gstRate,
+    hint: () => 'Type the rate from 0 to 50 as printed on the invoice. Enter 0 for exempt.'
+  },
+  cessRate: {
+    label: 'Cess rate (%)',
+    inputMode: 'decimal',
+    mono: true,
+    filter: 'decimal',
+    selectAll: true,
+    help: FIELD_HELP.item.cessRate,
+    hint: () => 'Leave 0 when the item has no cess.'
+  },
   salePrice: {
     label: 'Sale price (INR)',
     inputMode: 'decimal',
@@ -296,10 +346,6 @@ export function ItemsPage(): React.JSX.Element {
   const units = useQuery({
     queryKey: ['units', 'active'],
     queryFn: () => window.api.units.list({ includeInactive: false })
-  })
-  const taxRates = useQuery({
-    queryKey: ['tax-rates', 'active'],
-    queryFn: () => window.api.taxRates.list({ includeHistory: false })
   })
   const summary = useQuery({
     queryKey: ['items', 'summary'],
@@ -632,7 +678,6 @@ export function ItemsPage(): React.JSX.Element {
           onOpenChange={setOpen}
           item={editing}
           units={units.data ?? []}
-          taxRates={taxRates.data ?? []}
           onSaved={onSaved}
         />
       ) : null}
@@ -667,53 +712,16 @@ export function ItemDialog({
   onOpenChange,
   item,
   units,
-  taxRates,
   onSaved
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   item: ItemRow | null
   units: { id: number; name: string; symbol: string }[]
-  taxRates: TaxRateRow[]
   onSaved: (saved?: ItemRow) => void
 }): React.JSX.Element {
   const queryClient = useQueryClient()
   const editing = item !== null
-
-  // A rate is a GST/cess pair, so two rows can share a GST rate. The select
-  // key carries both. A stored legacy rate stays visible while editing.
-  const rateOptions = (() => {
-    const byKey = new Map<
-      string,
-      { key: string; gstBps: number; cessBps: number; label: string }
-    >()
-    for (const rate of taxRates) {
-      const key = `${rate.gstRateBps}:${rate.cessRateBps}`
-      if (byKey.has(key)) continue
-      byKey.set(key, {
-        key,
-        gstBps: rate.gstRateBps,
-        cessBps: rate.cessRateBps,
-        label: rate.description ?? `GST ${formatRate(rate.gstRateBps)}`
-      })
-    }
-    if (item) {
-      const key = `${item.gstRateBps}:${item.cessRateBps}`
-      if (!byKey.has(key)) {
-        const cess =
-          item.cessRateBps > 0 ? ` + ${formatRate(item.cessRateBps)} cess` : ''
-        byKey.set(key, {
-          key,
-          gstBps: item.gstRateBps,
-          cessBps: item.cessRateBps,
-          label: `${formatRate(item.gstRateBps)}${cess} (legacy)`
-        })
-      }
-    }
-    return [...byKey.values()].sort(
-      (a, b) => a.gstBps - b.gstBps || a.cessBps - b.cessBps
-    )
-  })()
 
   const save = useMutation({
     mutationFn: (input: ItemSave) =>
@@ -740,14 +748,13 @@ export function ItemDialog({
     validators: { onSubmit: itemFormSchema },
     onSubmitInvalid: ({ formApi }) => focusFirstError(formApi),
     onSubmit: ({ value }) => {
-      const [gstPart, cessPart] = value.taxRateKey.split(':')
       const payload: ItemPayload = {
         name: value.name.trim(),
         sku: value.sku.trim() || null,
         hsnSac: value.hsnSac.trim() || null,
         uomId: Number(value.uomId) || null,
-        gstRateBps: Number(gstPart) || 0,
-        cessRateBps: Number(cessPart) || 0,
+        gstRateBps: toBps(value.gstRate),
+        cessRateBps: toBps(value.cessRate),
         isService: value.isService,
         salePriceMinor: toMinor(value.salePrice),
         purchasePriceMinor: toMinor(value.purchasePrice),
@@ -772,9 +779,8 @@ export function ItemDialog({
   })
 
   const values = useStore(form.store, (state) => state.values)
-  const selectedRate = rateOptions.find((rate) => rate.key === values.taxRateKey)
-  const gstRateBps = selectedRate?.gstBps ?? 0
-  const cessRateBps = selectedRate?.cessBps ?? 0
+  const gstRateBps = toBps(values.gstRate)
+  const cessRateBps = toBps(values.cessRate)
   const saleSplit = values.salePriceIncludesTax
     ? splitInclusivePrice(toMinor(values.salePrice), gstRateBps, cessRateBps)
     : grossFromExclusive(toMinor(values.salePrice), gstRateBps, cessRateBps)
@@ -806,7 +812,11 @@ export function ItemDialog({
             help={meta.help}
             inputMode={meta.inputMode}
             mono={meta.mono}
+            filter={meta.filter}
             autoFocus={meta.autoFocus}
+            onFocus={
+              meta.selectAll ? (event) => event.currentTarget.select() : undefined
+            }
             disabled={meta.lockOnEdit === true && editing}
             hint={meta.hint?.(editing)}
             afterChange={() => {
@@ -934,49 +944,16 @@ export function ItemDialog({
               )}
             </form.Field>
 
-            <form.Field
-              name="taxRateKey"
-              validators={{
-                onBlur: ({ value }) => itemFieldError('taxRateKey', value),
-                onChange: ({ value }) => itemFieldError('taxRateKey', value),
-                onSubmit: ({ value }) => itemFieldError('taxRateKey', value)
-              }}
-            >
-              {(field) => (
-                <Field id="item-gst" label="GST rate" help={FIELD_HELP.item.gstRate}>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(value) => {
-                      field.handleChange(value)
-                      field.setErrorMap({ onBlur: undefined })
-                      void field.validate('change')
-                    }}
-                  >
-                    <SelectTrigger
-                      id="item-gst"
-                      className="w-full"
-                      onBlur={() => {
-                        field.handleBlur()
-                        void field.validate('blur')
-                      }}
-                    >
-                      <SelectValue placeholder="Choose a GST rate" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rateOptions.map((rate) => (
-                        <SelectItem key={rate.key} value={rate.key}>
-                          {rate.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              )}
-            </form.Field>
+            {textField('gstRate')}
+            {textField('cessRate')}
 
             <form.Field name="isService">
               {(field) => (
-                <Field label="Item type" help={FIELD_HELP.item.service}>
+                <Field
+                  className="sm:col-span-2"
+                  label="Item type"
+                  help={FIELD_HELP.item.service}
+                >
                   <label
                     htmlFor="isService"
                     className="flex items-center gap-1.5 pt-0.5 text-[0.9375rem]"
