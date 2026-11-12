@@ -1,6 +1,6 @@
 # Release: 0.1.0 Excel importer prototype
 
-Status: prerelease, built from `feat/excel-importer`
+Status: latest release on GitHub, built from `feat/excel-importer`
 Tag: `v0.1.0-excel-importer.1`
 Release page: <https://github.com/Vr3n/crown-crm/releases/tag/v0.1.0-excel-importer.1>
 
