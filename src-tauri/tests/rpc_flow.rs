@@ -27,6 +27,7 @@ impl Harness {
             user_data: root.clone(),
             database: root.join("crown-books.db"),
             backups: root.join("backups"),
+            logs: root.join("logs"),
         };
         paths.ensure().expect("create data dirs");
 
@@ -997,6 +998,7 @@ fn persisted_login_is_restored_after_restart() {
         user_data: root.clone(),
         database: root.join("crown-books.db"),
         backups: root.join("backups"),
+        logs: root.join("logs"),
     };
     paths.ensure().expect("data dirs");
 

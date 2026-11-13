@@ -213,14 +213,17 @@ function previewLine(line: EntryLine, intraState: boolean, cessRateBps = 0): Lin
   return { taxable, cgst, sgst, igst: 0, cess, total: taxable + cgst + sgst + cess }
 }
 
-function previewTotals(rows: LinePreview[]): LinePreview & { roundOff: number } {
+function previewTotals(
+  rows: LinePreview[],
+  roundOffMode = 'INVOICE'
+): LinePreview & { roundOff: number } {
   const taxable = rows.reduce((sum, row) => sum + row.taxable, 0)
   const cgst = rows.reduce((sum, row) => sum + row.cgst, 0)
   const sgst = rows.reduce((sum, row) => sum + row.sgst, 0)
   const igst = rows.reduce((sum, row) => sum + row.igst, 0)
   const cess = rows.reduce((sum, row) => sum + row.cess, 0)
   const preRound = taxable + cgst + sgst + igst + cess
-  const total = roundHalfUpDiv(preRound, 100) * 100
+  const total = roundOffMode === 'INVOICE' ? roundHalfUpDiv(preRound, 100) * 100 : preRound
   return { taxable, cgst, sgst, igst, cess, total, roundOff: total - preRound }
 }
 
@@ -274,7 +277,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
       line.itemId === null ? 0 : (cessByItem.get(line.itemId) ?? 0)
     )
   )
-  const totals = previewTotals(previews)
+  const totals = previewTotals(previews, company?.roundOffMode ?? 'INVOICE')
   const usable = lines.filter((line) => line.description.trim().length > 0)
   const badQty = usable.some((line) => toQtyE4(line.qty) <= 0)
   const supplierBillMissingValue = isPurchase && supplierBillMissing

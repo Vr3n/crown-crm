@@ -24,7 +24,8 @@ import {
   Ruler,
   Building2,
   ShieldCheck,
-  DatabaseBackup
+  DatabaseBackup,
+  Upload
 } from 'lucide-react'
 
 /**
@@ -61,6 +62,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/purchases', label: 'Purchases', icon: ShoppingCart, phase: 'P4' },
       { to: '/receipts', label: 'Receipts', icon: ArrowDownLeft, phase: 'P3' },
       { to: '/payments', label: 'Payments', icon: ArrowUpRight, phase: 'P4' },
+      {
+        to: '/import/excel',
+        label: 'Import from Excel',
+        icon: Upload,
+        requires: 'voucher.create'
+      },
       { to: '/journals', label: 'Journals', icon: NotebookPen, phase: 'P2' }
     ]
   },

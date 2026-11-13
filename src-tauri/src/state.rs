@@ -68,13 +68,23 @@ pub struct Ctx<'a> {
     ///
     /// `None` in tests: everything except those commands is window-independent.
     pub app: Option<&'a tauri::AppHandle>,
+    trace_id: Option<String>,
     tx_depth: u32,
     savepoint_seq: u32,
 }
 
 impl<'a> Ctx<'a> {
     pub fn new(inner: &'a mut Inner, paths: &'a Paths, app: Option<&'a tauri::AppHandle>) -> Self {
-        Self { inner, paths, app, tx_depth: 0, savepoint_seq: 0 }
+        Self { inner, paths, app, trace_id: None, tx_depth: 0, savepoint_seq: 0 }
+    }
+
+    /// The id shared by the renderer call and the backend work it caused.
+    pub fn set_trace_id(&mut self, trace_id: String) {
+        self.trace_id = Some(trace_id);
+    }
+
+    pub fn trace_id(&self) -> Option<&str> {
+        self.trace_id.as_deref()
     }
 
     /// The window handle, or a clear error when running headless.

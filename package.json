@@ -23,10 +23,18 @@
     "build": "tauri build",
     "build:web": "vite build",
     "smoke:win": "node scripts/smoke-tauri.mjs",
-    "smoke:ui": "node scripts/smoke-ui.mjs"
+    "smoke:ui": "node scripts/smoke-ui.mjs",
+    "logs": "node scripts/logs.mjs",
+    "logs:tail": "node scripts/logs.mjs tail --follow",
+    "logs:errors": "node scripts/logs.mjs errors",
+    "logs:doctor": "node scripts/logs.mjs doctor",
+    "logs:modules": "node scripts/logs.mjs modules",
+    "logs:dev": "node scripts/logs.mjs tail --dev --follow",
+    "logs:release": "node scripts/logs.mjs tail --release --follow"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "zod": "^4.4.3"
   },
   "devDependencies": {
