@@ -145,6 +145,7 @@ pub fn run() {
         None,
         json!({
             "version": env!("CARGO_PKG_VERSION"),
+            "profile": paths::profile(),
             "userData": paths.user_data.display().to_string(),
             "logs": paths.logs.display().to_string(),
         }),

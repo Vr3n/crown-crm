@@ -72,10 +72,16 @@ channel and the argument count.
 
 ## 4. Where the files are
 
-`%APPDATA%\Crown Books\logs\app-YYYY-MM-DD.jsonl` on Windows.
+A debug build and the installed build keep separate data directories.
 
-`CROWN_BOOKS_USER_DATA` overrides the user data directory, so a scripted run
-writes its logs under that directory. Tests use a temporary directory.
+| Build | Data directory | Database | Logs |
+|---|---|---|---|
+| `tauri dev`, `cargo run` | `%APPDATA%\Crown Books Dev` | `crown-books.db` | `logs\app-YYYY-MM-DD.jsonl` |
+| Installed release | `%APPDATA%\Crown Books` | `crown-books.db` | `logs\app-YYYY-MM-DD.jsonl` |
+
+`CROWN_BOOKS_USER_DATA` overrides the user data directory for either build, so a
+scripted run writes its database and logs under that directory. Tests use a
+temporary directory.
 
 The logger keeps the newest 14 daily files. The CLI can clear the rest.
 
@@ -85,6 +91,8 @@ Run from the repository root:
 
 ```bash
 npm run logs:tail              # last 80 lines, follow with the script below
+npm run logs:dev               # follow the debug build's logs
+npm run logs:release           # follow the installed build's logs
 npm run logs:errors            # errors in the last hour
 npm run logs:doctor            # paths, file count, last error
 npm run logs:modules           # counts by module and level
@@ -97,9 +105,14 @@ npm run logs -- tail --follow --module import
 npm run logs -- clear --yes    # delete the log files
 ```
 
-`node scripts/logs.mjs` accepts the same commands. Options: `--dir`, `--level`,
-`--module`, `--trace`, `--since` (`10m`, `2h`, `7d` or an ISO timestamp),
-`--lines`, `--limit`, `--json`, `--no-color`, `--follow`, `--yes`.
+`node scripts/logs.mjs` accepts the same commands. Options: `--dir`, `--dev`,
+`--release`, `--level`, `--module`, `--trace`, `--since` (`10m`, `2h`, `7d` or
+an ISO timestamp), `--lines`, `--limit`, `--json`, `--no-color`, `--follow`,
+`--yes`.
+
+The CLI defaults to `auto`: it uses the dev folder when it exists, otherwise the
+release folder. `--dev` and `--release` force one. `npm run logs:doctor` prints
+both candidate paths.
 
 ## 6. Debugging a stuck import
 

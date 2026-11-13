@@ -28,7 +28,9 @@
     "logs:tail": "node scripts/logs.mjs tail --follow",
     "logs:errors": "node scripts/logs.mjs errors",
     "logs:doctor": "node scripts/logs.mjs doctor",
-    "logs:modules": "node scripts/logs.mjs modules"
+    "logs:modules": "node scripts/logs.mjs modules",
+    "logs:dev": "node scripts/logs.mjs tail --dev --follow",
+    "logs:release": "node scripts/logs.mjs tail --release --follow"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

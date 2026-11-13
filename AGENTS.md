@@ -23,8 +23,10 @@ Implementing backend, or business logic, follow the steps below — they are man
 
 ## Debugging
 
-Persistent logs are JSONL at `%APPDATA%\Crown Books\logs\app-YYYY-MM-DD.jsonl`.
-The renderer and Rust share one trace id per operation.
+A debug build (`tauri dev`, `cargo run`) uses `%APPDATA%\Crown Books Dev`.
+The installed release uses `%APPDATA%\Crown Books`. They never share a database.
+Persistent logs are JSONL at `<data dir>\logs\app-YYYY-MM-DD.jsonl`. The
+renderer and Rust share one trace id per operation.
 
 ```bash
 npm run logs:doctor            # paths, file count, last error

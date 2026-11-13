@@ -11,8 +11,10 @@ Release page: <https://github.com/Vr3n/crown-crm/releases/tag/v0.1.0-excel-impor
 | `Crown.Books_0.1.0_x64-setup.exe` | Windows x64 NSIS installer, per-machine. |
 | `sample-bills-from-pdfs.xlsx` | The purchase and sales sample built from the two PDFs. |
 
-The installer uses the existing `Crown Books` application data directory. The
-company, database, backups and logs are kept.
+The installed build uses `%APPDATA%\Crown Books`. A `tauri dev` build uses
+`%APPDATA%\Crown Books Dev`, so installing a release for testing never touches
+the developer's database. The company, database, backups and logs under the
+chosen directory are kept.
 
 ## What the release contains
 

@@ -14,6 +14,8 @@
  *
  * Options:
  *   --dir <path>        log directory (default: the app's user data logs)
+ *   --dev               use the debug build's log folder
+ *   --release           use the installed build's log folder
  *   --level <level>     debug | info | warn | error (warn includes error)
  *   --module <name>     api, rpc, import, vouchers, db, auth, app, ...
  *   --trace <id>        one trace id
@@ -70,7 +72,8 @@ function parseArgs(args) {
 }
 
 const options = parseArgs(rest)
-const dir = resolveLogDir({ dir: options.dir })
+const profile = options.dev === true ? 'dev' : options.release === true ? 'release' : 'auto'
+const dir = resolveLogDir({ dir: options.dir, profile })
 const color = Boolean(process.stdout.isTTY) && options.noColor !== true
 const formatOptions = { color }
 
@@ -226,7 +229,10 @@ function doctor() {
   const files = logFiles()
   const records = readRecords()
   const errorsInLog = records.filter((record) => record.level === 'error')
+  console.log(`profile       : ${profile}`)
   console.log(`log directory : ${dir}`)
+  console.log(`dev logs      : ${resolveLogDir({ profile: 'dev' })}`)
+  console.log(`release logs  : ${resolveLogDir({ profile: 'release' })}`)
   console.log(`exists        : ${existsSync(dir) ? 'yes' : 'no'}`)
   console.log(`files         : ${files.length}`)
   console.log(`newest        : ${files.at(-1) ?? '-'}`)

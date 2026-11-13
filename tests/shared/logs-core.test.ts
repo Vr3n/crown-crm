@@ -48,10 +48,11 @@ describe('logs CLI core', () => {
     expect(rows.find((row) => row.module === 'vouchers')?.error).toBe(1)
   })
 
-  it('resolves the app log directory', () => {
-    expect(
-      resolveLogDir({ env: { APPDATA: 'C:\\Users\\Viren\\AppData\\Roaming' } })
-    ).toContain('Crown Books')
+  it('resolves the dev and release log directories separately', () => {
+    const env = { APPDATA: 'C:\\Users\\Viren\\AppData\\Roaming' }
+    expect(resolveLogDir({ env, profile: 'release' })).toContain('Crown Books\\logs')
+    expect(resolveLogDir({ env, profile: 'release' })).not.toContain('Crown Books Dev')
+    expect(resolveLogDir({ env, profile: 'dev' })).toContain('Crown Books Dev\\logs')
     expect(resolveLogDir({ env: { CROWN_BOOKS_USER_DATA: 'C:\\tmp\\books' } })).toBe(
       'C:\\tmp\\books\\logs'
     )

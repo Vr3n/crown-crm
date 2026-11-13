@@ -5,6 +5,7 @@
  * starting the desktop app or reading the user's log directory.
  */
 
+import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 export const LEVELS = { debug: 10, info: 20, warn: 30, error: 40 }
@@ -107,15 +108,22 @@ export function isLogFileName(name) {
   return /^app-\d{4}-\d{2}-\d{2}\.jsonl$/.test(name)
 }
 
-/** The same directory `Paths::resolve` uses in the Rust shell. */
-export function resolveLogDir({ dir, env = process.env } = {}) {
+/**
+ * The same directory `Paths::resolve` uses in the Rust shell.
+ *
+ * `profile` is `dev`, `release` or `auto`. Auto prefers the dev folder when it
+ * exists, because this CLI is usually run while developing. Pass `--dev` or
+ * `--release` to be explicit. `CROWN_BOOKS_USER_DATA` still wins.
+ */
+export function resolveLogDir({ dir, env = process.env, profile = 'auto' } = {}) {
   if (dir) return resolve(dir)
   const override = env.CROWN_BOOKS_USER_DATA?.trim()
-  const userData = override
-    ? override
-    : env.APPDATA
-      ? join(env.APPDATA, 'Crown Books')
-      : join(env.HOME || '.', '.crown-books')
-  return join(userData, 'logs')
+  if (override) return join(override, 'logs')
+  const base = env.APPDATA || env.HOME || '.'
+  const releaseDir = env.APPDATA ? join(base, 'Crown Books') : join(base, '.crown-books')
+  const devDir = env.APPDATA ? join(base, 'Crown Books Dev') : join(base, '.crown-books-dev')
+  if (profile === 'dev') return join(devDir, 'logs')
+  if (profile === 'release') return join(releaseDir, 'logs')
+  return existsSync(devDir) ? join(devDir, 'logs') : join(releaseDir, 'logs')
 }
 
