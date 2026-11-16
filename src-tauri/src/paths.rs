@@ -71,8 +71,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_debug_build_never_uses_the_installed_data_folder() {
-        assert_eq!(profile(), "dev");
-        assert!(default_user_data().to_string_lossy().contains("Crown Books Dev"));
+    fn debug_and_release_never_share_a_data_folder() {
+        let path = default_user_data().to_string_lossy().to_string();
+        if cfg!(debug_assertions) {
+            assert_eq!(profile(), "dev");
+            assert!(path.contains("Crown Books Dev"));
+        } else {
+            assert_eq!(profile(), "release");
+            assert!(!path.contains("Crown Books Dev"));
+        }
     }
 }
