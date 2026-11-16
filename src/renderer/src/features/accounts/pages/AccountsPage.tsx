@@ -516,7 +516,7 @@ function AccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="max-h-[92vh] sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>New account</DialogTitle>
           <DialogDescription>

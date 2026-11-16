@@ -879,7 +879,7 @@ function NewStaffDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="max-h-[92vh] sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle>New person</DialogTitle>
           <DialogDescription>
@@ -904,6 +904,8 @@ function NewStaffDialog({
             <form.Field
               name="roleId"
               validators={{
+                onBlur: ({ value }) => (value ? undefined : 'Choose a role'),
+                onChange: ({ value }) => (value ? undefined : 'Choose a role'),
                 onSubmit: ({ value }) => (value ? undefined : 'Choose a role')
               }}
             >
@@ -1000,7 +1002,7 @@ function EditStaffDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
+      <DialogContent className="max-h-[92vh] sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle>Edit {member.fullName}</DialogTitle>
           <DialogDescription>
@@ -1175,7 +1177,7 @@ function PasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent className="max-h-[92vh] sm:max-w-[440px]">
         <DialogHeader>
           <DialogTitle>Reset password</DialogTitle>
           <DialogDescription>
@@ -1287,7 +1289,7 @@ function RoleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[720px]">
+      <DialogContent className="max-h-[92vh] sm:max-w-[720px]">
         <DialogHeader>
           <DialogTitle>{editing ? `Edit ${role.name}` : 'New role'}</DialogTitle>
           <DialogDescription>

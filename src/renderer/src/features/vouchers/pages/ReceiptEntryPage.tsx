@@ -3,15 +3,54 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { FieldHelp, type FieldHelpContent } from '@/components/ui/field-help'
 import { PartyPicker } from '../components/party-picker'
 import { PartyDialog } from '@/features/parties/components/party-dialog'
 import { formatMinor, parseToMinor } from '@/lib/money'
+import { cn } from '@/lib/utils'
 import type { PartyRow } from '../../../../../shared/contracts/masters'
 import type { PostVoucherInput } from '../../../../../shared/contracts/vouchers'
 
 type Mode = 'RECEIPT' | 'PAYMENT'
 
 const METHODS = ['Cash', 'UPI', 'Card', 'Bank Transfer', 'Cheque', 'NEFT', 'RTGS']
+
+/** Column help for the settlement table, shown from the header. */
+const COLUMN_HELP: Partial<Record<string, FieldHelpContent>> = {
+  Outstanding: {
+    summary: 'The amount still open on this bill as of the voucher date.',
+    points: [
+      'The bill total minus everything already settled against it.',
+      'Overdue days count from the due date.'
+    ]
+  },
+  Allocate: {
+    summary: 'How much of this voucher settles this bill.',
+    points: [
+      'Leave a bill blank to keep it open.',
+      'The total allocated cannot exceed the amount above.'
+    ]
+  }
+}
+
+/** Money in reads green, money out reads amber. */
+const RECEIPT_TONE = {
+  accent: 'border-l-success',
+  pill: 'bg-success-soft text-success',
+  panel: 'bg-success-soft/60',
+  text: 'text-success',
+  focus: 'focus:bg-success-soft/60',
+  total: 'bg-success-soft/30'
+}
+
+const PAYMENT_TONE = {
+  accent: 'border-l-warning',
+  pill: 'bg-warning-soft text-warning',
+  panel: 'bg-warning-soft/60',
+  text: 'text-warning',
+  focus: 'focus:bg-warning-soft/60',
+  total: 'bg-warning-soft/30'
+}
 
 function todayIso(date = new Date()): string {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
@@ -29,6 +68,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
   const kind = receipt ? 'RECEIVABLE' : 'PAYABLE'
   const back = receipt ? '/receipts' : '/payments'
   const label = receipt ? 'receipt' : 'payment'
+  const tone = receipt ? RECEIPT_TONE : PAYMENT_TONE
 
   const [partyId, setPartyId] = useState<number | null>(null)
   const [partyOpen, setPartyOpen] = useState(false)
@@ -109,11 +149,21 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 p-6">
-      <div className="flex flex-wrap items-end justify-between gap-3 border border-border bg-card px-5 py-4">
+      <div
+        className={cn(
+          'flex flex-wrap items-end justify-between gap-3 border border-l-4 border-border bg-card px-5 py-4',
+          tone.accent
+        )}
+      >
         <div>
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          <span
+            className={cn(
+              'inline-flex items-center rounded-full px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.18em]',
+              tone.pill
+            )}
+          >
             {receipt ? 'Money received' : 'Money paid'}
-          </p>
+          </span>
           <h1 className="mt-1 font-heading text-[1.5rem] font-semibold leading-none tracking-tight">
             New {label}
           </h1>
@@ -150,14 +200,21 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             className="h-7 w-full border-0 bg-transparent font-mono text-[0.875rem] outline-none"
           />
         </Field>
-        <Field label="Amount" className="border-b border-border">
+        <Field
+          label="Amount"
+          className={cn('border-b border-border', tone.panel)}
+          labelClassName={tone.text}
+        >
           <input
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
             inputMode="decimal"
             placeholder="0.00"
             aria-label="Amount"
-            className="h-7 w-full border-0 bg-transparent text-right font-mono text-[0.9375rem] tabular-nums outline-none placeholder:text-muted-foreground/60"
+            className={cn(
+              'h-8 w-full border-0 bg-transparent text-right font-mono text-[1.125rem] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/50',
+              tone.text
+            )}
           />
         </Field>
         <Field label="Method" className="border-b border-border sm:border-r">
@@ -207,12 +264,34 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
         <table className="w-full border-collapse text-[0.875rem]">
           <thead>
             <tr className="border-b border-rule-strong bg-muted/40">
-              {['Bill', 'Date', 'Due', 'Outstanding', 'Allocate'].map((heading) => (
+              {[
+                { label: 'Bill', align: 'left' },
+                { label: 'Date', align: 'left' },
+                { label: 'Due', align: 'left' },
+                { label: 'Outstanding', align: 'right' },
+                { label: 'Allocate', align: 'right' }
+              ].map((column) => (
                 <th
-                  key={heading}
-                  className={`h-8 px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground ${heading === 'Outstanding' || heading === 'Allocate' ? 'text-right' : 'text-left'}`}
+                  key={column.label}
+                  className={cn(
+                    'h-8 px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground',
+                    column.align === 'right' ? 'text-right' : 'text-left'
+                  )}
                 >
-                  {heading}
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1',
+                      column.align === 'right' && 'justify-end'
+                    )}
+                  >
+                    {column.label}
+                    {COLUMN_HELP[column.label] ? (
+                      <FieldHelp
+                        label={column.label}
+                        content={COLUMN_HELP[column.label] as FieldHelpContent}
+                      />
+                    ) : null}
+                  </span>
                 </th>
               ))}
             </tr>
@@ -263,19 +342,29 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
                     inputMode="decimal"
                     placeholder="0.00"
                     aria-label={`Allocate to ${bill.number}`}
-                    className="h-9 w-full border-0 bg-transparent px-3 text-right font-mono text-[0.875rem] tabular-nums outline-none placeholder:text-muted-foreground/60"
+                    className={cn(
+                      'h-9 w-full border-0 bg-transparent px-3 text-right font-mono text-[0.875rem] tabular-nums outline-none placeholder:text-muted-foreground/60',
+                      tone.focus
+                    )}
                   />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div className="flex flex-wrap items-center justify-end gap-6 border-t border-rule-strong px-4 py-2.5 text-[0.875rem]">
+        <div
+          className={cn(
+            'flex flex-wrap items-center justify-end gap-6 border-t border-rule-strong px-4 py-2.5 text-[0.875rem]',
+            tone.total
+          )}
+        >
           <span className="flex items-baseline gap-2">
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               {receipt ? 'Received' : 'Paid'}
             </span>
-            <span className="font-mono tabular-nums">{formatMinor(amountMinor, 'INR')}</span>
+            <span className={cn('font-mono font-semibold tabular-nums', tone.text)}>
+              {formatMinor(amountMinor, 'INR')}
+            </span>
           </span>
           <span className="flex items-baseline gap-2">
             <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -312,6 +401,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
           <Button
             type="button"
             size="sm"
+            variant={receipt ? 'success' : 'warning'}
             onClick={submit}
             disabled={Boolean(reason) || post.isPending}
           >
@@ -344,15 +434,22 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
 function Field({
   label,
   children,
-  className
+  className,
+  labelClassName
 }: {
   label: string
   children: React.ReactNode
   className?: string
+  labelClassName?: string
 }): React.JSX.Element {
   return (
-    <div className={`flex items-center gap-3 px-3 py-2 ${className ?? ''}`}>
-      <span className="w-[76px] shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+    <div className={cn('flex items-center gap-3 px-3 py-2', className)}>
+      <span
+        className={cn(
+          'w-[76px] shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground',
+          labelClassName
+        )}
+      >
         {label}
       </span>
       <div className="min-w-0 flex-1">{children}</div>

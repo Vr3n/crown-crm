@@ -15,7 +15,9 @@ export interface FieldHelpContent {
 }
 
 export function helpText(content: FieldHelpContent): string {
-  return [content.summary, ...(content.points ?? [])].join('. ')
+  return [content.summary, ...(content.points ?? [])]
+    .map((part) => part.trim().replace(/\.+$/, ''))
+    .join('. ')
 }
 
 /**

@@ -16,7 +16,7 @@ export function SetupShell({
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex w-full max-w-[1200px] items-center gap-2.5 px-6 py-4">
+        <div className="flex w-full items-center gap-2.5 px-6 py-4">
           <span className="flex size-8 items-center justify-center bg-stamp text-paper">
             <BookOpen className="size-4" strokeWidth={1.75} />
           </span>
@@ -29,7 +29,7 @@ export function SetupShell({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1200px] px-6 py-8">
+      <main className="w-full px-6 py-8">
         <div className="mb-5 max-w-[70ch]">
           <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{title}</h1>
           <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-muted-foreground">

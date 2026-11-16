@@ -48,6 +48,9 @@ const child = spawn(exe, [], {
     ...process.env,
     CROWN_BOOKS_USER_DATA: dataDir,
     CROWN_BOOKS_E2E: '1',
+    // Keep the test webview out of the folder a running dev app uses, so both
+    // can run at once.
+    WEBVIEW2_USER_DATA_FOLDER: join(dataDir, 'webview2'),
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`
   },
   stdio: ['ignore', 'pipe', 'pipe']
@@ -86,7 +89,8 @@ async function findTarget() {
     const response = await fetch(`http://127.0.0.1:${port}/json/list`)
     if (!response.ok) return null
     const targets = await response.json()
-    return targets.find((target) => target.type === 'page' && target.webSocketDebuggerUrl) ?? null
+    const pages = targets.filter((target) => target.type === 'page' && target.webSocketDebuggerUrl)
+    return pages.find((target) => !String(target.url).startsWith('about:')) ?? pages[0] ?? null
   } catch {
     return null
   }
@@ -141,7 +145,7 @@ async function evaluate(expression) {
 
 /** @returns {Promise<string>} */
 async function bodyText() {
-  return String(await evaluate('document.body.innerText'))
+  return String(await evaluate('document.body ? document.body.innerText : ""'))
 }
 
 /**
@@ -281,6 +285,94 @@ try {
   )
 
   // -------------------------------------------------------------------
+  // Setup form: copy and per-field validation feedback
+  // -------------------------------------------------------------------
+  console.log('setup form feedback')
+  const ownerField = await evaluate(`(() => {
+    const input = document.getElementById('ownerName')
+    const label = document.querySelector('label[for="ownerName"]')
+    return { placeholder: input?.placeholder ?? null, label: label?.textContent ?? null }
+  })()`)
+  check(
+    'the owner label reads Owner Full Name',
+    String(ownerField.label).includes('Owner Full Name'),
+    String(ownerField.label)
+  )
+  check(
+    'the owner placeholder is John Ant Doe',
+    ownerField.placeholder === 'John Ant Doe',
+    String(ownerField.placeholder)
+  )
+
+  check('the setup form submits empty', (await clickButton('Create company and sign in')) === 'clicked')
+  text = await waitForText(['Company name is required', 'Owner full name is required'])
+  check(
+    'every invalid field explains itself',
+    [
+      'Company name is required',
+      'Owner full name is required',
+      'Owner email is required',
+      'Create a password'
+    ].every((message) => text.includes(message)),
+    text.replace(/\s+/g, ' ').slice(0, 260)
+  )
+  const invalidSetup = await evaluate(`(() => {
+    const ids = ['companyName', 'ownerName', 'ownerEmail', 'password']
+    return ids.map((id) => ({ id, invalid: document.getElementById(id)?.getAttribute('aria-invalid') ?? null }))
+  })()`)
+  check(
+    'every invalid input is marked invalid',
+    invalidSetup.every((field) => field.invalid === 'true'),
+    JSON.stringify(invalidSetup)
+  )
+  check(
+    'the first invalid field takes focus',
+    (await evaluate('document.activeElement?.id')) === 'companyName'
+  )
+
+  check(
+    'a valid value is typed into the business name',
+    (await setField('companyName', COMPANY)) === 'set'
+  )
+  check(
+    'the corrected field turns green',
+    await waitFor("document.getElementById('companyName')?.dataset.valid === 'true'")
+  )
+  const borders = await evaluate(`(() => {
+    const read = (id) => {
+      const live = document.getElementById(id)
+      const plain = live.cloneNode(false)
+      plain.removeAttribute('id')
+      plain.removeAttribute('data-valid')
+      plain.removeAttribute('aria-invalid')
+      document.body.appendChild(plain)
+      const untouched = getComputedStyle(plain).borderTopColor
+      plain.remove()
+      return { live: getComputedStyle(live).borderTopColor, untouched }
+    }
+    return { valid: read('companyName'), invalid: read('ownerEmail') }
+  })()`)
+  check(
+    'the valid input is bordered differently from an untouched one',
+    borders.valid.live !== borders.valid.untouched,
+    JSON.stringify(borders.valid)
+  )
+  check(
+    'the invalid input is bordered differently from an untouched one',
+    borders.invalid.live !== borders.invalid.untouched,
+    JSON.stringify(borders.invalid)
+  )
+  check(
+    'valid and invalid borders differ from each other',
+    borders.valid.live !== borders.invalid.live,
+    JSON.stringify(borders)
+  )
+  check(
+    'the corrected field clears its error',
+    (await evaluate("document.body.innerText.includes('Company name is required')")) === false
+  )
+
+  // -------------------------------------------------------------------
   // Setup, session restore, first-run wizard
   // -------------------------------------------------------------------
   console.log('setup and session restore')
@@ -302,10 +394,88 @@ try {
 
   // Save through the wizard itself: its own submit updates the cached company
   // profile before navigating, which is exactly what a real first run does.
+  const numberingWidth = await evaluate(`(() => {
+    const table = document.querySelector('main table')
+    return {
+      page: window.innerWidth,
+      table: Math.round(table?.getBoundingClientRect().width ?? 0)
+    }
+  })()`)
+  check(
+    'the numbering page uses the full window width',
+    numberingWidth.table >= numberingWidth.page * 0.9,
+    JSON.stringify(numberingWidth)
+  )
+
   check('the wizard save button is present', (await clickButton('Save numbering')) === 'clicked')
   text = await waitForText(['where the books stand today'], 25_000)
   check('the dashboard renders for the signed-in owner', text.includes(COMPANY), text.replace(/\s+/g, ' ').slice(0, 220))
   check('the dashboard shows the setup checklist', text.includes('Number your vouchers'))
+
+  // -------------------------------------------------------------------
+  // Item dialog layout: wide, no scroll, tinted price panels on one row
+  // -------------------------------------------------------------------
+  console.log('item dialog layout')
+  await goto('/items?action=new', ['New item'])
+  const itemLayout = await evaluate(`(() => {
+    const hue = (value) => {
+      const oklch = value.match(/oklch\\(([\\d.]+)\\s+([\\d.]+)\\s+([\\d.]+)/)
+      if (oklch) return Number(oklch[3])
+      const rgb = value.match(/rgba?\\(([\\d.]+),\\s*([\\d.]+),\\s*([\\d.]+)/)
+      if (!rgb) return null
+      const channels = rgb.slice(1).map(Number).map((channel) => channel / 255)
+      const max = Math.max(...channels)
+      const min = Math.min(...channels)
+      const delta = max - min
+      if (delta === 0) return 0
+      const [r, g, b] = channels
+      let angle
+      if (max === r) angle = ((g - b) / delta) % 6
+      else if (max === g) angle = (b - r) / delta + 2
+      else angle = (r - g) / delta + 4
+      angle *= 60
+      return angle < 0 ? angle + 360 : angle
+    }
+    const dialog = document.querySelector('[data-slot="dialog-content"]')
+    const purchase = document.querySelector('[data-price-panel="purchase"]')
+    const sale = document.querySelector('[data-price-panel="sale"]')
+    if (!dialog || !purchase || !sale) return null
+    const purchaseRect = purchase.getBoundingClientRect()
+    const saleRect = sale.getBoundingClientRect()
+    return {
+      width: Math.round(dialog.getBoundingClientRect().width),
+      scroll: Math.round(dialog.scrollHeight - dialog.clientHeight),
+      sameRow: Math.abs(purchaseRect.top - saleRect.top) < 2,
+      gap: Math.round(saleRect.left - purchaseRect.right),
+      purchaseHue: hue(getComputedStyle(purchase.querySelector('label')).color),
+      saleHue: hue(getComputedStyle(sale.querySelector('label')).color),
+      purchaseBg: getComputedStyle(purchase).backgroundColor,
+      saleBg: getComputedStyle(sale).backgroundColor
+    }
+  })()`)
+  if (!itemLayout) throw new Error('the item dialog did not render its price panels')
+  check('the item dialog is wide', itemLayout.width >= 900, JSON.stringify(itemLayout))
+  check('the item dialog does not scroll', itemLayout.scroll <= 0, JSON.stringify(itemLayout))
+  check(
+    'purchase and sale prices share a row',
+    itemLayout.sameRow === true,
+    JSON.stringify(itemLayout)
+  )
+  check('the price panels are separated by a gap', itemLayout.gap >= 8, JSON.stringify(itemLayout))
+  check(
+    'the two price panels are tinted differently',
+    itemLayout.purchaseBg !== itemLayout.saleBg,
+    JSON.stringify(itemLayout)
+  )
+  check(
+    'purchase reads blue and sale reads violet',
+    itemLayout.purchaseHue > 200 &&
+      itemLayout.purchaseHue < 270 &&
+      itemLayout.saleHue > 270 &&
+      itemLayout.saleHue < 330,
+    JSON.stringify(itemLayout)
+  )
+  check('the item dialog closes', (await clickButton('Cancel')) === 'clicked')
 
   // -------------------------------------------------------------------
   // Every route renders
@@ -354,6 +524,19 @@ try {
   check('the New party trigger is present', (await clickButton('New party')) === 'clicked')
   text = await waitForText(['Add party'])
   check('the dialog opens', text.includes('Add party'))
+  const partyLayout = await evaluate(`(() => {
+    const dialog = document.querySelector('[data-slot="dialog-content"]')
+    const grid = dialog?.querySelector('form > div.grid')
+    return dialog ? {
+      width: Math.round(parseFloat(getComputedStyle(dialog).width)),
+      scroll: Math.round(dialog.scrollHeight - dialog.clientHeight),
+      columns: grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').length : 0
+    } : null
+  })()`)
+  if (!partyLayout) throw new Error('the party dialog did not render')
+  check('the party dialog is wide', partyLayout.width >= 850, JSON.stringify(partyLayout))
+  check('the party dialog does not scroll', partyLayout.scroll <= 0, JSON.stringify(partyLayout))
+  check('the party dialog uses three columns', partyLayout.columns === 3, JSON.stringify(partyLayout))
   check('the name field exists', (await setField('name', PARTY)) === 'set')
   check('the credit days field accepts input', (await setField('creditDays', '15')) === 'set')
   check('submitting the form works', (await clickButton('Add party')) === 'clicked')
@@ -629,6 +812,76 @@ try {
   // -------------------------------------------------------------------
   // A customer created from a receipt's party picker
   // -------------------------------------------------------------------
+  console.log('receipt and payment context')
+  await goto('/receipts/new', ['New receipt'])
+  const receiptTone = await evaluate(`(() => {
+    const amount = document.querySelector('input[aria-label="Amount"]')
+    const post = [...document.querySelectorAll('button')].find((button) => button.textContent.trim().startsWith('Post '))
+    const help = [...document.querySelectorAll('button')].filter((button) => /^About (Outstanding|Allocate)$/.test(button.getAttribute('aria-label') ?? ''))
+    const described = help
+      .map((button) => {
+        const id = button.getAttribute('aria-describedby')
+        return id ? document.getElementById(id)?.textContent?.trim() ?? '' : ''
+      })
+      .join(' ')
+    return {
+      amountColor: amount ? getComputedStyle(amount).color : null,
+      amountBg: amount ? getComputedStyle(amount.closest('div').parentElement).backgroundColor : null,
+      postVariant: post?.getAttribute('data-variant') ?? null,
+      help: help.length,
+      helpText: described
+    }
+  })()`)
+  check(
+    'the receipt explains outstanding and allocate',
+    receiptTone.help === 2 &&
+      /still open/.test(receiptTone.helpText) &&
+      /settles/.test(receiptTone.helpText),
+    JSON.stringify(receiptTone)
+  )
+  check(
+    'the receipt amount is highlighted',
+    receiptTone.amountBg !== 'rgba(0, 0, 0, 0)',
+    JSON.stringify(receiptTone)
+  )
+  check(
+    'the receipt posts with the success action',
+    receiptTone.postVariant === 'success',
+    JSON.stringify(receiptTone)
+  )
+  await evaluate(`(() => {
+    document.querySelector('button[aria-label="About Outstanding"]')?.focus()
+    return true
+  })()`)
+  check(
+    'the outstanding tooltip opens on focus',
+    await waitFor(
+      "document.querySelector('[role=\"tooltip\"]')?.textContent.includes('still open') === true"
+    )
+  )
+
+  await goto('/payments/new', ['New payment'])
+  const paymentTone = await evaluate(`(() => {
+    const amount = document.querySelector('input[aria-label="Amount"]')
+    const post = [...document.querySelectorAll('button')].find((button) => button.textContent.trim().startsWith('Post '))
+    return {
+      amountColor: amount ? getComputedStyle(amount).color : null,
+      amountBg: amount ? getComputedStyle(amount.closest('div').parentElement).backgroundColor : null,
+      postVariant: post?.getAttribute('data-variant') ?? null
+    }
+  })()`)
+  check(
+    'the payment posts with the warning action',
+    paymentTone.postVariant === 'warning',
+    JSON.stringify(paymentTone)
+  )
+  check(
+    'receipt and payment use different context colours',
+    paymentTone.amountColor !== receiptTone.amountColor &&
+      paymentTone.amountBg !== receiptTone.amountBg,
+    JSON.stringify({ receiptTone, paymentTone })
+  )
+
   console.log('create from a receipt picker')
   const INLINE_CUSTOMER = 'Inline Customer'
 
@@ -662,6 +915,46 @@ try {
       `window.api.parties.list({ query: ${JSON.stringify(INLINE_CUSTOMER)} }).then((rows) => rows[0]?.isCustomer === true && rows[0]?.isSupplier === false)`
     )) === true
   )
+
+  // -------------------------------------------------------------------
+  // Sign out, then the login form's own feedback
+  // -------------------------------------------------------------------
+  console.log('login form feedback')
+  await evaluate('window.api.identity.logout()')
+  await evaluate('(() => { setTimeout(() => location.reload(), 50); return true })()')
+  await sleep(1500)
+  text = await waitForText(['Open your books'])
+  check('signing out returns the login form', text.includes('Open your books'))
+
+  check('the login form submits empty', (await clickButton('Sign in')) === 'clicked')
+  text = await waitForText(['Enter your email address', 'Enter your password'])
+  check(
+    'the login errors sit under their fields',
+    text.includes('Enter your email address') && text.includes('Enter your password')
+  )
+  const invalidLogin = await evaluate(`(() => {
+    const ids = ['loginEmail', 'loginPassword']
+    return ids.map((id) => document.getElementById(id)?.getAttribute('aria-invalid') ?? null)
+  })()`)
+  check(
+    'both login inputs are marked invalid',
+    invalidLogin.every((value) => value === 'true'),
+    JSON.stringify(invalidLogin)
+  )
+  check(
+    'the login email takes focus',
+    (await evaluate('document.activeElement?.id')) === 'loginEmail'
+  )
+
+  check('the login email is typed', (await setField('loginEmail', 'owner@smoke.test')) === 'set')
+  check(
+    'the valid email turns green',
+    await waitFor("document.getElementById('loginEmail')?.dataset.valid === 'true'")
+  )
+  check('the login password is typed', (await setField('loginPassword', 'correct-horse')) === 'set')
+  check('the login form signs in', (await clickButton('Sign in')) === 'clicked')
+  text = await waitForText(['where the books stand today'], 25_000)
+  check('a real sign in opens the dashboard', text.includes(COMPANY))
 } catch (error) {
   problems.push(error.message)
   console.error(`smoke-ui: ${error.message}`)

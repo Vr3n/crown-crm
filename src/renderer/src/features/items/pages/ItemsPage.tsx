@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/select'
 import { FIELD_HELP } from '@/lib/form-help'
 import { formatMinor, formatRate, minorToMajor } from '@/lib/money'
+import { cn } from '@/lib/utils'
 import {
   grossFromExclusive,
   splitInclusivePrice,
@@ -60,6 +61,28 @@ const TH =
   'h-8 whitespace-nowrap border-b border-border bg-muted/60 px-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground'
 const TD = 'h-9 border-b border-border px-3 align-middle'
 const TAG = 'rounded-none px-1.5 py-0 text-[0.6875rem] uppercase tracking-[0.08em]'
+
+/**
+ * Purchase and sale prices carry their own tint so the two sides of the item
+ * stay distinct at a glance. The label, input and breakup share one hue.
+ */
+const PURCHASE_TONE = {
+  panel: 'border-sky-200 bg-sky-50/70 dark:border-sky-900/70 dark:bg-sky-950/25',
+  label: '[&_label]:text-sky-900 dark:[&_label]:text-sky-200',
+  input:
+    '[&_input]:border-sky-300 [&_input]:bg-sky-50 [&_input]:focus-visible:border-sky-500 [&_input]:focus-visible:ring-sky-200/70 dark:[&_input]:border-sky-800 dark:[&_input]:bg-sky-950/40 dark:[&_input]:focus-visible:ring-sky-900/60',
+  breakup:
+    'border-sky-200 bg-sky-100/70 text-sky-900 dark:border-sky-900 dark:bg-sky-950/50 dark:text-sky-200'
+}
+
+const SALE_TONE = {
+  panel: 'border-violet-200 bg-violet-50/70 dark:border-violet-900/70 dark:bg-violet-950/25',
+  label: '[&_label]:text-violet-900 dark:[&_label]:text-violet-200',
+  input:
+    '[&_input]:border-violet-300 [&_input]:bg-violet-50 [&_input]:focus-visible:border-violet-500 [&_input]:focus-visible:ring-violet-200/70 dark:[&_input]:border-violet-800 dark:[&_input]:bg-violet-950/40 dark:[&_input]:focus-visible:ring-violet-900/60',
+  breakup:
+    'border-violet-200 bg-violet-100/70 text-violet-900 dark:border-violet-900 dark:bg-violet-950/50 dark:text-violet-200'
+}
 
 interface ItemPayload extends Omit<CreateItemInput, 'reorderLevelE4'> {
   reorderLevelE4?: number
@@ -929,19 +952,34 @@ export function ItemDialog({
   /**
    * A price field plus its live breakup. The breakup is the only place the form
    * explains what the typed number means, so it updates on every keystroke.
+   * Purchase reads blue and sale reads violet, label, input and breakup alike.
    */
   function priceField(name: 'salePrice' | 'purchasePrice'): React.JSX.Element {
     const sale = name === 'salePrice'
     const split = sale ? saleSplit : purchaseSplit
     const typedMinor = toMinor(values[name])
+    const tone = sale ? SALE_TONE : PURCHASE_TONE
     const cessText =
       cessRateBps > 0
         ? ` · Cess ${formatRate(cessRateBps)} ${formatMinor(split.cessMinor, 'INR')}`
         : ''
     return (
-      <div className="flex flex-col gap-1.5 sm:col-span-2">
+      <div
+        data-price-panel={sale ? 'sale' : 'purchase'}
+        className={cn(
+          'flex min-w-0 flex-1 flex-col gap-1.5 rounded-lg border p-3',
+          tone.panel,
+          tone.label,
+          tone.input
+        )}
+      >
         {textField(name)}
-        <div className="border border-border bg-muted/30 px-2.5 py-2 font-mono text-[0.75rem] tabular-nums text-muted-foreground">
+        <div
+          className={cn(
+            'border px-2.5 py-2 font-mono text-[0.75rem] tabular-nums',
+            tone.breakup
+          )}
+        >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span>
               {sale ? 'Sale price' : 'Purchase price'} {formatMinor(typedMinor, 'INR')}
@@ -976,7 +1014,7 @@ export function ItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px]">
+      <DialogContent className="max-h-[92vh] sm:max-w-[920px]">
         <DialogHeader>
           <DialogTitle>{editing ? 'Edit item' : 'New item'}</DialogTitle>
           <DialogDescription>
@@ -995,8 +1033,8 @@ export function ItemDialog({
         >
           <FormLegend />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {textField('name')}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="sm:col-span-2">{textField('name')}</div>
             {textField('sku')}
             {textField('hsnSac')}
 
@@ -1066,8 +1104,10 @@ export function ItemDialog({
               )}
             </form.Field>
 
-            {priceField('purchasePrice')}
-            {priceField('salePrice')}
+            <div className="flex flex-col gap-3 sm:col-span-3 sm:flex-row">
+              {priceField('purchasePrice')}
+              {priceField('salePrice')}
+            </div>
             {textField('openingQty')}
             {textField('openingRate')}
             {textField('reorderLevel')}
