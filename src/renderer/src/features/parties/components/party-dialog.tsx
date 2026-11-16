@@ -69,7 +69,7 @@ const FIELDS: {
   {
     name: 'billingAddress',
     label: 'Billing address',
-    className: 'sm:col-span-2',
+    className: 'sm:col-span-3',
     help: FIELD_HELP.party.billingAddress
   },
   {
@@ -160,7 +160,7 @@ export function PartyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[620px]">
+      <DialogContent className="max-h-[92vh] sm:max-w-[860px]">
         <DialogHeader>
           <DialogTitle>{editing ? 'Edit party' : 'New party'}</DialogTitle>
           <DialogDescription>
@@ -179,7 +179,7 @@ export function PartyDialog({
         >
           <FormLegend />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {FIELDS.map((meta) => {
               const locked =
                 editing && ['openingBalance', 'openingDate'].includes(meta.name as string)
@@ -226,54 +226,55 @@ export function PartyDialog({
                 </form.Field>
               )
             })}
-          </div>
 
-          <Field
-            label="Role"
-            required
-            help={FIELD_HELP.party.role}
-            error={roleError ? 'Choose customer, supplier, or both' : undefined}
-            hint={
-              editing ? 'Roles and ledger accounts are set when the party is created.' : undefined
-            }
-          >
-            <div className="flex items-center gap-5 pt-0.5">
-              <form.Field name="isCustomer">
-                {(field) => (
-                  <label
-                    htmlFor="isCustomer"
-                    className="flex items-center gap-1.5 text-[0.9375rem]"
-                  >
-                    <Checkbox
-                      id="isCustomer"
-                      checked={field.state.value}
-                      disabled={editing}
-                      onCheckedChange={(checked) => field.handleChange(checked === true)}
-                      aria-required
-                    />
-                    Customer
-                  </label>
-                )}
-              </form.Field>
-              <form.Field name="isSupplier">
-                {(field) => (
-                  <label
-                    htmlFor="isSupplier"
-                    className="flex items-center gap-1.5 text-[0.9375rem]"
-                  >
-                    <Checkbox
-                      id="isSupplier"
-                      checked={field.state.value}
-                      disabled={editing}
-                      onCheckedChange={(checked) => field.handleChange(checked === true)}
-                      aria-required
-                    />
-                    Supplier
-                  </label>
-                )}
-              </form.Field>
-            </div>
-          </Field>
+            <Field
+              label="Role"
+              required
+              className="sm:col-span-2"
+              help={FIELD_HELP.party.role}
+              error={roleError ? 'Choose customer, supplier, or both' : undefined}
+              hint={
+                editing ? 'Roles and ledger accounts are set when the party is created.' : undefined
+              }
+            >
+              <div className="flex items-center gap-5 pt-0.5">
+                <form.Field name="isCustomer">
+                  {(field) => (
+                    <label
+                      htmlFor="isCustomer"
+                      className="flex items-center gap-1.5 text-[0.9375rem]"
+                    >
+                      <Checkbox
+                        id="isCustomer"
+                        checked={field.state.value}
+                        disabled={editing}
+                        onCheckedChange={(checked) => field.handleChange(checked === true)}
+                        aria-required
+                      />
+                      Customer
+                    </label>
+                  )}
+                </form.Field>
+                <form.Field name="isSupplier">
+                  {(field) => (
+                    <label
+                      htmlFor="isSupplier"
+                      className="flex items-center gap-1.5 text-[0.9375rem]"
+                    >
+                      <Checkbox
+                        id="isSupplier"
+                        checked={field.state.value}
+                        disabled={editing}
+                        onCheckedChange={(checked) => field.handleChange(checked === true)}
+                        aria-required
+                      />
+                      Supplier
+                    </label>
+                  )}
+                </form.Field>
+              </div>
+            </Field>
+          </div>
 
           {save.isError ? (
             <p

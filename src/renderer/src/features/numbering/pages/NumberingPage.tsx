@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { FieldHelp, type FieldHelpContent } from '@/components/ui/field-help'
 import { Input } from '@/components/ui/input'
 import { formatDate, formatTime } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { errorMessage } from '../../../../../shared/contracts/errors'
 import { formatVoucherNumber, nextSequenceValue } from '../../../../../shared/numbering'
 import type { NumberingRow } from '../../../../../shared/contracts/numbering'
@@ -217,7 +218,7 @@ export function NumberingPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 p-6">
+    <div className={cn('flex w-full flex-col gap-4', !embedded && 'mx-auto max-w-[1200px] p-6')}>
       {!embedded ? (
         <PageHeader
           title="Voucher numbering"
@@ -290,7 +291,7 @@ export function NumberingPage({
         </div>
       ) : (
         <div className="overflow-x-auto border border-border bg-card">
-          <table className="w-full min-w-[980px] border-collapse text-[0.875rem]">
+          <table className="w-full min-w-[960px] border-collapse text-[0.875rem]">
             <thead>
               <tr className="border-b border-rule-strong bg-muted/60">
                 <th className={`${LABEL} px-3 py-2 text-left`}>Voucher</th>

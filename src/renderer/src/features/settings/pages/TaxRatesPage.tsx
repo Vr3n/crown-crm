@@ -440,7 +440,7 @@ function RateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className="max-h-[92vh] sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle>{revising ? 'Change this tax rate' : 'New tax rate'}</DialogTitle>
           <DialogDescription>
@@ -558,7 +558,7 @@ function RetireDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="max-h-[92vh] sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>Retire this tax rate?</DialogTitle>
           <DialogDescription>
@@ -576,7 +576,17 @@ function RetireDialog({
           className="flex flex-col gap-4"
           noValidate
         >
-          <form.Field name="effectiveFrom">
+          <form.Field
+            name="effectiveFrom"
+            validators={{
+              onBlur: ({ value }) =>
+                /^\d{4}-\d{2}-\d{2}$/.test(value) ? undefined : 'Choose a date',
+              onChange: ({ value }) =>
+                /^\d{4}-\d{2}-\d{2}$/.test(value) ? undefined : 'Choose a date',
+              onSubmit: ({ value }) =>
+                /^\d{4}-\d{2}-\d{2}$/.test(value) ? undefined : 'Choose a date'
+            }}
+          >
             {(field) => (
               <FormTextField
                 field={field as unknown as FormFieldApi}

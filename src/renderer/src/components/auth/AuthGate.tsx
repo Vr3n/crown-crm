@@ -1,10 +1,18 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useState } from 'react'
+import { useForm } from '@tanstack/react-form'
 import { BookOpen, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { FieldCounter } from '@/components/ui/field'
-import { FieldHelp } from '@/components/ui/field-help'
+import { Field } from '@/components/ui/field'
+import { focusFirstError, FormTextField, type FormFieldApi } from '@/components/ui/form-field'
 import { FIELD_HELP } from '@/lib/form-help'
-import { mobileDigitsLeft, toMobileDigits } from '@/lib/validation'
+import {
+  companyNameError,
+  emailError,
+  fullNameError,
+  loginPasswordError,
+  mobileError,
+  passwordError
+} from '@/lib/validation'
 
 type SessionContext = Awaited<ReturnType<typeof window.api.identity.session>>
 type Phase = 'setup' | 'login'
@@ -36,6 +44,21 @@ const STATES: { code: string; name: string }[] = [
   { code: '38', name: 'Ladakh' }
 ]
 
+const GSTIN_ERROR = 'GSTIN must be 15 characters'
+const BOOKS_BEGIN_ERROR = 'Books begin date is required'
+
+/** A blank GSTIN is allowed; a partial one is not. */
+function gstinError(value: string): string | undefined {
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  return trimmed.length === 15 ? undefined : GSTIN_ERROR
+}
+
+/** A blank mobile is allowed; a partial one is not. */
+function optionalMobileError(value: string): string | undefined {
+  return value.trim() ? mobileError(value) : undefined
+}
+
 interface AuthGateProps {
   status: 'SETUP_REQUIRED' | 'LOGIN_REQUIRED' | 'AUTHENTICATED' | undefined
   /** True while the boot status or the remembered session is still resolving. */
@@ -45,8 +68,10 @@ interface AuthGateProps {
 
 /**
  * First run creates the company and the owner in one step. After that the screen
- * is a local login. Validation is inline; the application layer repeats the
- * rules that matter for the books (state code, GSTIN, password length).
+ * is a local login. Both surfaces use the shared TanStack Form field, so a field
+ * turns green once it is valid and shows its own error, styled and focused, on
+ * submit. The application layer repeats the rules that matter for the books
+ * (state code, GSTIN, password length).
  */
 export function AuthGate({
   status,
@@ -57,17 +82,68 @@ export function AuthGate({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [companyName, setCompanyName] = useState('')
-  const [ownerName, setOwnerName] = useState('')
-  const [ownerEmail, setOwnerEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [stateCode, setStateCode] = useState('27')
-  const [gstin, setGstin] = useState('')
-  const [phone, setPhone] = useState('')
-  const [booksBegin, setBooksBegin] = useState(today())
+  const setupForm = useForm({
+    defaultValues: {
+      companyName: '',
+      ownerName: '',
+      phone: '',
+      ownerEmail: '',
+      password: '',
+      stateCode: '27',
+      gstin: '',
+      booksBegin: today()
+    },
+    canSubmitWhenInvalid: true,
+    onSubmitInvalid: ({ formApi }) => {
+      setError(null)
+      focusFirstError(formApi)
+    },
+    onSubmit: async ({ value }) => {
+      setError(null)
+      setBusy(true)
+      try {
+        const session = await window.api.identity.setup({
+          name: value.companyName.trim(),
+          ownerFullName: value.ownerName.trim(),
+          ownerEmail: value.ownerEmail.trim(),
+          ownerPassword: value.password,
+          stateCode: value.stateCode,
+          gstin: value.gstin.trim() || undefined,
+          phone: value.phone.trim() || undefined,
+          booksBeginDate: value.booksBegin
+        })
+        if (session) onAuthenticated(session)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Something went wrong. Try again.')
+      } finally {
+        setBusy(false)
+      }
+    }
+  })
 
-  const [loginEmail, setLoginEmail] = useState('')
-  const [loginPassword, setLoginPassword] = useState('')
+  const loginForm = useForm({
+    defaultValues: { loginEmail: '', loginPassword: '' },
+    canSubmitWhenInvalid: true,
+    onSubmitInvalid: ({ formApi }) => {
+      setError(null)
+      focusFirstError(formApi)
+    },
+    onSubmit: async ({ value }) => {
+      setError(null)
+      setBusy(true)
+      try {
+        const session = await window.api.identity.login({
+          email: value.loginEmail.trim(),
+          password: value.loginPassword
+        })
+        if (session) onAuthenticated(session)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Something went wrong. Try again.')
+      } finally {
+        setBusy(false)
+      }
+    }
+  })
 
   if (bootPending) {
     return (
@@ -77,51 +153,11 @@ export function AuthGate({
     )
   }
 
-  async function submit(event: FormEvent): Promise<void> {
-    event.preventDefault()
-    setError(null)
-
-    if (phase === 'setup') {
-      if (companyName.trim().length < 2) return setError('Enter the business name.')
-      if (ownerName.trim().length < 2) return setError('Enter the owner name.')
-      if (!isEmail(ownerEmail)) return setError('Enter a valid email address.')
-      if (password.length < 8) return setError('Password must be at least 8 characters.')
-      if (gstin && gstin.trim().length !== 15) return setError('GSTIN must be 15 characters.')
-    } else {
-      if (!isEmail(loginEmail)) return setError('Enter your email address.')
-      if (!loginPassword) return setError('Enter your password.')
-    }
-
-    setBusy(true)
-    try {
-      const session =
-        phase === 'setup'
-          ? await window.api.identity.setup({
-              name: companyName.trim(),
-              ownerFullName: ownerName.trim(),
-              ownerEmail: ownerEmail.trim(),
-              ownerPassword: password,
-              stateCode,
-              gstin: gstin.trim() || undefined,
-              phone: phone.trim() || undefined,
-              booksBeginDate: booksBegin
-            })
-          : await window.api.identity.login({
-              email: loginEmail.trim(),
-              password: loginPassword
-            })
-      if (session) onAuthenticated(session)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const isSetup = phase === 'setup'
+  const form = isSetup ? setupForm : loginForm
 
   return (
-    <div className="grid h-screen grid-cols-1 bg-background lg:grid-cols-[1.05fr_1fr]">
+    <div className="grid min-h-screen grid-cols-1 bg-background lg:grid-cols-[1.05fr_1fr]">
       <aside className="hidden flex-col justify-between bg-ink p-10 text-paper lg:flex">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center border border-paper/25">
@@ -166,116 +202,219 @@ export function AuthGate({
               : 'Use the owner or staff account for this machine.'}
           </p>
 
-          <form onSubmit={submit} className="mt-7 space-y-4" noValidate>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              void form.handleSubmit()
+            }}
+            className="mt-7 space-y-3"
+            noValidate
+          >
             {isSetup ? (
               <>
-                <Field
-                  label="Business name"
-                  value={companyName}
-                  onChange={setCompanyName}
-                  autoFocus
-                  placeholder="Acme Distributors"
-                />
+                <setupForm.Field
+                  name="companyName"
+                  validators={{
+                    onBlur: ({ value }) => companyNameError(value),
+                    onChange: ({ value }) => companyNameError(value)
+                  }}
+                >
+                  {(field) => (
+                    <FormTextField
+                      field={field as unknown as FormFieldApi}
+                      submitted={setupForm.state.isSubmitted}
+                      label="Business name"
+                      required
+                      autoFocus
+                      placeholder="Acme Distributors"
+                    />
+                  )}
+                </setupForm.Field>
+
                 <div className="grid grid-cols-2 gap-3">
-                  <Field
-                    label="Owner name"
-                    value={ownerName}
-                    onChange={setOwnerName}
-                    placeholder="Viren Patel"
-                  />
-                  <Field
-                    label="Mobile (optional)"
-                    value={phone}
-                    onChange={setPhone}
-                    filter="mobile"
-                    placeholder="98765 43210"
-                  />
+                  <setupForm.Field
+                    name="ownerName"
+                    validators={{
+                      onBlur: ({ value }) => fullNameError(value),
+                      onChange: ({ value }) => fullNameError(value)
+                    }}
+                  >
+                    {(field) => (
+                      <FormTextField
+                        field={field as unknown as FormFieldApi}
+                        submitted={setupForm.state.isSubmitted}
+                        label="Owner Full Name"
+                        required
+                        placeholder="John Ant Doe"
+                      />
+                    )}
+                  </setupForm.Field>
+
+                  <setupForm.Field
+                    name="phone"
+                    validators={{
+                      onBlur: ({ value }) => optionalMobileError(value),
+                      onChange: ({ value }) => optionalMobileError(value)
+                    }}
+                  >
+                    {(field) => (
+                      <FormTextField
+                        field={field as unknown as FormFieldApi}
+                        submitted={setupForm.state.isSubmitted}
+                        label="Mobile (optional)"
+                        filter="mobile"
+                        placeholder="98765 43210"
+                      />
+                    )}
+                  </setupForm.Field>
                 </div>
-                <Field
-                  label="Owner email"
-                  value={ownerEmail}
-                  onChange={setOwnerEmail}
-                  type="email"
-                  placeholder="owner@business.in"
-                />
-                <Field
-                  label="Password"
-                  value={password}
-                  onChange={setPassword}
-                  type="password"
-                  placeholder="At least 8 characters"
-                  hint="At least 8 characters. Stored hashed on this machine."
-                />
+
+                <setupForm.Field
+                  name="ownerEmail"
+                  validators={{
+                    onBlur: ({ value }) => emailError(value, 'Owner email is required'),
+                    onChange: ({ value }) => emailError(value, 'Owner email is required')
+                  }}
+                >
+                  {(field) => (
+                    <FormTextField
+                      field={field as unknown as FormFieldApi}
+                      submitted={setupForm.state.isSubmitted}
+                      label="Owner email"
+                      required
+                      type="email"
+                      placeholder="owner@business.in"
+                    />
+                  )}
+                </setupForm.Field>
+
+                <setupForm.Field
+                  name="password"
+                  validators={{
+                    onBlur: ({ value }) => passwordError(value),
+                    onChange: ({ value }) => passwordError(value)
+                  }}
+                >
+                  {(field) => (
+                    <FormTextField
+                      field={field as unknown as FormFieldApi}
+                      submitted={setupForm.state.isSubmitted}
+                      label="Password"
+                      required
+                      type="password"
+                      placeholder="At least 8 characters"
+                      hint="At least 8 characters. Stored hashed on this machine."
+                    />
+                  )}
+                </setupForm.Field>
+
                 <div className="grid grid-cols-2 gap-3">
-                  <label className="block">
-                    <span className="mb-1.5 block text-[0.75rem] font-medium text-foreground">
-                      State
-                    </span>
-                    <select
-                      value={stateCode}
-                      onChange={(e) => setStateCode(e.target.value)}
-                      className="h-9 w-full border border-input bg-card px-2.5 text-[0.9375rem] outline-none focus:border-primary"
-                    >
-                      {STATES.map((s) => (
-                        <option key={s.code} value={s.code}>
-                          {s.code} · {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <Field
-                    label="GSTIN (optional)"
-                    value={gstin}
-                    onChange={(v) => setGstin(v.toUpperCase())}
-                    placeholder="27AABFU4477G1ZY"
-                    maxLength={15}
-                  />
+                  <setupForm.Field name="stateCode">
+                    {(field) => (
+                      <Field id="stateCode" label="State">
+                        <select
+                          id="stateCode"
+                          name="stateCode"
+                          value={field.state.value}
+                          onChange={(event) => field.handleChange(event.target.value)}
+                          onBlur={field.handleBlur}
+                          aria-invalid={false}
+                          data-valid={
+                            field.state.meta.isTouched || setupForm.state.isSubmitted || undefined
+                          }
+                          className="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-2.5 text-sm shadow-xs outline-none transition-[color,box-shadow,border-color] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 data-valid:border-green-600 dark:bg-input/30"
+                        >
+                          {STATES.map((s) => (
+                            <option key={s.code} value={s.code}>
+                              {s.code} · {s.name}
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                    )}
+                  </setupForm.Field>
+
+                  <setupForm.Field
+                    name="gstin"
+                    validators={{
+                      onBlur: ({ value }) => gstinError(value),
+                      onChange: ({ value }) => gstinError(value)
+                    }}
+                  >
+                    {(field) => (
+                      <FormTextField
+                        field={field as unknown as FormFieldApi}
+                        submitted={setupForm.state.isSubmitted}
+                        label="GSTIN (optional)"
+                        filter="upper"
+                        maxLength={15}
+                        placeholder="27AABFU4477G1ZY"
+                      />
+                    )}
+                  </setupForm.Field>
                 </div>
-                <div>
-                  <div className="mb-1.5 flex items-center gap-1.5">
-                    <label
-                      htmlFor="setup-books-begin"
-                      className="text-[0.75rem] font-medium text-foreground"
-                    >
-                      Books begin
-                      <span aria-hidden className="ml-0.5 text-stamp">
-                        *
-                      </span>
-                      <span className="sr-only"> (required)</span>
-                    </label>
-                    <FieldHelp label="Books begin" content={FIELD_HELP.company.booksBegin} />
-                  </div>
-                  <input
-                    id="setup-books-begin"
-                    type="date"
-                    value={booksBegin}
-                    onChange={(event) => setBooksBegin(event.target.value)}
-                    required
-                    className="h-9 w-full border border-input bg-card px-2.5 text-[0.9375rem] outline-none transition-colors focus:border-primary"
-                  />
-                  <span className="mt-1 block text-[0.75rem] leading-relaxed text-muted-foreground">
-                    The first day Crown Books records transactions. Opening balances are as at the
-                    day before.
-                  </span>
-                </div>
+
+                <setupForm.Field
+                  name="booksBegin"
+                  validators={{
+                    onBlur: ({ value }) => (value ? undefined : BOOKS_BEGIN_ERROR),
+                    onChange: ({ value }) => (value ? undefined : BOOKS_BEGIN_ERROR)
+                  }}
+                >
+                  {(field) => (
+                    <FormTextField
+                      field={field as unknown as FormFieldApi}
+                      submitted={setupForm.state.isSubmitted}
+                      label="Books begin"
+                      required
+                      help={FIELD_HELP.company.booksBegin}
+                      type="date"
+                      hint="The first day Crown Books records transactions. Opening balances are as at the day before."
+                    />
+                  )}
+                </setupForm.Field>
               </>
             ) : (
               <>
-                <Field
-                  label="Email"
-                  value={loginEmail}
-                  onChange={setLoginEmail}
-                  type="email"
-                  autoFocus
-                  placeholder="owner@business.in"
-                />
-                <Field
-                  label="Password"
-                  value={loginPassword}
-                  onChange={setLoginPassword}
-                  type="password"
-                  placeholder="Your password"
-                />
+                <loginForm.Field
+                  name="loginEmail"
+                  validators={{
+                    onBlur: ({ value }) => emailError(value, 'Enter your email address'),
+                    onChange: ({ value }) => emailError(value, 'Enter your email address')
+                  }}
+                >
+                  {(field) => (
+                    <FormTextField
+                      field={field as unknown as FormFieldApi}
+                      submitted={loginForm.state.isSubmitted}
+                      label="Email"
+                      required
+                      type="email"
+                      autoFocus
+                      placeholder="owner@business.in"
+                    />
+                  )}
+                </loginForm.Field>
+
+                <loginForm.Field
+                  name="loginPassword"
+                  validators={{
+                    onBlur: ({ value }) => loginPasswordError(value),
+                    onChange: ({ value }) => loginPasswordError(value)
+                  }}
+                >
+                  {(field) => (
+                    <FormTextField
+                      field={field as unknown as FormFieldApi}
+                      submitted={loginForm.state.isSubmitted}
+                      label="Password"
+                      required
+                      type="password"
+                      placeholder="Your password"
+                    />
+                  )}
+                </loginForm.Field>
               </>
             )}
 
@@ -308,67 +447,6 @@ export function AuthGate({
       </main>
     </div>
   )
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  type = 'text',
-  placeholder,
-  hint,
-  maxLength,
-  filter,
-  autoFocus
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  type?: string
-  placeholder?: string
-  hint?: string
-  maxLength?: number
-  filter?: 'mobile'
-  autoFocus?: boolean
-}): React.JSX.Element {
-  const digitsLeft = filter === 'mobile' ? mobileDigitsLeft(value) : undefined
-  const id = useId()
-  return (
-    <div className="block">
-      <div className="mb-1.5 flex items-center gap-1.5">
-        <label htmlFor={id} className="text-[0.75rem] font-medium text-foreground">
-          {label}
-        </label>
-        {digitsLeft === undefined ? null : (
-          <FieldCounter complete={digitsLeft === 0} className="ml-auto">
-            {digitsLeft} left
-          </FieldCounter>
-        )}
-      </div>
-      <input
-        id={id}
-        type={type}
-        inputMode={filter === 'mobile' ? 'tel' : undefined}
-        value={value}
-        onChange={(e) =>
-          onChange(filter === 'mobile' ? toMobileDigits(e.target.value) : e.target.value)
-        }
-        placeholder={placeholder}
-        maxLength={maxLength}
-        autoFocus={autoFocus}
-        className="h-9 w-full border border-input bg-card px-2.5 text-[0.9375rem] outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary"
-      />
-      {hint ? (
-        <span className="mt-1 block text-[0.75rem] leading-relaxed text-muted-foreground">
-          {hint}
-        </span>
-      ) : null}
-    </div>
-  )
-}
-
-function isEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 }
 
 function today(): string {
