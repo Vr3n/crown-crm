@@ -49,11 +49,16 @@ export type ModuleToneName = keyof typeof TONES
  * neutral body. Colour is a wayfinding cue, never the only signal.
  */
 export function toneForPath(pathname: string): ModuleTone {
-  if (pathname.startsWith('/parties') || pathname.startsWith('/customers') || pathname.startsWith('/suppliers')) {
+  if (
+    pathname.startsWith('/parties') ||
+    pathname.startsWith('/customers') ||
+    pathname.startsWith('/suppliers')
+  ) {
     return TONES.success
   }
   if (pathname.startsWith('/items') || pathname.startsWith('/stock')) return TONES.warning
   if (pathname.startsWith('/reports') || pathname.startsWith('/day-book')) return TONES.info
+  if (pathname.startsWith('/import')) return TONES.info
   if (pathname.startsWith('/settings') || pathname.startsWith('/setup')) return TONES.stamp
   if (pathname.startsWith('/purchases') || pathname.startsWith('/payments')) return TONES.stamp
   return TONES.primary

@@ -28,6 +28,7 @@ impl Harness {
             user_data: root.clone(),
             database: root.join("crown-books.db"),
             backups: root.join("backups"),
+            logs: root.join("logs"),
         };
         paths.ensure().expect("create data dirs");
 

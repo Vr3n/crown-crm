@@ -43,6 +43,7 @@ import { VoucherEntryPage } from '@/features/vouchers/pages/VoucherEntryPage'
 import { ReceiptEntryPage } from '@/features/vouchers/pages/ReceiptEntryPage'
 import { VoucherDetailPage } from '@/features/vouchers/pages/VoucherDetailPage'
 import { InvoicePrintPage } from '@/features/invoice/pages/InvoicePrintPage'
+import { ExcelImportPage } from '@/features/imports/pages/ExcelImportPage'
 import { ModulePlaceholder } from '@/pages/module-placeholder'
 import { can, useSession } from '@/context/session-context'
 
@@ -283,6 +284,14 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="purchases" element={<VoucherListPage type="PURCHASE" title="Purchases" />} />
         <Route path="receipts" element={<VoucherListPage type="RECEIPT" title="Receipts" />} />
         <Route path="payments" element={<VoucherListPage type="PAYMENT" title="Payments" />} />
+        <Route
+          path="import/excel"
+          element={
+            <Protected code="voucher.create">
+              <ExcelImportPage />
+            </Protected>
+          }
+        />
         <Route path="sales/new" element={<VoucherEntryPage type="SALES" />} />
         <Route path="purchases/new" element={<VoucherEntryPage type="PURCHASE" />} />
         <Route path="sales/:id/credit-note" element={<VoucherEntryPage type="CREDIT_NOTE" />} />

@@ -14,6 +14,17 @@ pub struct Paths {
     pub user_data: PathBuf,
     pub database: PathBuf,
     pub backups: PathBuf,
+    pub logs: PathBuf,
+}
+
+/// `dev` for a debug build (`tauri dev`, `cargo run`), `release` for the
+/// installed build. The two must never share a database.
+pub fn profile() -> &'static str {
+    if cfg!(debug_assertions) {
+        "dev"
+    } else {
+        "release"
+    }
 }
 
 impl Paths {
@@ -24,26 +35,44 @@ impl Paths {
         };
 
         let backups = user_data.join("backups");
-        Self { database: user_data.join("crown-books.db"), backups, user_data }
+        let logs = user_data.join("logs");
+        Self { database: user_data.join("crown-books.db"), backups, logs, user_data }
     }
 
-    /// Creates the data and backup directories. Safe to call on every start.
+    /// Creates the data, backup and log directories. Safe to call on every start.
     pub fn ensure(&self) -> std::io::Result<()> {
         std::fs::create_dir_all(&self.user_data)?;
         std::fs::create_dir_all(&self.backups)?;
+        std::fs::create_dir_all(&self.logs)?;
         Ok(())
     }
 }
 
 fn default_user_data() -> PathBuf {
+    // A debug build is the developer's copy. Keep it out of the installed
+    // app's data folder so installing a release for testing never touches the
+    // dev database, and the release never sees the dev one.
+    let folder = if cfg!(debug_assertions) { "Crown Books Dev" } else { "Crown Books" };
     if let Ok(appdata) = std::env::var("APPDATA") {
         if !appdata.trim().is_empty() {
-            return PathBuf::from(appdata).join("Crown Books");
+            return PathBuf::from(appdata).join(folder);
         }
     }
     // Non-Windows fallbacks only matter for development on another OS.
+    let fallback = if cfg!(debug_assertions) { ".crown-books-dev" } else { ".crown-books" };
     if let Ok(home) = std::env::var("HOME") {
-        return PathBuf::from(home).join(".crown-books");
+        return PathBuf::from(home).join(fallback);
     }
-    PathBuf::from(".crown-books")
+    PathBuf::from(fallback)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_debug_build_never_uses_the_installed_data_folder() {
+        assert_eq!(profile(), "dev");
+        assert!(default_user_data().to_string_lossy().contains("Crown Books Dev"));
+    }
 }

@@ -31,11 +31,13 @@ mod settlement;
 mod stock;
 
 use std::collections::HashMap;
+use std::time::Instant;
 
 use rusqlite::Connection;
 use serde_json::{json, Value};
 
 use crate::audit;
+use crate::logging;
 use crate::db::permissions::codes as perm;
 use crate::error::{codes, AppError, AppResult};
 use crate::json::{
@@ -526,7 +528,24 @@ fn cancel_voucher(ctx: &mut Ctx<'_>, input: &Value) -> AppResult<Value> {
 // ---------------------------------------------------------------------------
 
 fn post_voucher(ctx: &mut Ctx<'_>, input: &Value) -> AppResult<Value> {
+    let started = Instant::now();
+    let trace_id = ctx.trace_id().map(str::to_string);
     let parsed = PostInput::parse(input)?;
+    logging::info(
+        "vouchers",
+        "post.start",
+        trace_id.as_deref(),
+        json!({
+            "requestId": parsed.request_id,
+            "type": parsed.voucher_type,
+            "date": parsed.date,
+            "partyId": parsed.party_id,
+            "lines": parsed.lines.len(),
+            "supplierBillNo": parsed.supplier_bill_no,
+            "referenceNo": parsed.reference_no,
+        }),
+    );
+
     let permission = if parsed.voucher_type == "RECEIPT" {
         perm::RECEIPT_RECORD
     } else {
@@ -536,7 +555,30 @@ fn post_voucher(ctx: &mut Ctx<'_>, input: &Value) -> AppResult<Value> {
     let company_id = ctx.company_id()?;
     let user_id = ctx.user_id()?;
     let fingerprint = input.to_string();
-    ctx.with_tx(|ctx| post_in_tx(ctx, company_id, user_id, &parsed, &fingerprint))
+    let result = ctx.with_tx(|ctx| post_in_tx(ctx, company_id, user_id, &parsed, &fingerprint));
+    let duration_ms = started.elapsed().as_millis() as u64;
+    match &result {
+        Ok(value) => logging::info(
+            "vouchers",
+            "post.ok",
+            trace_id.as_deref(),
+            json!({
+                "requestId": parsed.request_id,
+                "id": value.get("id"),
+                "number": value.get("number"),
+                "durationMs": duration_ms,
+            }),
+        ),
+        Err(err) => logging::error(
+            "vouchers",
+            "post.fail",
+            trace_id.as_deref(),
+            json!({ "requestId": parsed.request_id, "durationMs": duration_ms }),
+            err.code,
+            &err.message,
+        ),
+    }
+    result
 }
 
 fn required_account(keys: &HashMap<String, i64>, name: &str) -> AppResult<i64> {
