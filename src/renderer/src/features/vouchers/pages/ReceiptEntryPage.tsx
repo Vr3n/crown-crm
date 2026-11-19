@@ -52,6 +52,9 @@ const PAYMENT_TONE = {
   total: 'bg-warning-soft/30'
 }
 
+const FIELD_INPUT =
+  'w-full rounded-sm border border-input bg-background outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary'
+
 function todayIso(date = new Date()): string {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
 }
@@ -197,7 +200,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             value={date}
             onChange={(event) => setDate(event.target.value)}
             aria-label="Voucher date"
-            className="h-7 w-full border-0 bg-transparent font-mono text-[0.875rem] outline-none"
+            className={cn(FIELD_INPUT, 'h-7 px-2 font-mono text-[0.875rem]')}
           />
         </Field>
         <Field
@@ -212,7 +215,8 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             placeholder="0.00"
             aria-label="Amount"
             className={cn(
-              'h-8 w-full border-0 bg-transparent text-right font-mono text-[1.125rem] font-semibold tabular-nums outline-none placeholder:text-muted-foreground/50',
+              FIELD_INPUT,
+              'h-8 px-2 text-right font-mono text-[1.125rem] font-semibold tabular-nums placeholder:text-muted-foreground/50',
               tone.text
             )}
           />
@@ -222,7 +226,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             value={method}
             onChange={(event) => setMethod(event.target.value)}
             aria-label="Payment method"
-            className="h-7 w-full cursor-pointer border-0 bg-transparent text-[0.875rem] outline-none"
+            className={cn(FIELD_INPUT, 'h-7 cursor-pointer px-2 text-[0.875rem]')}
           >
             {METHODS.map((option) => (
               <option key={option} value={option}>
@@ -237,7 +241,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             onChange={(event) => setReference(event.target.value)}
             placeholder="Cheque or UTR number"
             aria-label="Reference"
-            className="h-7 w-full border-0 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
+            className={cn(FIELD_INPUT, 'h-7 px-2 text-[0.875rem]')}
           />
         </Field>
         <Field label="Notes" className="sm:col-span-2">
@@ -247,7 +251,7 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
             rows={2}
             placeholder="Narration for the voucher"
             aria-label="Notes"
-            className="w-full resize-none border-0 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
+            className={cn(FIELD_INPUT, 'resize-none px-2 py-1.5 text-[0.875rem]')}
           />
         </Field>
       </div>
@@ -334,19 +338,22 @@ export function ReceiptEntryPage({ mode }: { mode: Mode }): React.JSX.Element {
                   {formatMinor(bill.outstandingMinor, 'INR')}
                 </td>
                 <td className="p-0">
-                  <input
-                    value={allocations[bill.id] ?? ''}
-                    onChange={(event) =>
-                      setAllocations((current) => ({ ...current, [bill.id]: event.target.value }))
-                    }
-                    inputMode="decimal"
-                    placeholder="0.00"
-                    aria-label={`Allocate to ${bill.number}`}
-                    className={cn(
-                      'h-9 w-full border-0 bg-transparent px-3 text-right font-mono text-[0.875rem] tabular-nums outline-none placeholder:text-muted-foreground/60',
-                      tone.focus
-                    )}
-                  />
+                  <div className="px-1 py-0.5">
+                    <input
+                      value={allocations[bill.id] ?? ''}
+                      onChange={(event) =>
+                        setAllocations((current) => ({ ...current, [bill.id]: event.target.value }))
+                      }
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      aria-label={`Allocate to ${bill.number}`}
+                      className={cn(
+                        FIELD_INPUT,
+                        'h-8 px-2 text-right font-mono text-[0.875rem] tabular-nums',
+                        tone.focus
+                      )}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}

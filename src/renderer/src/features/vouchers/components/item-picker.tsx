@@ -42,8 +42,8 @@ export function ItemPicker({
           type="button"
           role="combobox"
           className={cn(
-            'flex h-9 w-full items-center gap-1 border-0 bg-transparent px-2 text-left text-[0.875rem] outline-none',
-            'hover:bg-accent-soft/50 focus-visible:bg-accent-soft/60'
+            'flex h-8 w-full items-center gap-1 border border-input bg-background px-2 text-left text-[0.875rem] outline-none transition-colors',
+            'hover:bg-accent-soft/50 focus-visible:border-primary focus-visible:bg-accent-soft/60'
           )}
           aria-label={selected ? `Item ${selected.name}` : 'Choose item or use free text'}
         >

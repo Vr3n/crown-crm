@@ -121,7 +121,7 @@ const HEADERS = [
   ''
 ]
 const CELL =
-  'h-9 w-full border-0 bg-transparent px-2 text-[0.875rem] text-foreground outline-none placeholder:text-muted-foreground/60'
+  'h-8 w-full border border-input bg-background px-2 text-[0.875rem] text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary'
 const FIELD_KEYS = [
   { key: 'description', label: 'Description', placeholder: 'Item or service' },
   { key: 'hsn', label: 'HSN', mono: true },
@@ -676,7 +676,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                 className="h-9 border-b border-border last:border-b-0 focus-within:bg-accent-soft/30"
               >
                 <td className="px-2 font-mono text-[0.75rem] text-muted-foreground">{index + 1}</td>
-                <td className="p-0">
+                <td className="px-0.5 py-0.5">
                   <ItemPicker
                     items={items}
                     value={line.itemId}
@@ -686,7 +686,7 @@ export function VoucherEntryPage({ type }: { type: LineType }): React.JSX.Elemen
                   />
                 </td>
                 {FIELD_KEYS.map((field) => (
-                  <td key={field.key} className="p-0">
+                  <td key={field.key} className="px-0.5 py-0.5">
                     <CellInput
                       value={line[field.key]}
                       onChange={(value) => updateLine(line.key, { [field.key]: value })}
