@@ -3,52 +3,52 @@
     {
       "label": 1,
       "text": "Business name, owner and phone",
-      "xPct": 60.34,
-      "yPct": 24.31
+      "xPct": 59.83,
+      "yPct": 23.06
     },
     {
       "label": 2,
       "text": "Owner email is the sign-in name",
-      "xPct": 60.34,
-      "yPct": 42.68
+      "xPct": 59.83,
+      "yPct": 47.61
     },
     {
       "label": 3,
       "text": "Password, at least 8 characters",
-      "xPct": 60.34,
-      "yPct": 51.86
+      "xPct": 59.83,
+      "yPct": 59.6
     },
     {
       "label": 4,
       "text": "State and GSTIN decide the tax treatment",
-      "xPct": 60.34,
-      "yPct": 63.87
+      "xPct": 59.83,
+      "yPct": 71.59
     },
     {
       "label": 5,
       "text": "Books begin: the first day recorded",
-      "xPct": 60.34,
-      "yPct": 73.05
+      "xPct": 59.83,
+      "yPct": 83.59
     },
     {
       "label": 6,
       "text": "Creates the company and signs you in",
-      "xPct": 60.34,
-      "yPct": 84.44
+      "xPct": 59.83,
+      "yPct": 93.89
     }
   ],
   "00-first-run-numbering": [
     {
       "label": 1,
       "text": "Each document has its own series",
-      "xPct": 23.27,
-      "yPct": 58.8
+      "xPct": 16.72,
+      "yPct": 55.92
     },
     {
       "label": 2,
       "text": "The next number is previewed live",
-      "xPct": 19.16,
-      "yPct": 48.08
+      "xPct": 9.84,
+      "yPct": 45.2
     }
   ],
   "00-first-run-checklist": [
@@ -127,26 +127,26 @@
     {
       "label": 1,
       "text": "Legal or trading name",
-      "xPct": 5.65,
-      "yPct": 22.58
+      "xPct": 4.22,
+      "yPct": 23.53
     },
     {
       "label": 2,
       "text": "GSTIN and state code control the tax type",
-      "xPct": 5.65,
-      "yPct": 47.66
+      "xPct": 33.76,
+      "yPct": 36.61
     },
     {
       "label": 3,
       "text": "Credit days set the default due date",
-      "xPct": 5.65,
-      "yPct": 72.75
+      "xPct": 4.22,
+      "yPct": 62.76
     },
     {
       "label": 4,
       "text": "Opening balance is posted later, once",
-      "xPct": 5.65,
-      "yPct": 85.29
+      "xPct": 63.29,
+      "yPct": 62.76
     }
   ],
   "04-items": [
@@ -173,32 +173,32 @@
     {
       "label": 1,
       "text": "Name, SKU and HSN or SAC",
-      "xPct": 5.49,
-      "yPct": 15.09
+      "xPct": 3.97,
+      "yPct": 20.31
     },
     {
       "label": 2,
       "text": "Unit, GST and cess rates",
-      "xPct": 48.08,
-      "yPct": 21.13
+      "xPct": 33.73,
+      "yPct": 28.44
     },
     {
       "label": 3,
       "text": "Tick for services, which never hold stock",
-      "xPct": 5.49,
-      "yPct": 39.3
+      "xPct": 33.73,
+      "yPct": 41.61
     },
     {
       "label": 4,
       "text": "Default sale and purchase prices",
-      "xPct": 5.49,
-      "yPct": 62.35
+      "xPct": 49.88,
+      "yPct": 56.96
     },
     {
       "label": 5,
       "text": "Opening stock and cost",
-      "xPct": 5.49,
-      "yPct": 76.12
+      "xPct": 3.97,
+      "yPct": 79.14
     }
   ],
   "06-company": [
@@ -277,8 +277,8 @@
     {
       "label": 5,
       "text": "Quantity, rate, discount and GST",
-      "xPct": 52.66,
-      "yPct": 71.98
+      "xPct": 52.8,
+      "yPct": 72.22
     },
     {
       "label": 6,
@@ -298,37 +298,37 @@
       "label": 1,
       "text": "Supplier and amount paid",
       "xPct": 24.43,
-      "yPct": 24.23
+      "yPct": 25.16
     },
     {
       "label": 2,
       "text": "Payment method and bank reference",
       "xPct": 24.43,
-      "yPct": 38.56
+      "yPct": 39.96
     },
     {
       "label": 3,
       "text": "Open bills for that supplier",
       "xPct": 18.26,
-      "yPct": 54.25
+      "yPct": 57.29
     },
     {
       "label": 4,
       "text": "Allocate against the bill being settled",
-      "xPct": 73.66,
-      "yPct": 61.1
+      "xPct": 74.23,
+      "yPct": 64.38
     },
     {
       "label": 5,
       "text": "Anything not allocated stays on account",
       "xPct": 85.31,
-      "yPct": 67.19
+      "yPct": 70.23
     },
     {
       "label": 6,
       "text": "Post the payment",
       "xPct": 90.27,
-      "yPct": 74.06
+      "yPct": 77.1
     }
   ],
   "12-payables": [
@@ -385,8 +385,8 @@
     {
       "label": 4,
       "text": "Item lines with quantity and rate",
-      "xPct": 52.66,
-      "yPct": 61.27
+      "xPct": 52.8,
+      "yPct": 61.51
     },
     {
       "label": 5,
@@ -464,37 +464,37 @@
       "label": 1,
       "text": "Customer and amount received",
       "xPct": 24.43,
-      "yPct": 24.23
+      "yPct": 25.16
     },
     {
       "label": 2,
       "text": "Method and reference for the receipt",
       "xPct": 24.43,
-      "yPct": 38.56
+      "yPct": 39.96
     },
     {
       "label": 3,
       "text": "Open invoices",
       "xPct": 18.26,
-      "yPct": 54.25
+      "yPct": 57.29
     },
     {
       "label": 4,
       "text": "Allocate to the invoice being settled",
-      "xPct": 73.96,
-      "yPct": 61.1
+      "xPct": 74.79,
+      "yPct": 64.38
     },
     {
       "label": 5,
       "text": "Unallocated money stays as an advance",
       "xPct": 87.64,
-      "yPct": 67.19
+      "yPct": 70.23
     },
     {
       "label": 6,
       "text": "Post the receipt",
       "xPct": 91.08,
-      "yPct": 74.06
+      "yPct": 77.1
     }
   ],
   "17-receivables": [

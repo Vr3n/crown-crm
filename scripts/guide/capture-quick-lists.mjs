@@ -24,11 +24,11 @@ try {
 
   await page.getByText('Set up the books').first().waitFor()
   await page.getByLabel('Business name').fill('Crown Traders')
-  await page.getByLabel('Owner name').fill('Priya Sharma')
+  await page.getByLabel('Owner Full Name').fill('Priya Sharma')
   await page.getByLabel('Owner email').fill('owner@crowntraders.in')
   await page.locator('input[type="password"]').first().fill('crownbooks')
   await page.getByLabel('GSTIN (optional)').fill('27AABCT1234F1Z5')
-  await page.locator('#setup-books-begin').fill('2026-04-01')
+  await page.locator('#booksBegin').fill('2026-04-01')
   await page.getByRole('button', { name: 'Create company and sign in' }).click()
   await page.getByRole('heading', { name: 'Number your vouchers' }).waitFor()
   await page.getByRole('button', { name: 'Save numbering' }).click()
