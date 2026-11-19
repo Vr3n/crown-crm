@@ -28,7 +28,15 @@ beforeAll(async () => {
   items = await runtime.listItems()
 })
 
-function planFor(sheet: SheetData, target: ImportTarget) {
+function planFor(
+  sheet: SheetData,
+  target: ImportTarget
+): {
+  range: ReturnType<typeof suggestTableRange>
+  headerRow: ReturnType<typeof detectHeaderRow>
+  mapping: ReturnType<typeof autoMap>
+  plan: ReturnType<typeof buildPlan>
+} {
   const range = suggestTableRange(sheet.rows, sheet.name, target)
   const headerRow = detectHeaderRow(sheet.rows, range, target)
   const mapping = autoMap(sheet.rows, headerRow, range.startCol, range.endCol, target)
