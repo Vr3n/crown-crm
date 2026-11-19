@@ -32,6 +32,7 @@ function App(): React.JSX.Element {
             <HashRouter>
               <AppRoutes />
             </HashRouter>
+            <UpdateBanner />
           </SessionProvider>
         </LicenseGate>
       ) : (
@@ -43,7 +44,6 @@ function App(): React.JSX.Element {
           />
         </LicenseGate>
       )}
-      <UpdateBanner />
     </>
   )
 }

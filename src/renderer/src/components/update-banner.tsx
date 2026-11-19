@@ -28,7 +28,7 @@ export function UpdateBanner(): React.JSX.Element | null {
     async function checkForUpdate(): Promise<void> {
       try {
         const { check } = await import('@tauri-apps/plugin-updater')
-        const found = await check({ timeout: 20_000 })
+        const found = await check({ timeout: 60_000 })
         if (cancelled) {
           await found?.close()
           return
@@ -92,7 +92,7 @@ export function UpdateBanner(): React.JSX.Element | null {
   return (
     <aside
       aria-label="Application update"
-      className="fixed right-4 top-16 z-40 w-[360px] max-w-[calc(100vw-2rem)] border border-border border-t-4 border-t-primary bg-card p-4 shadow-lg"
+      className="fixed bottom-4 right-4 z-40 w-[360px] max-w-[calc(100vw-2rem)] border border-border border-t-4 border-t-primary bg-card p-4 shadow-lg"
     >
       <div className="flex items-start justify-between gap-3">
         <div>
