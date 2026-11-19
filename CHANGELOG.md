@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/Vr3n/crown-crm/compare/v1.0.0...v1.0.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **update:** let slow connections finish and keep the card out of setup ([86a4f8a](https://github.com/Vr3n/crown-crm/commit/86a4f8a0b67e7f33147a2cad111f21421c919845))
+
 # 1.0.0 (2026-11-19)
 
 

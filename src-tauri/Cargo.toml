@@ -1,6 +1,6 @@
 [package]
 name = "crown-books"
-version = "1.0.0"
+version = "1.0.1"
 description = "Crown Books - offline-first accounting for small businesses"
 authors = ["Viren Patel"]
 edition = "2021"
