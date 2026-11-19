@@ -5,11 +5,11 @@
   "author": "Viren Patel",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Vr3n/crm.git"
+    "url": "https://github.com/Vr3n/crown-crm.git"
   },
-  "homepage": "https://github.com/Vr3n/crm#readme",
+  "homepage": "https://github.com/Vr3n/crown-crm#readme",
   "bugs": {
-    "url": "https://github.com/Vr3n/crm/issues"
+    "url": "https://github.com/Vr3n/crown-crm/issues"
   },
   "scripts": {
     "format": "prettier --write .",
