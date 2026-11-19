@@ -31,6 +31,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "createUpdaterArtifacts": true,
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
     "windows": {
       "webviewInstallMode": { "type": "embedBootstrapper" },
@@ -38,6 +39,17 @@
         "installMode": "perMachine",
         "languages": ["English"],
         "installerHooks": "installer-hooks.nsh"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDEzOTA4RjVBRjA0MDNGMDUKUldRRlAwRHdXbytRRTFCenI1UC96T1ZvTGpHZWpHR2xXNjlMOU1FRU0zVHFselo0SFFwd1Q2NkgK",
+      "endpoints": [
+        "https://github.com/Vr3n/crown-crm/releases/download/updater/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

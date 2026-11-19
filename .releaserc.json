@@ -8,16 +8,22 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node scripts/sync-version.mjs && npm run build && node scripts/collect-installer.mjs"
+        "prepareCmd": "node scripts/sync-version.mjs && npm run build && node scripts/collect-installer.mjs && node scripts/collect-updater.mjs ${nextRelease.gitTag}"
       }
     ],
     [
       "@semantic-release/github",
       {
-        "assets": [{ "path": "dist/Crown-Books-*-setup.exe", "label": "Crown Books installer (Windows x64)" }]
+        "assets": [
+          { "path": "dist/Crown-Books-*-setup.exe", "label": "Crown Books installer (Windows x64)" },
+          { "path": "dist/latest.json", "label": "Updater manifest" }
+        ]
       }
     ],
-    ["@semantic-release/exec", { "successCmd": "gh release edit ${nextRelease.gitTag} --prerelease" }],
+    [
+      "@semantic-release/exec",
+      { "successCmd": "gh release edit ${nextRelease.gitTag} --prerelease && node scripts/publish-updater.mjs" }
+    ],
     [
       "@semantic-release/git",
       {

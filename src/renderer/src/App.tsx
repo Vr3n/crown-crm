@@ -1,6 +1,7 @@
 import { HashRouter } from 'react-router-dom'
 import { AppRoutes } from './AppRoutes'
 import { AuthGate } from './components/auth/AuthGate'
+import { UpdateBanner } from './components/update-banner'
 import { LicenseGate } from './features/license/components/license-gate'
 import { SessionProvider } from './context/session-context'
 import {
@@ -23,26 +24,27 @@ function App(): React.JSX.Element {
   // of the wrong screen. Hold the boot splash until the session resolves.
   const bootPending = statusQuery.isPending || (authenticated && sessionQuery.isPending)
 
-  if (session) {
-    return (
-      <LicenseGate>
-        <SessionProvider value={session} onSignOut={() => void logout.mutate()}>
-          <HashRouter>
-            <AppRoutes />
-          </HashRouter>
-        </SessionProvider>
-      </LicenseGate>
-    )
-  }
-
   return (
-    <LicenseGate>
-      <AuthGate
-        status={statusQuery.data}
-        bootPending={bootPending}
-        onAuthenticated={commitSession}
-      />
-    </LicenseGate>
+    <>
+      {session ? (
+        <LicenseGate>
+          <SessionProvider value={session} onSignOut={() => void logout.mutate()}>
+            <HashRouter>
+              <AppRoutes />
+            </HashRouter>
+          </SessionProvider>
+        </LicenseGate>
+      ) : (
+        <LicenseGate>
+          <AuthGate
+            status={statusQuery.data}
+            bootPending={bootPending}
+            onAuthenticated={commitSession}
+          />
+        </LicenseGate>
+      )}
+      <UpdateBanner />
+    </>
   )
 }
 
